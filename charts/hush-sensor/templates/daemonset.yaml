@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "hush-sensor.fullName" . }}
+  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
+  namespace: {{ .Values.namespace.name }}
+
+spec:
+  selector:
+    matchLabels: {{- include "hush-sensor.selectorLabels" . | nindent 6 }}
+  {{- with .Values.daemonSet.updateStrategy }}
+  updateStrategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  template:
+    metadata:
+      labels: {{- include "hush-sensor.labels" . | nindent 8 }}
+      {{ with (include "hush-sensor.daemonSetAnnotations" .) -}}
+      annotations: {{- . | nindent 8 }}
+      {{- end }}
+
+    spec:
+      {{- with .Values.daemonSet.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.daemonSet.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      hostNetwork: true
+      hostPID: true
+      dnsPolicy: ClusterFirstWithHostNet
+      restartPolicy: Always
+      {{- with (include "hush-sensor.imagePullSecretEffectiveList" .) }}
+      imagePullSecrets: {{- . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.daemonSet.terminationGracePeriodSeconds }}
+      volumes:
+        - name: containerd
+          hostPath:
+            path: /run/containerd
+            type: Directory
+        - name: cgroupfs
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+        - name: vector-socket
+          emptyDir:
+            sizeLimit: 1Mi
+      containers:
+        - name: hush-sensor
+          image: {{ include "hush-sensor.sensorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            privileged: true
+            seccompProfile:
+              type: Unconfined
+            {{- with (include "hush-sensor.appArmorProfile" .) }}
+            appArmorProfile:
+              {{- . | nindent 14 }}
+            {{- end }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+            - name: containerd
+              mountPath: /var/run/containerd
+              readOnly: true
+            - name: cgroupfs
+              mountPath: /hostcgroup
+              readOnly: true
+        - name: hush-sensor-vector
+          image: {{ include "hush-sensor.vectorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector

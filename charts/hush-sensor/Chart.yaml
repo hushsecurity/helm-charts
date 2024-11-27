@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hush-sensor
+description: A Helm chart for Hush Security sensor.
+type: application
+version: 1.0.0
+home: https://hush.security

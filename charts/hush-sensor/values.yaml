@@ -1,0 +1,103 @@
+# Default values for hush-sensor.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This is to override the chart name.
+nameOverride: ""
+
+# This is to override the chart fullname.
+fullnameOverride: ""
+
+# Labels applied to all resources.
+# For more information see
+# https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+commonLabels: {}
+
+# The namespace for everything hush
+namespace:
+  create: true
+  name: "hush-security"
+
+# Values related to container images
+image:
+  # Container registry to pull images from
+  registry: hushsecurity.azurecr.io
+
+  # Overrides the image tag.
+  tag: "v1"
+
+  # A list of pre-created image pull secrets of the form:
+  #
+  # pullSecretList:
+  #   - name: "<secret-name-here>"
+  #
+  # When the list is empty 'image.pullSecret' can be used to create a secret and
+  # use it in the Daemon Set.
+  #
+  # Secrets must be pre-created in namespace specified in 'namespace.name'.
+  #
+  # More information can be found here:
+  # https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  pullSecretList: []
+
+  # Creates a pull secret for 'image.registry'.
+  # Both 'username' and 'password' must be non-empty for the secret to be created.
+  # Otherwise 'image.pullSecretList' can be used to specify pre-created secrets.
+  # When 'image.pullSecretList' is non-empty the created secret is not used.
+  pullSecret:
+    # Custom pull secret name.
+    # When not set chart's full name is used with '-imagepullsecret' suffix.
+    name: ""
+    # Pull secret username
+    username: ""
+    # Pull secret password
+    password: ""
+
+  # The pull policy for images.
+  pullPolicy: Always
+
+  # The repository used for sensor
+  sensorRepository: sensor
+
+  # The repository used for sensor-vector
+  vectorRepository: sensor-vector
+
+daemonSet:
+  # Custom priority class
+  priorityClassName: ""
+
+  # Custom node selector
+  nodeSelector: {}
+
+  # Additional annotations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  annotations: {}
+
+  # Termination grace period
+  terminationGracePeriodSeconds: 30
+
+  # An update strategy
+  updateStrategy:
+    type: RollingUpdate
+
+  # Node affinity.
+  # Choose the node types by OS and Arch.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+
+  # A list of tolerations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: []
