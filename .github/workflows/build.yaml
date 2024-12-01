@@ -1,0 +1,40 @@
+---
+name: Build
+on:
+  push:
+    branches:
+      - main
+      - "**-ci"
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Linear PR history
+        if: github.event_name == 'pull_request'
+        uses: NexusPHP/no-merge-commits@v2.1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install kube tools
+        uses: yokawasa/action-setup-kube-tools@v0.11.2
+        with:
+          kubectl: '1.31.2'
+          kubeconform: '0.6.7'
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+      - name: Lint
+        run: make lint
