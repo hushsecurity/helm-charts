@@ -3,6 +3,7 @@ default: lint
 
 .PHONY: lint
 lint: ct-lint-all lint-hush-sensor
+	$(MAKE) -C tests lint
 
 .PHONY: lint-all
 ct-lint-all:
