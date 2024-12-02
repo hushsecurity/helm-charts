@@ -29,6 +29,12 @@ jobs:
         uses: NexusPHP/no-merge-commits@v2.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install poetry
+        uses: Gr1N/setup-poetry@v9
       - name: Install kube tools
         uses: yokawasa/action-setup-kube-tools@v0.11.2
         with:
