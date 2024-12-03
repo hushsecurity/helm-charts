@@ -21,6 +21,18 @@ HUSH_SENSOR_VALUES = [
             "pullSecret": {"username": "dummy-username", "password": "dummy-password"}
         }
     },
+    {
+        "daemonSet": {
+            "tolerations": [
+                {
+                    "key": "kubernetes.io/arch",
+                    "operator": "Equal",
+                    "value": "arm64",
+                    "effect": "NoSchedule",
+                }
+            ]
+        }
+    },
 ]
 CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
 

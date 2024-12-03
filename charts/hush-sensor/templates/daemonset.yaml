@@ -26,6 +26,9 @@ spec:
       {{- with .Values.daemonSet.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.daemonSet.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
       hostNetwork: true
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
