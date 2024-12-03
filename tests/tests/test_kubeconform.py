@@ -77,6 +77,8 @@ def test_kubeconform(chart):
     for kube_version in KUBE_VERSION_VALUES:
         for values in CHART_VALUES.get(chart, []) + [{}]:
             with values_tmp_file(values) as path:
+                with open(path, "r", encoding="utf-8") as f:
+                    logger.info("values:\n%s", f.read())
                 args = f"--kube-version {kube_version} -f {path}"
                 conform_kube_version = kube_version.split("-")[0]
                 conform_args = f"-strict -kubernetes-version {conform_kube_version}"
