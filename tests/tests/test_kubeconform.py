@@ -33,6 +33,32 @@ HUSH_SENSOR_VALUES = [
             ]
         }
     },
+    {
+        "daemonSet": {
+            "affinity": {
+                "nodeAffinity": {
+                    "requiredDuringSchedulingIgnoredDuringExecution": {
+                        "nodeSelectorTerms": [
+                            {
+                                "matchExpressions": [
+                                    {
+                                        "key": "kubernetes.io/os",
+                                        "operator": "In",
+                                        "values": ["linux"],
+                                    },
+                                    {
+                                        "key": "kubernetes.io/arch",
+                                        "operator": "In",
+                                        "values": ["arm64", "amd64"],
+                                    },
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
 ]
 CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
 
