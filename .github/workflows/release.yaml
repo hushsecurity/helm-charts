@@ -5,19 +5,61 @@ on:
     branches:
       - "**-ci"
   workflow_dispatch:
+    inputs:
+      chart_name:
+        description: "Chart name to release"
+        required: true
+        default: hush-sensor
+        type: choice
+        options:
+          - hush-sensor
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
+      - name: Set TOP_DIR
+        run: |
+          TOP_DIR=$(git rev-parse --show-toplevel)
+          echo "TOP_DIR=$TOP_DIR" >> "$GITHUB_ENV"
+      - name: Set SHORT_HASH
+        run: |
+          SHORT_HASH=$(git describe --always --first-parent --dirty --exclude="*" --abbrev=10)
+          echo "SHORT_HASH=$SHORT_HASH" >> "$GITHUB_ENV"
+      - name: Import PGP key
+        run: |
+          set -o pipefail
+          echo "${{ secrets.HUSH_PGP_PRIVATE_KEY }}" | gpg --import
+          gpg --export > /home/runner/.gnupg/pubring.gpg
+          gpg --export-secret-keys > /home/runner/.gnupg/secring.gpg
+      - name: Shred PGP key
+        uses: gacts/run-and-post-run@v1
+        with:
+          post: find /home/runner/.gnupg/ -type f -exec shred -zuv {} +
+      - name: Install sigstore plugin
+        run: |
+          which helm
+          helm version
+      - name: Helm Login
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login -u "$GITHUB_ACTOR" --password-stdin ghcr.io
       - name: Install Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install poetry
         uses: Gr1N/setup-poetry@v9
-      - name: GPG test
-        run: gpg --version
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+      - name: Lint
+        run: make lint
+      - name: Release
+        run: poetry run python3 -m cli release ${{ inputs.chart_name }}
+        working-directory: cli
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
