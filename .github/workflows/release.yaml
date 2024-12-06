@@ -10,6 +10,9 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
@@ -19,5 +22,14 @@ jobs:
           python-version: "3.12"
       - name: Install poetry
         uses: Gr1N/setup-poetry@v9
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+      - name: Lint
+        run: make lint
       - name: GPG test
         run: gpg --version
+      - name: Release
+        run: poetry run python3 -m cli release ../charts
+        working-directory: cli
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
