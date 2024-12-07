@@ -17,8 +17,8 @@ def release_chart(chart_name):
             existing_versions,
         )
         raise RuntimeError(f"chart {chart_name} is already released")
-    charts.add_release_annotation(chart_name, chart_data)
-    charts.package_sign_and_push(chart_name, chart_version)
+    # charts.add_release_annotation(chart_name, chart_data)
+    # charts.package_sign_and_push(chart_name, chart_version)
 
 
 def release_cmd(args):
