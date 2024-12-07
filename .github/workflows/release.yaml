@@ -24,14 +24,6 @@ jobs:
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
-      - name: Set TOP_DIR
-        run: |
-          TOP_DIR=$(git rev-parse --show-toplevel)
-          echo "TOP_DIR=$TOP_DIR" >> "$GITHUB_ENV"
-      - name: Set SHORT_HASH
-        run: |
-          SHORT_HASH=$(git describe --always --first-parent --dirty --exclude="*" --abbrev=10)
-          echo "SHORT_HASH=$SHORT_HASH" >> "$GITHUB_ENV"
       - name: Import PGP key
         run: |
           set -o pipefail
@@ -43,9 +35,7 @@ jobs:
         with:
           post: find /home/runner/.gnupg/ -type f -exec shred -zuv {} +
       - name: Install sigstore plugin
-        run: |
-          which helm
-          helm version
+        run: helm plugin install https://github.com/sigstore/helm-sigstore
       - name: Helm Login
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login -u "$GITHUB_ACTOR" --password-stdin ghcr.io
       - name: Install Python 3.12
@@ -59,7 +49,6 @@ jobs:
       - name: Lint
         run: make lint
       - name: Release
-        run: poetry run python3 -m cli release ${{ inputs.chart_name }}
-        working-directory: cli
+        run: make release CHART=hush-sensor
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
