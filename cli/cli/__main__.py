@@ -15,7 +15,7 @@ def parse_args():
     p = argparse.ArgumentParser()
     sub_parsers = p.add_subparsers(dest="cmd")
     release = sub_parsers.add_parser("release")
-    release.add_argument("charts_dir")
+    release.add_argument("chart_name")
     release.set_defaults(func=release_cmd)
     args = p.parse_args()
     if not args.cmd:

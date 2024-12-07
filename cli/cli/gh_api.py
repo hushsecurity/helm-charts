@@ -11,7 +11,7 @@ NEXT_RE = re.compile(r"<(?P<url>\S*)>; rel=\"next\"")
 GH_TOKEN = os.environ["GH_TOKEN"]
 
 
-def get_published_versions(chart_name):
+def get_chart_versions(chart_name):
     headers = {
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
