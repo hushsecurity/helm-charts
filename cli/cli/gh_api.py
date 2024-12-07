@@ -18,7 +18,7 @@ def get_chart_versions(chart_name):
         "Authorization": f"Bearer {GH_TOKEN}",
     }
     params = {"per_page": 1}
-    url = f"{GH_API}/{CHARTS_API_PATH}/{chart_name}/versions"
+    url = f"{GH_API}/{CHARTS_API_PATH}%2F{chart_name}/versions"
     versions = []
     while True:
         response = requests.get(
