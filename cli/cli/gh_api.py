@@ -2,7 +2,6 @@ import logging
 import os
 import re
 import requests
-from requests_toolbelt.utils import dump
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +20,9 @@ def get_chart_versions(chart_name):
         "X-GitHub-Api-Version": "2022-11-28",
         "Authorization": f"Bearer {GH_TOKEN}",
     }
-    params = {"per_page": 1}
+    params = {"per_page": 100}
     url = f"{GH_API}/{CHARTS_API_PATH}/{CHARTS_PFX}%2F{chart_name}/versions"
-    versions = []
+    versions = set()
     while True:
         logger.info("GET %s", url)
         response = requests.get(
@@ -32,12 +31,10 @@ def get_chart_versions(chart_name):
             params=params,
             timeout=TIMEOUT,
         )
-        data = dump.dump_all(response).decode("utf-8")
-        logger.info("get_chart_versions: %s", data)
         if response.status_code == 404:
-            return []
+            return versions
         response.raise_for_status()
-        versions.extend(v["name"] for v in response.json())
+        versions.update(*(v["metadata"]["container"]["tags"] for v in response.json()))
         if (link := response.headers.get("link")) and 'rel="next"' in link:
             if not (m := NEXT_RE.search(link)):
                 raise RuntimeError(f"failed to parse link: {link}")
