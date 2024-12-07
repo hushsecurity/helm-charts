@@ -4,6 +4,7 @@ default: lint
 .PHONY: lint
 lint: ct-lint-all
 	$(MAKE) -C tests lint
+	$(MAKE) -C cli lint
 
 .PHONY: lint-all
 ct-lint-all:
