@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - "**-ci"
+      - "!rbk-hush-252-release-workflow-ci"
   pull_request:
 
 jobs:

@@ -1,0 +1,32 @@
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pyyaml = "^6.0.2"
+pygithub = "^2.5.0"
+requests-toolbelt = "^1.0.0"
+requests = "^2.32.3"
+
+[tool.poetry.group.ci]
+optional = true
+
+[tool.poetry.group.ci.dependencies]
+pylint = "^3.3.2"
+ruff = "^0.8.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint.isort]
+no-lines-before = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
