@@ -1,6 +1,7 @@
 TOP_DIR:=$(shell git rev-parse --show-toplevel)
 TEST_KW?=
 VERBOSE?=
+NO_SYNC?=
 
 __PYTEST_ARGS = --log-level INFO
 __PYTEST_ARGS += --log-format "%(asctime)s.%(msecs)03d %(levelname)s %(message)s"
@@ -12,6 +13,11 @@ __PYTEST_ARGS += -vvv
 __PYTEST_ARGS += -o log_cli=true
 endif
 
+__SYNC_ARGS = --sync
+ifeq ($(NO_SYNC),1)
+__SYNC_ARGS =
+endif
+
 .PHONY: default
 default: lint
 
@@ -19,7 +25,7 @@ poetry.lock: pyproject.toml
 	@poetry lock --no-update
 
 .venv: poetry.lock
-	@poetry install --with ci --sync
+	@poetry install --with ci $(__SYNC_ARGS)
 	@touch .venv
 
 .PHONY: lint

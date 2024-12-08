@@ -18,6 +18,8 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+    env:
+      NO_SYNC: "1"
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4

@@ -1,3 +1,10 @@
+NO_SYNC?=
+
+__SYNC_ARGS = --sync
+ifeq ($(NO_SYNC),1)
+__SYNC_ARGS =
+endif
+
 .PHONY: default
 default: lint
 
@@ -6,7 +13,7 @@ poetry.lock: pyproject.toml
 	@touch $@
 
 .venv: poetry.lock
-	@poetry install --with ci --sync
+	@poetry install --with ci $(__SYNC_ARGS)
 	@touch .venv
 
 .PHONY: lint
