@@ -101,3 +101,11 @@ daemonSet:
   # For more information see
   # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
   tolerations: []
+
+sensorConfigMap:
+  # Configure pod tracing:
+  #   false = trace annotated pods only
+  #   true  = trace all pods (besides kube-system)
+  trace_pods_default: false
+  # Report TLS connections
+  report_tls: false

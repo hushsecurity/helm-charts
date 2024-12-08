@@ -52,6 +52,9 @@ spec:
         - name: vector-socket
           emptyDir:
             sizeLimit: 1Mi
+        - name: sensor-config
+          configMap:
+            name: {{ include "hush-sensor.sensorConfigMapName" . }}
       containers:
         - name: hush-sensor
           image: {{ include "hush-sensor.sensorImagePath" . }}
@@ -72,6 +75,9 @@ spec:
               readOnly: true
             - name: cgroupfs
               mountPath: /hostcgroup
+              readOnly: true
+            - name: sensor-config
+              mountPath: /opt/snoopy/
               readOnly: true
         - name: hush-sensor-vector
           image: {{ include "hush-sensor.vectorImagePath" . }}

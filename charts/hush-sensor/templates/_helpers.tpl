@@ -40,6 +40,13 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+Sensor config map name
+*/}}
+{{- define "hush-sensor.sensorConfigMapName" -}}
+{{- printf "%s-%s" (include "hush-sensor.buildChartFullName" .) "sensorconfigmap" }}
+{{- end }}
+
+{{/*
 Common labels
 */}}
 {{- define "hush-sensor.labels" -}}

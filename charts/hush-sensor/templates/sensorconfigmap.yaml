@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
+  namespace: {{ .Values.namespace.name }}
+data:
+  config.yaml: |
+    trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
+    report_tls: {{ .Values.sensorConfigMap.report_tls }}
+    self_k8s_namespace: {{ .Values.namespace.name | quote }}
