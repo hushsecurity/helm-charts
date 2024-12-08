@@ -1,17 +1,4 @@
-TOP_DIR:=$(shell git rev-parse --show-toplevel)
-TEST_KW?=
-VERBOSE?=
 NO_SYNC?=
-
-__PYTEST_ARGS = --log-level INFO
-__PYTEST_ARGS += --log-format "%(asctime)s.%(msecs)03d %(levelname)s %(message)s"
-ifneq ($(TEST_KW),)
-__PYTEST_ARGS += -k $(TEST_KW)
-endif
-ifeq ($(VERBOSE),1)
-__PYTEST_ARGS += -vvv
-__PYTEST_ARGS += -o log_cli=true
-endif
 
 __SYNC_ARGS = --sync
 ifeq ($(NO_SYNC),1)
@@ -23,6 +10,7 @@ default: lint
 
 poetry.lock: pyproject.toml
 	@poetry lock --no-update
+	@touch $@
 
 .venv: poetry.lock
 	@poetry install --with ci $(__SYNC_ARGS)
@@ -46,8 +34,3 @@ pylint: .venv
 pyformat: .venv
 	@poetry run ruff format
 	@poetry run ruff check --select I --fix
-
-.PHONY: tests
-tests: .venv
-	@PYTHONDONTWRITEBYTECODE=1 TOP_DIR=$(TOP_DIR) poetry run \
-		pytest -p no:cacheprovider $(__PYTEST_ARGS)
