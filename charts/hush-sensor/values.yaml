@@ -96,6 +96,7 @@ daemonSet:
               operator: In
               values:
                 - amd64
+                - arm64
 
   # A list of tolerations.
   # For more information see
