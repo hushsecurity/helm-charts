@@ -77,7 +77,7 @@ spec:
               mountPath: /hostcgroup
               readOnly: true
             - name: sensor-config
-              mountPath: /opt/snoopy/
+              mountPath: /opt/snoopy/config/
               readOnly: true
         - name: hush-sensor-vector
           image: {{ include "hush-sensor.vectorImagePath" . }}
