@@ -104,6 +104,29 @@ type: Unconfined
 {{- end }}
 
 {{/*
+Hush deployment info
+*/}}
+{{- define "hush-sensor.deploymentInfo" -}}
+{{- $parts := .Values.deploymentToken | b64dec | split ":" -}}
+{{- $zone := trimPrefix "m" $parts._0 | trimSuffix "prd" -}}
+{{- $zone = ternary "" (printf "%s." $zone) (not $zone) -}}
+{{- $uri := printf "https://events.%s.%shush-security.com/v1/runtime-events" $parts._1 $zone -}}
+{{- $result := dict
+    "orgId" $parts._2
+    "deploymentId" $parts._3
+    "eventReportingUri" $uri
+-}}
+{{- $result | toYaml -}}
+{{- end }}
+
+{{/*
+Deployment secret name
+*/}}
+{{- define "hush-sensor.deploymentSecretName" -}}
+{{- printf "%s-deploymentsecret" (include "hush-sensor.fullName" .) }}
+{{- end }}
+
+{{/*
 Should we create the image pull secret?
 */}}
 {{- define "hush-sensor.shouldCreateImagePullSecret" -}}
