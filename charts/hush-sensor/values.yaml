@@ -18,6 +18,8 @@ namespace:
   create: true
   name: "hush-security"
 
+deploymentToken: ""
+
 # Values related to container images
 image:
   # Container registry to pull images from

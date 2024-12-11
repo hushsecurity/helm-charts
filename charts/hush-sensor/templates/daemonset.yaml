@@ -85,3 +85,17 @@ spec:
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector
+          env:
+            {{- with (include "hush-sensor.deploymentInfo" . | fromYaml) }}
+            - name: EVENT_REPORTING_ENDPOINT
+              value: {{ .eventReportingUri }}
+            - name: EVENT_REPORTING_ORG_ID
+              value: {{ .orgId }}
+            - name: EVENT_REPORTING_DEPLOYMENT_ID
+              value: {{ .deploymentId }}
+            {{- end }}
+            - name: EVENT_REPORTING_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hush-sensor.deploymentSecretName" . }}
+                  key: deployment-token
