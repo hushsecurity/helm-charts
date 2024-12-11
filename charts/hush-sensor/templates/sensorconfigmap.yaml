@@ -9,3 +9,7 @@ data:
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
     report_tls: {{ .Values.sensorConfigMap.report_tls }}
     self_k8s_namespace: {{ .Values.namespace.name | quote }}
+    {{- with (include "hush-sensor.deploymentInfo" . | fromYaml) }}
+    org_id: {{ .orgId | quote }}
+    deployment_id: {{ .deploymentId | quote }}
+    {{- end }}
