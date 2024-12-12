@@ -107,6 +107,6 @@ sensorConfigMap:
   # Configure pod tracing:
   #   false = trace annotated pods only
   #   true  = trace all pods (besides kube-system)
-  trace_pods_default: false
+  trace_pods_default: true
   # Report TLS connections
   report_tls: false
