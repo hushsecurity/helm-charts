@@ -127,12 +127,35 @@ Deployment secret name
 {{- end }}
 
 {{/*
+Get image registry
+*/}}
+{{- define "hush-sensor.imageRegistry" -}}
+{{- and .Values.image .Values.image.registry -}}
+{{- end }}
+
+{{/*
+Get image pull secret username
+*/}}
+{{- define "hush-sensor.imagePullSecretUsername" -}}
+{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
+{{- and $hasPullSecret .Values.image.pullSecret.username -}}
+{{- end }}
+
+{{/*
+Get image pull secret password
+*/}}
+{{- define "hush-sensor.imagePullSecretPassword" -}}
+{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
+{{- and $hasPullSecret .Values.image.pullSecret.password -}}
+{{- end }}
+
+{{/*
 Should we create the image pull secret?
 */}}
 {{- define "hush-sensor.shouldCreateImagePullSecret" -}}
-{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
-{{- $hasUsername := (and $hasPullSecret .Values.image.pullSecret.username) -}}
-{{- if and $hasUsername .Values.image.pullSecret.password -}}
+{{- $username := (include "hush-sensor.imagePullSecretUsername" .) -}}
+{{- $password := (include "hush-sensor.imagePullSecretPassword" .) -}}
+{{- if and $username $password -}}
 true
 {{- end }}
 {{- end }}
@@ -150,11 +173,11 @@ PullSecret name
 PullSecret value
 */}}
 {{- define "hush-sensor.imagePullSecretValue" -}}
-{{- $msg := "'image.registry' must be provided for image pull secret creation" -}}
-{{- $registry := required $msg .Values.image.registry -}}
-{{- $userPass := printf "%s:%s"
-    .Values.image.pullSecret.username
-    .Values.image.pullSecret.password -}}
+{{- $msg := "couldn't find image registry definition. 'image.registry' must be defined." -}}
+{{- $registry := required $msg (include "hush-sensor.imageRegistry" .) -}}
+{{- $username := (include "hush-sensor.imagePullSecretUsername" .) -}}
+{{- $password := (include "hush-sensor.imagePullSecretPassword" .) -}}
+{{- $userPass := printf "%s:%s" $username $password -}}
 {{- $value := printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}"
     $registry ($userPass | b64enc) -}}
 {{- $value | b64enc }}
@@ -189,7 +212,7 @@ Sensor image path
 */}}
 {{- define "hush-sensor.sensorImagePath" -}}
 {{- $ctx := dict
-    "registry" .Values.image.registry
+    "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sensorRepository
     "tag" .Values.image.tag
 -}}
@@ -201,7 +224,7 @@ Vector image path
 */}}
 {{- define "hush-sensor.vectorImagePath" -}}
 {{- $ctx := dict
-    "registry" .Values.image.registry
+    "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.vectorRepository
     "tag" .Values.image.tag
 -}}
