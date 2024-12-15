@@ -130,23 +130,61 @@ Deployment secret name
 Get image registry
 */}}
 {{- define "hush-sensor.imageRegistry" -}}
-{{- and .Values.image .Values.image.registry -}}
+{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
+{{- $registry := and .Values.image .Values.image.registry -}}
+{{- default $registry (get $token "registry") -}}
 {{- end }}
 
 {{/*
 Get image pull secret username
 */}}
 {{- define "hush-sensor.imagePullSecretUsername" -}}
+{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
 {{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
-{{- and $hasPullSecret .Values.image.pullSecret.username -}}
+{{- $username := and $hasPullSecret .Values.image.pullSecret.username -}}
+{{- default $username (get $token "username") -}}
 {{- end }}
 
 {{/*
 Get image pull secret password
 */}}
 {{- define "hush-sensor.imagePullSecretPassword" -}}
+{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
 {{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
-{{- and $hasPullSecret .Values.image.pullSecret.password -}}
+{{- $password := and $hasPullSecret .Values.image.pullSecret.password -}}
+{{- default $password (get $token "password") -}}
+{{- end }}
+
+{{/*
+Parse image.pullToken
+*/}}
+{{- define "hush-sensor.parsePullToken" -}}
+{{- $pullToken := and .Values.image .Values.image.pullToken -}}
+{{- if $pullToken -}}
+    {{- $token := b64dec $pullToken -}}
+    {{- $version := splitn ":" 2 $token -}}
+    {{- if ne $version._0 "1" -}}
+        {{- fail (printf "image.pullToken version '%s' isn't supported" $version._0) -}}
+    {{- end -}}
+    {{- $registry := splitn ":" 2 $version._1 -}}
+    {{- if not $registry._0 -}}
+        {{- fail "invalid image.pullToken: registry is empty" -}}
+    {{- end -}}
+    {{- $username := splitn ":" 2 $registry._1 -}}
+    {{- if not $username._0 -}}
+        {{- fail "invalid image.pullToken: username is empty" -}}
+    {{- end -}}
+    {{- $password := splitn ":" 2 $username._1 -}}
+    {{- if not $password._0 -}}
+        {{- fail "invalid image.pullToken: password is empty" -}}
+    {{- end -}}
+    {{- dict
+        "registry" $registry._0
+        "username" $username._0
+        "password" $password._0
+        | toYaml
+    -}}
+{{- end -}}
 {{- end }}
 
 {{/*
@@ -173,7 +211,7 @@ PullSecret name
 PullSecret value
 */}}
 {{- define "hush-sensor.imagePullSecretValue" -}}
-{{- $msg := "couldn't find image registry definition. 'image.registry' must be defined." -}}
+{{- $msg := "couldn't find image registry definition. 'image.registry' or 'image.pullToken' must be defined." -}}
 {{- $registry := required $msg (include "hush-sensor.imageRegistry" .) -}}
 {{- $username := (include "hush-sensor.imagePullSecretUsername" .) -}}
 {{- $password := (include "hush-sensor.imagePullSecretPassword" .) -}}
