@@ -127,12 +127,73 @@ Deployment secret name
 {{- end }}
 
 {{/*
+Get image registry
+*/}}
+{{- define "hush-sensor.imageRegistry" -}}
+{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
+{{- $registry := and .Values.image .Values.image.registry -}}
+{{- default $registry (get $token "registry") -}}
+{{- end }}
+
+{{/*
+Get image pull secret username
+*/}}
+{{- define "hush-sensor.imagePullSecretUsername" -}}
+{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
+{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
+{{- $username := and $hasPullSecret .Values.image.pullSecret.username -}}
+{{- default $username (get $token "username") -}}
+{{- end }}
+
+{{/*
+Get image pull secret password
+*/}}
+{{- define "hush-sensor.imagePullSecretPassword" -}}
+{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
+{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
+{{- $password := and $hasPullSecret .Values.image.pullSecret.password -}}
+{{- default $password (get $token "password") -}}
+{{- end }}
+
+{{/*
+Parse image.pullToken
+*/}}
+{{- define "hush-sensor.parsePullToken" -}}
+{{- $pullToken := and .Values.image .Values.image.pullToken -}}
+{{- if $pullToken -}}
+    {{- $token := b64dec $pullToken -}}
+    {{- $version := splitn ":" 2 $token -}}
+    {{- if ne $version._0 "1" -}}
+        {{- fail (printf "image.pullToken version '%s' isn't supported" $version._0) -}}
+    {{- end -}}
+    {{- $registry := splitn ":" 2 $version._1 -}}
+    {{- if not $registry._0 -}}
+        {{- fail "invalid image.pullToken: registry is empty" -}}
+    {{- end -}}
+    {{- $username := splitn ":" 2 $registry._1 -}}
+    {{- if not $username._0 -}}
+        {{- fail "invalid image.pullToken: username is empty" -}}
+    {{- end -}}
+    {{- $password := splitn ":" 2 $username._1 -}}
+    {{- if not $password._0 -}}
+        {{- fail "invalid image.pullToken: password is empty" -}}
+    {{- end -}}
+    {{- dict
+        "registry" $registry._0
+        "username" $username._0
+        "password" $password._0
+        | toYaml
+    -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Should we create the image pull secret?
 */}}
 {{- define "hush-sensor.shouldCreateImagePullSecret" -}}
-{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
-{{- $hasUsername := (and $hasPullSecret .Values.image.pullSecret.username) -}}
-{{- if and $hasUsername .Values.image.pullSecret.password -}}
+{{- $username := (include "hush-sensor.imagePullSecretUsername" .) -}}
+{{- $password := (include "hush-sensor.imagePullSecretPassword" .) -}}
+{{- if and $username $password -}}
 true
 {{- end }}
 {{- end }}
@@ -150,11 +211,11 @@ PullSecret name
 PullSecret value
 */}}
 {{- define "hush-sensor.imagePullSecretValue" -}}
-{{- $msg := "'image.registry' must be provided for image pull secret creation" -}}
-{{- $registry := required $msg .Values.image.registry -}}
-{{- $userPass := printf "%s:%s"
-    .Values.image.pullSecret.username
-    .Values.image.pullSecret.password -}}
+{{- $msg := "couldn't find image registry definition. 'image.registry' or 'image.pullToken' must be defined." -}}
+{{- $registry := required $msg (include "hush-sensor.imageRegistry" .) -}}
+{{- $username := (include "hush-sensor.imagePullSecretUsername" .) -}}
+{{- $password := (include "hush-sensor.imagePullSecretPassword" .) -}}
+{{- $userPass := printf "%s:%s" $username $password -}}
 {{- $value := printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}"
     $registry ($userPass | b64enc) -}}
 {{- $value | b64enc }}
@@ -189,7 +250,7 @@ Sensor image path
 */}}
 {{- define "hush-sensor.sensorImagePath" -}}
 {{- $ctx := dict
-    "registry" .Values.image.registry
+    "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sensorRepository
     "tag" .Values.image.tag
 -}}
@@ -201,7 +262,7 @@ Vector image path
 */}}
 {{- define "hush-sensor.vectorImagePath" -}}
 {{- $ctx := dict
-    "registry" .Values.image.registry
+    "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.vectorRepository
     "tag" .Values.image.tag
 -}}

@@ -1,0 +1,12 @@
+{
+    "version": "0.2",
+    "language": "en",
+    "words": [
+        "trunc",
+        "nindent",
+        "sensorconfigmap",
+        "deploymentsecret",
+        "imagepullsecret",
+    ],
+    "flagWords": []
+}

@@ -22,7 +22,12 @@ deploymentToken: ""
 
 # Values related to container images
 image:
+  # Image pull token contains registry information and credentials
+  pullToken: ""
+
   # Container registry to pull images from
+  #
+  # This value is ignored when 'image.pullToken' is defined.
   registry: hushsecurity.azurecr.io
 
   # Overrides the image tag.
@@ -33,26 +38,32 @@ image:
   # pullSecretList:
   #   - name: "<secret-name-here>"
   #
-  # When the list is empty 'image.pullSecret' can be used to create a secret and
-  # use it in the Daemon Set.
-  #
   # Secrets must be pre-created in namespace specified in 'namespace.name'.
+  #
+  # When this list is empty 'image.pullSecret' can be used to create a secret
+  # automatically.
   #
   # More information can be found here:
   # https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
   pullSecretList: []
 
-  # Creates a pull secret for 'image.registry'.
-  # Both 'username' and 'password' must be non-empty for the secret to be created.
-  # Otherwise 'image.pullSecretList' can be used to specify pre-created secrets.
+  # Creates a Secret for pulling images
+  #
+  # When 'image.pullToken' is defined the credentials for the Secret are taken
+  # from there. Otherwise both 'username' and 'password' must be defined.
+  #
   # When 'image.pullSecretList' is non-empty the created secret is not used.
   pullSecret:
     # Custom pull secret name.
-    # When not set chart's full name is used with '-imagepullsecret' suffix.
+    # When not defined chart's full name is used with '-imagepullsecret' suffix.
     name: ""
     # Pull secret username
+    #
+    # This value is ignored when 'image.pullToken' is defined.
     username: ""
     # Pull secret password
+    #
+    # This value is ignored when 'image.pullToken' is defined.
     password: ""
 
   # The pull policy for images.
