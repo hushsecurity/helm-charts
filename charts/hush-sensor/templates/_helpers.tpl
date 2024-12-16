@@ -110,12 +110,15 @@ Hush deployment info
 {{- $ctx := dict "name" "deploymentToken" "value" .Values.deploymentToken -}}
 {{- $deploymentToken := (include "hush-sensor.b64decode" $ctx) -}}
 {{- $parts := split ":" $deploymentToken -}}
-{{- $zone := trimPrefix "m" $parts._0 | trimSuffix "prd" -}}
+{{- if ne $parts._0 "d1" -}}
+    {{- fail (printf "deploymentToken version '%s' isn't supported" $parts._0) -}}
+{{- end -}}
+{{- $zone := trimPrefix "m" $parts._1 | trimSuffix "prd" -}}
 {{- $zone = ternary "" (printf "%s." $zone) (not $zone) -}}
-{{- $uri := printf "https://events.%s.%shush-security.com/v1/runtime-events" $parts._1 $zone -}}
+{{- $uri := printf "https://events.%s.%shush-security.com/v1/runtime-events" $parts._2 $zone -}}
 {{- $result := dict
-    "orgId" $parts._2
-    "deploymentId" $parts._3
+    "orgId" $parts._3
+    "deploymentId" $parts._4
     "eventReportingUri" $uri
 -}}
 {{- $result | toYaml -}}
@@ -166,7 +169,7 @@ Parse image.pullToken
     {{- $ctx := dict "name" "image.pullToken" "value" $pullToken -}}
     {{- $token := (include "hush-sensor.b64decode" $ctx) -}}
     {{- $version := splitn ":" 2 $token -}}
-    {{- if ne $version._0 "1" -}}
+    {{- if ne $version._0 "p1" -}}
         {{- fail (printf "image.pullToken version '%s' isn't supported" $version._0) -}}
     {{- end -}}
     {{- $registry := splitn ":" 2 $version._1 -}}
