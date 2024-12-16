@@ -107,7 +107,9 @@ type: Unconfined
 Hush deployment info
 */}}
 {{- define "hush-sensor.deploymentInfo" -}}
-{{- $parts := .Values.deploymentToken | b64dec | split ":" -}}
+{{- $ctx := dict "name" "deploymentToken" "value" .Values.deploymentToken -}}
+{{- $deploymentToken := (include "hush-sensor.b64decode" $ctx) -}}
+{{- $parts := split ":" $deploymentToken -}}
 {{- $zone := trimPrefix "m" $parts._0 | trimSuffix "prd" -}}
 {{- $zone = ternary "" (printf "%s." $zone) (not $zone) -}}
 {{- $uri := printf "https://events.%s.%shush-security.com/v1/runtime-events" $parts._1 $zone -}}
@@ -161,7 +163,8 @@ Parse image.pullToken
 {{- define "hush-sensor.parsePullToken" -}}
 {{- $pullToken := and .Values.image .Values.image.pullToken -}}
 {{- if $pullToken -}}
-    {{- $token := b64dec $pullToken -}}
+    {{- $ctx := dict "name" "image.pullToken" "value" $pullToken -}}
+    {{- $token := (include "hush-sensor.b64decode" $ctx) -}}
     {{- $version := splitn ":" 2 $token -}}
     {{- if ne $version._0 "1" -}}
         {{- fail (printf "image.pullToken version '%s' isn't supported" $version._0) -}}
@@ -267,4 +270,15 @@ Vector image path
     "tag" .Values.image.tag
 -}}
 {{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+b64dec with error check
+*/}}
+{{- define "hush-sensor.b64decode" -}}
+{{- $decoded := b64dec .value -}}
+{{- if contains "illegal base64" $decoded -}}
+    {{- fail (printf "failed to base64 decode %s: %s" .name $decoded) -}}
+{{- end -}}
+{{- printf "%s" $decoded -}}
 {{- end }}
