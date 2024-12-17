@@ -31,7 +31,7 @@ image:
   registry: hushsecurity.azurecr.io
 
   # Overrides the image tag for sensor* images.
-  sensorTag: "v1"
+  sensorTag: "v0"
 
   # A list of pre-created image pull secrets of the form:
   #
