@@ -86,7 +86,7 @@ spec:
               {{- toYaml . | nindent 12 }}
             {{- end }}
         - name: hush-sensor-vector
-          image: {{ include "hush-sensor.vectorImagePath" . }}
+          image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: vector-socket
