@@ -13,3 +13,6 @@ data:
     org_id: {{ .orgId | quote }}
     deployment_id: {{ .deploymentId | quote }}
     {{- end }}
+    {{- with (include "hush-sensor.criSocketPath" .) }}
+    cri_socket_path: {{ . | quote }}
+    {{- end }}

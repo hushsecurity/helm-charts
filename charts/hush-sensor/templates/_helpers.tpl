@@ -285,3 +285,31 @@ b64dec with error check
 {{- end -}}
 {{- printf "%s" $decoded -}}
 {{- end }}
+
+{{/*
+Validate criSocketPath
+*/}}
+{{- define "hush-sensor.criSocketPath" -}}
+{{- $path := and .Values.daemonSet .Values.daemonSet.criSocketPath -}}
+{{- if $path -}}
+    {{- if not (isAbs $path) -}}
+        {{- fail (printf "'criSocketPath' must be an absolute path: %s" $path) -}}
+    {{- end -}}
+    {{- if eq (dir $path) "/" -}}
+        {{- fail (printf "'criSocketPath' base directory cannot be root: %s" $path) -}}
+    {{- end -}}
+    {{- printf "%s" $path -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Containerd mount path
+*/}}
+{{- define "hush-sensor.containerdMountPath" -}}
+{{- $path := (include "hush-sensor.criSocketPath" .) -}}
+{{- if $path -}}
+    {{- dir $path -}}
+{{- else -}}
+    {{- printf "%s" "/run/containerd" -}}
+{{- end -}}
+{{- end }}

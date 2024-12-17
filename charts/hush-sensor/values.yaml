@@ -82,6 +82,12 @@ daemonSet:
   # Custom node selector
   nodeSelector: {}
 
+  # A custom CRI socket path.
+  #
+  # This must be the full socket path on the Host.
+  # Needed in cases when it cannot be auto-detected.
+  criSocketPath: ""
+
   # Additional annotations.
   # For more information see
   # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/

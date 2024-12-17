@@ -43,7 +43,7 @@ spec:
       volumes:
         - name: containerd
           hostPath:
-            path: /run/containerd
+            path: {{ include "hush-sensor.containerdMountPath" . }}
             type: Directory
         - name: cgroupfs
           hostPath:
@@ -71,7 +71,7 @@ spec:
             - name: vector-socket
               mountPath: /tmp/vector
             - name: containerd
-              mountPath: /run/containerd
+              mountPath: {{ include "hush-sensor.containerdMountPath" . }}
               readOnly: true
             - name: cgroupfs
               mountPath: /hostcgroup
