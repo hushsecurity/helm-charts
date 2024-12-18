@@ -41,9 +41,9 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.daemonSet.terminationGracePeriodSeconds }}
       volumes:
-        - name: containerd
+        - name: cri
           hostPath:
-            path: {{ include "hush-sensor.containerdMountPath" . }}
+            path: {{ include "hush-sensor.criMountPath" . }}
             type: Directory
         - name: cgroupfs
           hostPath:
@@ -73,8 +73,8 @@ spec:
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector
-            - name: containerd
-              mountPath: {{ include "hush-sensor.containerdMountPath" . }}
+            - name: cri
+              mountPath: {{ include "hush-sensor.criMountPath" . }}
               readOnly: true
             - name: cgroupfs
               mountPath: /hostcgroup

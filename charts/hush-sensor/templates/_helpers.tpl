@@ -305,7 +305,7 @@ Validate criSocketPath
 {{/*
 Containerd mount path
 */}}
-{{- define "hush-sensor.containerdMountPath" -}}
+{{- define "hush-sensor.criMountPath" -}}
 {{- $path := (include "hush-sensor.criSocketPath" .) -}}
 {{- if $path -}}
     {{- dir $path -}}
