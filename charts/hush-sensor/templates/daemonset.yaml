@@ -43,7 +43,7 @@ spec:
       volumes:
         - name: containerd
           hostPath:
-            path: /run/containerd
+            path: {{ include "hush-sensor.containerdMountPath" . }}
             type: Directory
         - name: cgroupfs
           hostPath:
@@ -55,6 +55,9 @@ spec:
         - name: sensor-config
           configMap:
             name: {{ include "hush-sensor.sensorConfigMapName" . }}
+        {{- with and .Values.daemonSet .Values.daemonSet.extraVolumes -}}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
       containers:
         - name: hush-sensor
           image: {{ include "hush-sensor.sensorImagePath" . }}
@@ -71,7 +74,7 @@ spec:
             - name: vector-socket
               mountPath: /tmp/vector
             - name: containerd
-              mountPath: /run/containerd
+              mountPath: {{ include "hush-sensor.containerdMountPath" . }}
               readOnly: true
             - name: cgroupfs
               mountPath: /hostcgroup
@@ -79,6 +82,9 @@ spec:
             - name: sensor-config
               mountPath: /opt/snoopy/config/
               readOnly: true
+            {{- with and .Values.daemonSet .Values.daemonSet.sensorExtraVolumeMounts -}}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
         - name: hush-sensor-vector
           image: {{ include "hush-sensor.vectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
