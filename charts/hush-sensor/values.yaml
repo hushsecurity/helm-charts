@@ -30,8 +30,8 @@ image:
   # This value is ignored when 'image.pullToken' is defined.
   registry: hushsecurity.azurecr.io
 
-  # Overrides the image tag.
-  tag: "v1"
+  # Overrides the image tag for sensor* images.
+  sensorTag: "v0"
 
   # A list of pre-created image pull secrets of the form:
   #
@@ -73,7 +73,7 @@ image:
   sensorRepository: sensor
 
   # The repository used for sensor-vector
-  vectorRepository: sensor-vector
+  sensorVectorRepository: sensor-vector
 
 daemonSet:
   # Custom priority class

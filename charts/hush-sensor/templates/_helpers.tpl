@@ -258,7 +258,7 @@ Sensor image path
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sensorRepository
-    "tag" .Values.image.tag
+    "tag" .Values.image.sensorTag
 -}}
 {{- include "hush-sensor.buildImagePath" $ctx -}}
 {{- end }}
@@ -266,11 +266,11 @@ Sensor image path
 {{/*
 Vector image path
 */}}
-{{- define "hush-sensor.vectorImagePath" -}}
+{{- define "hush-sensor.sensorVectorImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
-    "repository" .Values.image.vectorRepository
-    "tag" .Values.image.tag
+    "repository" .Values.image.sensorVectorRepository
+    "tag" .Values.image.sensorTag
 -}}
 {{- include "hush-sensor.buildImagePath" $ctx -}}
 {{- end }}
@@ -305,7 +305,7 @@ Validate criSocketPath
 {{/*
 Containerd mount path
 */}}
-{{- define "hush-sensor.containerdMountPath" -}}
+{{- define "hush-sensor.criMountPath" -}}
 {{- $path := (include "hush-sensor.criSocketPath" .) -}}
 {{- if $path -}}
     {{- dir $path -}}
