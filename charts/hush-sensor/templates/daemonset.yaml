@@ -55,6 +55,9 @@ spec:
         - name: sensor-config
           configMap:
             name: {{ include "hush-sensor.sensorConfigMapName" . }}
+            items:
+              - key: sensor_config
+                path: config.yaml
         {{- with and .Values.daemonSet .Values.daemonSet.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}
