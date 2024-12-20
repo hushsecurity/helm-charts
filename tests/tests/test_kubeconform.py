@@ -14,7 +14,7 @@ TOP_DIR = os.environ["TOP_DIR"]
 CHARTS_DIR = os.path.join(TOP_DIR, "charts")
 CHARTS = os.listdir(CHARTS_DIR)
 
-DUMMY_DEPLOYMENT_TOKEN = "d1:zone:realm:org-id:deployment-id:secret"
+DUMMY_DEPLOYMENT_TOKEN = "d1:zone:realm:org-id:deployment-id"
 KUBE_MINORS = [28, 29, 30, 31]
 KUBE_VERSION_VALUES = [f"1.{m}.0" for m in KUBE_MINORS] + ["1.29.10-eks-7f9249a"]
 HUSH_SENSOR_VALUES = [
@@ -69,7 +69,10 @@ CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
 def values_tmp_file(values: dict):
     values.setdefault(
         "deployment",
-        {"token": base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode()},
+        {
+            "token": base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode(),
+            "password": "dummy_password",
+        },
     )
     with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as tmp_file:
         dump(values, tmp_file, Dumper=Dumper)

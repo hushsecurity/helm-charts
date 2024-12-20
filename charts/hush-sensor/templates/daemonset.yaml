@@ -104,4 +104,4 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "hush-sensor.deploymentSecretName" . }}
-                  key: deployment-token
+                  key: deployment-password

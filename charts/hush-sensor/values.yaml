@@ -22,6 +22,8 @@ namespace:
 deployment:
   # The deployment token as received from API/UI. Required.
   token: ""
+  # The deployment password as received from API/UI. Required.
+  password: ""
 
 # Values related to container images
 image:
