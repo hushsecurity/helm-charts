@@ -264,6 +264,37 @@ PullSecret effective list
 {{- end }}
 
 {{/*
+Should we create deployment secret?
+*/}}
+{{- define "hush-sensor.shouldCreateDeploymentSecret" -}}
+{{- $keyRef := and .Values.deployment .Values.deployment.secretKeyRef -}}
+{{- $name := and $keyRef $keyRef.name -}}
+{{- $key := and $keyRef $keyRef.key -}}
+{{- if not (and $name $key) -}}
+true
+{{- end }}
+{{- end }}
+
+{{/*
+Effective deployment password secret ref
+*/}}
+{{- define "hush-sensor.effectiveDeploymentPasswordSecretRef" -}}
+{{- if (include "hush-sensor.shouldCreateDeploymentSecret" .) -}}
+    {{- dict
+        "name" (include "hush-sensor.deploymentSecretName" .)
+        "key" "deployment-password"
+        | toYaml
+    -}}
+{{- else -}}
+    {{- dict
+        "name" .Values.deployment.secretKeyRef.name
+        "key" .Values.deployment.secretKeyRef.key
+        | toYaml
+    -}}
+{{- end }}
+{{- end }}
+
+{{/*
 Build image path from components
 */}}
 {{- define "hush-sensor.buildImagePath" -}}

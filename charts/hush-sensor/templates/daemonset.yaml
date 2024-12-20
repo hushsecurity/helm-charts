@@ -100,8 +100,10 @@ spec:
             - name: EVENT_REPORTING_DEPLOYMENT_ID
               value: {{ .deploymentId }}
             {{- end }}
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
             - name: EVENT_REPORTING_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "hush-sensor.deploymentSecretName" . }}
-                  key: deployment-password
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}

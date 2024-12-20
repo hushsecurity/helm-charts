@@ -22,8 +22,19 @@ namespace:
 deployment:
   # The deployment token as received from API/UI. Required.
   token: ""
-  # The deployment password as received from API/UI. Required.
+  # The deployment password as received from API/UI.
+  #
+  # When 'deployment.secretKeyRef' is defined this value is ignored.
   password: ""
+  # A reference to an existing Secret with deployment password.
+  #
+  # The secret must be defined in namespace specified in 'namespace.name'.
+  # All attributes are required.
+  secretKeyRef:
+    # Secret name
+    name: ""
+    # Secret key
+    key: ""
 
 # Values related to container images
 image:
