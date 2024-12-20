@@ -68,7 +68,8 @@ CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
 @contextlib.contextmanager
 def values_tmp_file(values: dict):
     values.setdefault(
-        "deploymentToken", base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode()
+        "deployment",
+        {"token": base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode()},
     )
     with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as tmp_file:
         dump(values, tmp_file, Dumper=Dumper)

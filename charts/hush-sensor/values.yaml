@@ -18,7 +18,10 @@ namespace:
   create: true
   name: "hush-security"
 
-deploymentToken: ""
+# Deployment configuration
+deployment:
+  # The deployment token as received from API/UI. Required.
+  token: ""
 
 # Values related to container images
 image:

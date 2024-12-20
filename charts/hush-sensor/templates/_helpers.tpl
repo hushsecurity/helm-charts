@@ -104,14 +104,26 @@ type: Unconfined
 {{- end }}
 
 {{/*
+Verify deployment.token was defined
+*/}}
+{{- define "hush-sensor.getDeploymentToken" -}}
+{{- $token := and .Values.deployment .Values.deployment.token -}}
+{{- if not $token -}}
+    {{- fail "'deployment.token' must be defined" -}}
+{{- end -}}
+{{- printf "%s" $token -}}
+{{- end }}
+
+{{/*
 Hush deployment info
 */}}
 {{- define "hush-sensor.deploymentInfo" -}}
-{{- $ctx := dict "name" "deploymentToken" "value" .Values.deploymentToken -}}
+{{- $token := (include "hush-sensor.getDeploymentToken" .) -}}
+{{- $ctx := dict "name" "deployment.token" "value" $token -}}
 {{- $deploymentToken := (include "hush-sensor.b64decode" $ctx) -}}
 {{- $parts := split ":" $deploymentToken -}}
 {{- if ne $parts._0 "d1" -}}
-    {{- fail (printf "deploymentToken version '%s' isn't supported" $parts._0) -}}
+    {{- fail (printf "'deployment.token' version '%s' isn't supported" $parts._0) -}}
 {{- end -}}
 {{- $zone := trimPrefix "m" $parts._1 | trimSuffix "prd" -}}
 {{- $zone = ternary "" (printf "%s." $zone) (not $zone) -}}
