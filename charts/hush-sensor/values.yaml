@@ -22,10 +22,12 @@ namespace:
 deployment:
   # The deployment token as received from API/UI. Required.
   token: ""
+
   # The deployment password as received from API/UI.
   #
   # When 'deployment.secretKeyRef' is defined this value is ignored.
   password: ""
+
   # A reference to an existing Secret with deployment password.
   #
   # The secret must be defined in namespace specified in 'namespace.name'.
@@ -73,10 +75,12 @@ image:
     # Custom pull secret name.
     # When not defined chart's full name is used with '-imagepullsecret' suffix.
     name: ""
+
     # Pull secret username
     #
     # This value is ignored when 'image.pullToken' is defined.
     username: ""
+
     # Pull secret password
     #
     # This value is ignored when 'image.pullToken' is defined.
