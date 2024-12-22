@@ -5,14 +5,16 @@ metadata:
   labels: {{- include "hush-sensor.labels" . | nindent 4 }}
   namespace: {{ .Values.namespace.name }}
 data:
-  config.yaml: |
+  {{ $di := (include "hush-sensor.deploymentInfo" . | fromYaml) -}}
+  sensor_config: |
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
     report_tls: {{ .Values.sensorConfigMap.report_tls }}
     self_k8s_namespace: {{ .Values.namespace.name | quote }}
-    {{- with (include "hush-sensor.deploymentInfo" . | fromYaml) }}
-    org_id: {{ .orgId | quote }}
-    deployment_id: {{ .deploymentId | quote }}
-    {{- end }}
+    org_id: {{ $di.orgId | quote }}
+    deployment_id: {{ $di.deploymentId | quote }}
     {{- with (include "hush-sensor.criSocketPath" .) }}
     cri_socket_path: {{ . | quote }}
     {{- end }}
+  event_reporting_uri: {{ $di.eventReportingUri | quote }}
+  org_id: {{ $di.orgId | quote }}
+  deployment_id: {{ $di.deploymentId | quote }}

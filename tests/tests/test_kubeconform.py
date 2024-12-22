@@ -14,7 +14,7 @@ TOP_DIR = os.environ["TOP_DIR"]
 CHARTS_DIR = os.path.join(TOP_DIR, "charts")
 CHARTS = os.listdir(CHARTS_DIR)
 
-DUMMY_DEPLOYMENT_TOKEN = "d1:zone:realm:org-id:deployment-id:secret"
+DUMMY_DEPLOYMENT_TOKEN = "d1:zone:realm:org-id:deployment-id"
 KUBE_MINORS = [28, 29, 30, 31]
 KUBE_VERSION_VALUES = [f"1.{m}.0" for m in KUBE_MINORS] + ["1.29.10-eks-7f9249a"]
 HUSH_SENSOR_VALUES = [
@@ -61,15 +61,26 @@ HUSH_SENSOR_VALUES = [
             }
         }
     },
+    {
+        "deployment": {
+            "secretKeyRef": {
+                "name": "pre-created-deployment-secret-name",
+                "key": "pre-created-deployment-secret-key",
+            }
+        }
+    },
 ]
 CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
 
 
 @contextlib.contextmanager
 def values_tmp_file(values: dict):
-    values.setdefault(
-        "deploymentToken", base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode()
+    deployment = values.setdefault("deployment", {})
+    deployment.setdefault(
+        "token", base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode()
     )
+    if "secretKeyRef" not in deployment:
+        deployment.setdefault("password", "dummy_password")
     with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as tmp_file:
         dump(values, tmp_file, Dumper=Dumper)
         tmp_file.flush()

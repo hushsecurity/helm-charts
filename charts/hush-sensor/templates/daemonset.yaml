@@ -55,6 +55,9 @@ spec:
         - name: sensor-config
           configMap:
             name: {{ include "hush-sensor.sensorConfigMapName" . }}
+            items:
+              - key: sensor_config
+                path: config.yaml
         {{- with and .Values.daemonSet .Values.daemonSet.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -92,16 +95,25 @@ spec:
             - name: vector-socket
               mountPath: /tmp/vector
           env:
-            {{- with (include "hush-sensor.deploymentInfo" . | fromYaml) }}
             - name: EVENT_REPORTING_ENDPOINT
-              value: {{ .eventReportingUri }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: event_reporting_uri
             - name: EVENT_REPORTING_ORG_ID
-              value: {{ .orgId }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: org_id
             - name: EVENT_REPORTING_DEPLOYMENT_ID
-              value: {{ .deploymentId }}
-            {{- end }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: deployment_id
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
             - name: EVENT_REPORTING_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "hush-sensor.deploymentSecretName" . }}
-                  key: deployment-token
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
