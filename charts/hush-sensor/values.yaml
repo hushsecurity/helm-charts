@@ -18,14 +18,14 @@ namespace:
   create: true
   name: "hush-security"
 
-# Deployment configuration
-deployment:
+# Hush deployment configuration
+hushDeployment:
   # The deployment token as received from API/UI. Required.
   token: ""
 
   # The deployment password as received from API/UI.
   #
-  # When 'deployment.secretKeyRef' is defined this value is ignored.
+  # When 'hushDeployment.secretKeyRef' is defined this value is ignored.
   password: ""
 
   # A reference to an existing Secret with deployment password.

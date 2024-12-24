@@ -62,7 +62,7 @@ HUSH_SENSOR_VALUES = [
         }
     },
     {
-        "deployment": {
+        "hushDeployment": {
             "secretKeyRef": {
                 "name": "pre-created-deployment-secret-name",
                 "key": "pre-created-deployment-secret-key",
@@ -75,12 +75,12 @@ CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
 
 @contextlib.contextmanager
 def values_tmp_file(values: dict):
-    deployment = values.setdefault("deployment", {})
-    deployment.setdefault(
+    hushDeployment = values.setdefault("hushDeployment", {})
+    hushDeployment.setdefault(
         "token", base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode()
     )
-    if "secretKeyRef" not in deployment:
-        deployment.setdefault("password", "dummy_password")
+    if "secretKeyRef" not in hushDeployment:
+        hushDeployment.setdefault("password", "dummy_password")
     with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as tmp_file:
         dump(values, tmp_file, Dumper=Dumper)
         tmp_file.flush()
