@@ -27,6 +27,15 @@ jobs:
         uses: NexusPHP/no-merge-commits@v2.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check Linear issue link
+        if: github.event_name == 'pull_request'
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: "^HUSH-[1-9][0-9]* "
+          error: Linear issue link check failed
+          excludeDescription: true
+          checkAllCommitMessages: true
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Python 3.12
         uses: actions/setup-python@v5
         with:
