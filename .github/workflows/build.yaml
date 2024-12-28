@@ -10,8 +10,6 @@ on:
 jobs:
   build:
     name: Build
-    strategy:
-      fail-fast: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
