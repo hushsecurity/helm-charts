@@ -40,6 +40,13 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+Calculate the namespace to use.
+*/}}
+{{- define "hush-sensor.namespace" -}}
+{{- default .Release.Namespace .Values.namespaceOverride }}
+{{- end }}
+
+{{/*
 Sensor config map name
 */}}
 {{- define "hush-sensor.sensorConfigMapName" -}}

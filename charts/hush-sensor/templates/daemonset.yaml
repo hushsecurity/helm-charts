@@ -3,7 +3,7 @@ kind: DaemonSet
 metadata:
   name: {{ include "hush-sensor.fullName" . }}
   labels: {{- include "hush-sensor.labels" . | nindent 4 }}
-  namespace: {{ .Values.namespace.name }}
+  namespace: {{ include "hush-sensor.namespace" . }}
 
 spec:
   selector:
