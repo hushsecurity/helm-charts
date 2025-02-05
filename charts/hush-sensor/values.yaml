@@ -13,10 +13,9 @@ fullnameOverride: ""
 # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 commonLabels: {}
 
-# The namespace for everything hush
-namespace:
-  create: true
-  name: "hush-security"
+# Override the namespace used for all objects.
+# If not specified '.Release.Namespace' is used.
+namespaceOverride: ""
 
 # Hush deployment configuration
 hushDeployment:
@@ -30,7 +29,7 @@ hushDeployment:
 
   # A reference to an existing Secret with deployment password.
   #
-  # The secret must be defined in namespace specified in 'namespace.name'.
+  # The secret must be defined in the same namespace where the chart is installed.
   # All attributes are required.
   secretKeyRef:
     # Secret name
@@ -56,7 +55,7 @@ image:
   # pullSecretList:
   #   - name: "<secret-name-here>"
   #
-  # Secrets must be pre-created in namespace specified in 'namespace.name'.
+  # Secrets must be pre-created in the same namespace where the chart is installed.
   #
   # When this list is empty 'image.pullSecret' can be used to create a secret
   # automatically.
