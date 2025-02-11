@@ -36,7 +36,7 @@ jobs:
         with:
           post: find /home/runner/.gnupg/ -type f -exec shred -zuv {} +
       - name: Install slsa-verifier
-        uses: slsa-framework/slsa-verifier/actions/installer@v2.6.0
+        uses: slsa-framework/slsa-verifier/actions/installer@v2.7.0
       - name: Install sigstore plugin
         run: |
           helm plugin install https://github.com/sigstore/helm-sigstore \
