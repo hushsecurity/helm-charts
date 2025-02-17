@@ -32,6 +32,13 @@ full name.
 {{- end }}
 
 {{/*
+Create a default fully qualified app name for Sentry.
+*/}}
+{{- define "hush-sensor.sentryFullName" -}}
+{{- printf "%s-sentry" (include "hush-sensor.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "hush-sensor.chart" -}}
@@ -331,6 +338,18 @@ Vector image path
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sensorVectorRepository
+    "tag" .Values.image.sensorTag
+-}}
+{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- end }}
+{{/*
+
+Sentry image path
+*/}}
+{{- define "hush-sensor.sentryImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-sensor.imageRegistry" .)
+    "repository" .Values.image.sentryRepository
     "tag" .Values.image.sensorTag
 -}}
 {{- include "hush-sensor.buildImagePath" $ctx -}}
