@@ -94,6 +94,9 @@ image:
   # The repository used for sensor-vector
   sensorVectorRepository: sensor-vector
 
+  # The repository used for sentry
+  sentryRepository: sentry
+
 daemonSet:
   # Custom priority class
   priorityClassName: ""
@@ -154,3 +157,55 @@ sensorConfigMap:
   trace_pods_default: true
   # Report TLS connections
   report_tls: false
+
+sentry:
+  # Hush Security Sentry monitors k8s secrets usage as volumes/envvars in pods
+  #    true  = Deploy the Sentry pod as part of the Sensor installation
+  #    false = Do not deploy the Sentry pod
+  enabled: true
+
+  # Custom priority class
+  priorityClassName: ""
+
+  # Custom node selector
+  nodeSelector: {}
+
+  # Additional annotations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  annotations: {}
+
+  # Termination grace period
+  terminationGracePeriodSeconds: 30
+
+  # An update strategy
+  strategy:
+    type: RollingUpdate
+
+  # Node affinity.
+  # Choose the node types by OS and Arch.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+                - arm64
+
+  # A list of tolerations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: []
+
+  # An additional set of volumes
+  extraVolumes: []
+
+  # An additional set of mounts for sentry
+  sentryExtraVolumeMounts: []

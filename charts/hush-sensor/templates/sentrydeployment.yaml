@@ -1,0 +1,103 @@
+{{- if .Values.sentry.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hush-sensor.sentryFullName" . }}
+  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
+  namespace: {{ include "hush-sensor.namespace" . }}
+
+spec:
+  selector:
+    matchLabels: {{- include "hush-sensor.selectorLabels" . | nindent 6 }}
+  {{- with .Values.sentry.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  template:
+    metadata:
+      labels: {{- include "hush-sensor.labels" . | nindent 8 }}
+      {{ with .Values.sentry.annotations -}}
+      annotations: {{- . | nindent 8 }}
+      {{- end }}
+
+    spec:
+      {{- with .Values.sentry.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.sentry.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.sentry.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.sentry.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      dnsPolicy: ClusterFirstWithHostNet
+      restartPolicy: Always
+      {{- with (include "hush-sensor.imagePullSecretEffectiveList" .) }}
+      imagePullSecrets: {{- . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.sentry.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "hush-sensor.sentryFullName" . }}
+      volumes:
+        - name: vector-socket
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: sensor-config
+          configMap:
+            name: {{ include "hush-sensor.sensorConfigMapName" . }}
+            items:
+              - key: sensor_config
+                path: config.yaml
+        {{- with and .Values.sentry .Values.sentry.extraVolumes -}}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      containers:
+        - name: hush-sentry
+          image: {{ include "hush-sensor.sentryImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+            - name: sensor-config
+              mountPath: /opt/pluto/config/
+              readOnly: true
+            {{- with and .Values.sentry .Values.sentry.sentryExtraVolumeMounts -}}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: SELF_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+        - name: hush-sentry-vector
+          image: {{ include "hush-sensor.sensorVectorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+          env:
+            - name: EVENT_REPORTING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: event_reporting_uri
+            - name: EVENT_REPORTING_ORG_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: org_id
+            - name: EVENT_REPORTING_DEPLOYMENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: deployment_id
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            - name: EVENT_REPORTING_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+{{- end -}}
