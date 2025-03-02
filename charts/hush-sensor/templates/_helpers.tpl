@@ -154,10 +154,12 @@ Hush deployment info
 {{- $zone = ternary "" (printf "%s." $zone) (not $zone) -}}
 {{- $baseUri := printf "https://events.%s.%shush-security.com/v1" $parts._2 $zone -}}
 {{- $eventsUri := printf "%s/runtime-events" $baseUri -}}
+{{- $logsUri := printf "%s/runtime-logs" $baseUri -}}
 {{- $result := dict
     "orgId" $parts._3
     "deploymentId" $parts._4
     "eventReportingUri" $eventsUri
+    "logReportingUri" $logsUri
 -}}
 {{- $result | toYaml -}}
 {{- end }}

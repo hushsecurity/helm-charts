@@ -105,6 +105,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "hush-sensor.sensorConfigMapName" . }}
                   key: event_reporting_uri
+            - name: LOG_REPORTING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: log_reporting_uri
             - name: EVENT_REPORTING_ORG_ID
               valueFrom:
                 configMapKeyRef:
