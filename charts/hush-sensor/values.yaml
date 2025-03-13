@@ -13,6 +13,9 @@ fullnameOverride: ""
 # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 commonLabels: {}
 
+# Host directory for minimal caching
+hostDir: "/var/lib/hush-security"
+
 # Override the namespace used for all objects.
 # If not specified '.Release.Namespace' is used.
 namespaceOverride: ""

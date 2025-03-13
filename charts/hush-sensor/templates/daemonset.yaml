@@ -58,6 +58,10 @@ spec:
             items:
               - key: sensor_config
                 path: config.yaml
+        - name: host-dir
+          hostPath:
+            path: {{ .Values.hostDir }}
+            type: DirectoryOrCreate
         {{- with and .Values.daemonSet .Values.daemonSet.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -85,6 +89,8 @@ spec:
             - name: sensor-config
               mountPath: /opt/snoopy/config/
               readOnly: true
+            - name: host-dir
+              mountPath: /var/lib/hush-security
             {{- with and .Values.daemonSet .Values.daemonSet.sensorExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
