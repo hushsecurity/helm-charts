@@ -15,6 +15,9 @@ data:
     {{- with (include "hush-sensor.criSocketPath" .) }}
     cri_socket_path: {{ . | quote }}
     {{- end }}
+    {{- with .Values.sensorConfigMap.akeyless_gateway_domain }}
+    akeyless_gateway_domain: {{ . | quote }}
+    {{- end }}
   event_reporting_uri: {{ $di.eventReportingUri | quote }}
   log_reporting_uri: {{ $di.logReportingUri | quote }}
   org_id: {{ $di.orgId | quote }}

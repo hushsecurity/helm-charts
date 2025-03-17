@@ -160,6 +160,8 @@ sensorConfigMap:
   trace_pods_default: true
   # Report TLS connections
   report_tls: false
+  # Akeyless Gateway domain name
+  akeyless_gateway_domain: ""
 
 sentry:
   # Hush Security Sentry monitors k8s secrets usage as volumes/envvars in pods
