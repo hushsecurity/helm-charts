@@ -99,6 +99,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: LOG_CONFIG_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: log_config_uri
             - name: EVENT_REPORTING_ORG_ID
               valueFrom:
                 configMapKeyRef:
