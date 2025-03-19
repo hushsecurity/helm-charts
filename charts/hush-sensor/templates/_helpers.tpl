@@ -155,11 +155,13 @@ Hush deployment info
 {{- $baseUri := printf "https://events.%s.%shush-security.com/v1" $parts._2 $zone -}}
 {{- $eventsUri := printf "%s/runtime-events" $baseUri -}}
 {{- $logsUri := printf "%s/runtime-logs" $baseUri -}}
+{{- $logsConfigUri := printf "%s/runtime-logs-config" $baseUri -}}
 {{- $result := dict
     "orgId" $parts._3
     "deploymentId" $parts._4
     "eventReportingUri" $eventsUri
     "logReportingUri" $logsUri
+    "logConfigUri" $logsConfigUri
 -}}
 {{- $result | toYaml -}}
 {{- end }}
