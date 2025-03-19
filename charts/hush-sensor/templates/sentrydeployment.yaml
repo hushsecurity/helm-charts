@@ -77,6 +77,23 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: EVENT_REPORTING_ORG_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: org_id
+            - name: EVENT_REPORTING_DEPLOYMENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: deployment_id
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            - name: EVENT_REPORTING_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
         - name: hush-sentry-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
