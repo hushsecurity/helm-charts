@@ -1,0 +1,147 @@
+{{- if .Values.vermon.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hush-sensor.vermonFullName" . }}
+  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
+  namespace: {{ include "hush-sensor.namespace" . }}
+
+spec:
+  selector:
+    matchLabels: {{- include "hush-sensor.selectorLabels" . | nindent 6 }}
+  {{- with .Values.vermon.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  template:
+    metadata:
+      labels: {{- include "hush-sensor.labels" . | nindent 8 }}
+      {{ with .Values.vermon.annotations -}}
+      annotations: {{- . | nindent 8 }}
+      {{- end }}
+
+    spec:
+      {{- with .Values.vermon.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.vermon.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.vermon.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.vermon.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      dnsPolicy: ClusterFirstWithHostNet
+      restartPolicy: Always
+      {{- with (include "hush-sensor.imagePullSecretEffectiveList" .) }}
+      imagePullSecrets: {{- . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.vermon.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "hush-sensor.vermonFullName" . }}
+      volumes:
+        - name: vector-socket
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: sensor-config
+          configMap:
+            name: {{ include "hush-sensor.sensorConfigMapName" . }}
+            items:
+              - key: sensor_config
+                path: config.yaml
+        - name: host-dir
+          hostPath:
+            path: {{ .Values.hostDir }}
+            type: DirectoryOrCreate
+        {{- with and .Values.vermon .Values.vermon.extraVolumes -}}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      containers:
+        - name: hush-vermon
+          image: {{ include "hush-sensor.vermonImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+            - name: sensor-config
+              mountPath: /opt/lassie/config/
+              readOnly: true
+            - name: host-dir
+              mountPath: /var/lib/hush-security
+            {{- with and .Values.vermon .Values.vermon.vermonExtraVolumeMounts -}}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: SELF_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SELF_K8S_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: LOG_CONFIG_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: log_config_uri
+            - name: CHANNEL_DIGESTS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: channel_digests_uri
+            - name: CHANNEL_DIGESTS_PERIOD
+              value: {{ .Values.vermon.updateFrequency }}
+            - name: EVENT_REPORTING_ORG_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: org_id
+            - name: EVENT_REPORTING_DEPLOYMENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: deployment_id
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            - name: EVENT_REPORTING_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+        - name: hush-vermon-vector
+          image: {{ include "hush-sensor.sensorVectorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+          env:
+            - name: EVENT_REPORTING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: event_reporting_uri
+            - name: LOG_REPORTING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: log_reporting_uri
+            - name: EVENT_REPORTING_ORG_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: org_id
+            - name: EVENT_REPORTING_DEPLOYMENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: deployment_id
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            - name: EVENT_REPORTING_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+{{- end -}}
