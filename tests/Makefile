@@ -13,9 +13,9 @@ __PYTEST_ARGS += -vvv
 __PYTEST_ARGS += -o log_cli=true
 endif
 
-__SYNC_ARGS = --sync
+__INSTALL_CMD = sync
 ifeq ($(NO_SYNC),1)
-__SYNC_ARGS =
+__INSTALL_CMD = install
 endif
 
 .PHONY: default
@@ -25,7 +25,7 @@ poetry.lock: pyproject.toml
 	@poetry lock --no-update
 
 .venv: poetry.lock
-	@poetry install --with ci $(__SYNC_ARGS)
+	@poetry $(__INSTALL_CMD) --with ci
 	@touch .venv
 
 .PHONY: lint
