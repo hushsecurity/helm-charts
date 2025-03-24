@@ -347,8 +347,8 @@ Vector image path
 -}}
 {{- include "hush-sensor.buildImagePath" $ctx -}}
 {{- end }}
-{{/*
 
+{{/*
 Sentry image path
 */}}
 {{- define "hush-sensor.sentryImagePath" -}}
