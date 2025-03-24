@@ -21,5 +21,6 @@ data:
   event_reporting_uri: {{ $di.eventReportingUri | quote }}
   log_reporting_uri: {{ $di.logReportingUri | quote }}
   log_config_uri: {{ $di.logConfigUri | quote }}
+  channel_digests_uri: {{ $di.channelDigestsUri | quote }}
   org_id: {{ $di.orgId | quote }}
   deployment_id: {{ $di.deploymentId | quote }}

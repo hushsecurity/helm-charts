@@ -1,0 +1,15 @@
+{{- if .Values.vermon.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "hush-sensor.vermonFullName" . }}
+  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "hush-sensor.vermonFullName" . }}
+  namespace: {{ include "hush-sensor.namespace" . }}
+roleRef:
+  kind: Role
+  name: {{ include "hush-sensor.vermonFullName" . }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end -}}
