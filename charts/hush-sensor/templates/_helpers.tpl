@@ -39,6 +39,13 @@ Create a default fully qualified app name for Sentry.
 {{- end }}
 
 {{/*
+Create a default fully qualified app name for Vermon.
+*/}}
+{{- define "hush-sensor.vermonFullName" -}}
+{{- printf "%s-vermon" (include "hush-sensor.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "hush-sensor.chart" -}}
@@ -156,12 +163,15 @@ Hush deployment info
 {{- $eventsUri := printf "%s/runtime-events" $baseUri -}}
 {{- $logsUri := printf "%s/runtime-logs" $baseUri -}}
 {{- $logsConfigUri := printf "%s/runtime-logs-config" $baseUri -}}
+{{- $registry := (include "hush-sensor.imageRegistry" .) -}}
+{{- $channelDigestsUri := printf "%s/runtime-versions?registry=%s" $baseUri $registry -}}
 {{- $result := dict
     "orgId" $parts._3
     "deploymentId" $parts._4
     "eventReportingUri" $eventsUri
     "logReportingUri" $logsUri
     "logConfigUri" $logsConfigUri
+    "channelDigestsUri" $channelDigestsUri
 -}}
 {{- $result | toYaml -}}
 {{- end }}
@@ -355,6 +365,18 @@ Sentry image path
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sentryRepository
+    "tag" .Values.image.sensorTag
+-}}
+{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Vermon image path
+*/}}
+{{- define "hush-sensor.vermonImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-sensor.imageRegistry" .)
+    "repository" .Values.image.vermonRepository
     "tag" .Values.image.sensorTag
 -}}
 {{- include "hush-sensor.buildImagePath" $ctx -}}

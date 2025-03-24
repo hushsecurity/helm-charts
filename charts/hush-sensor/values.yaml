@@ -100,6 +100,9 @@ image:
   # The repository used for sentry
   sentryRepository: sentry
 
+  # The repository used for vermon
+  vermonRepository: vermon
+
 daemonSet:
   # Custom priority class
   priorityClassName: ""
@@ -214,3 +217,61 @@ sentry:
 
   # An additional set of mounts for sentry
   sentryExtraVolumeMounts: []
+
+vermon:
+  # Hush Security Vermon keeps hush sensor channel images up to date.
+  # Hush Sensor containers must be deployed with image pull policy "Always"
+  # for this feature to perform as expected.
+  #    true  = Deploy the Vermon pod as part of the Sensor installation
+  #    false = Do not deploy the Vermon pod
+  enabled: true
+
+  # How often to check for channel updates, in go time.Duration format
+  # Minimum 4 hours, maximum 360 hours (15 days)
+  updateFrequency: "8h"
+
+  # Custom priority class
+  priorityClassName: ""
+
+  # Custom node selector
+  nodeSelector: {}
+
+  # Additional annotations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  annotations: {}
+
+  # Termination grace period
+  terminationGracePeriodSeconds: 30
+
+  # An update strategy
+  strategy:
+    type: RollingUpdate
+
+  # Node affinity.
+  # Choose the node types by OS and Arch.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+                - arm64
+
+  # A list of tolerations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: []
+
+  # An additional set of volumes
+  extraVolumes: []
+
+  # An additional set of mounts for vermon
+  vermonExtraVolumeMounts: []
