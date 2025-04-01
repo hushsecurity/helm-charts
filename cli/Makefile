@@ -9,7 +9,7 @@ endif
 default: lint
 
 poetry.lock: pyproject.toml
-	@poetry lock --no-update
+	@poetry lock
 	@touch $@
 
 .venv: poetry.lock
