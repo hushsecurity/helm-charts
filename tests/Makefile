@@ -22,7 +22,7 @@ endif
 default: lint
 
 poetry.lock: pyproject.toml
-	@poetry lock --no-update
+	@poetry lock
 
 .venv: poetry.lock
 	@poetry $(__INSTALL_CMD) --with ci
