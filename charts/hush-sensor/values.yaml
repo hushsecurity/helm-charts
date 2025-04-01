@@ -156,6 +156,24 @@ daemonSet:
   # An additional set of mounts for sensor
   sensorExtraVolumeMounts: []
 
+  # Default resource requests/limits for sensor
+  resources:
+    limits:
+      cpu: "2"
+      memory: "1Gi"
+    requests:
+      cpu: "20m"
+      memory: "256Mi"
+
+  # Default resource requests/limits for sensor-vector
+  vectorResources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
+
 sensorConfigMap:
   # Configure pod tracing:
   #   false = trace annotated pods only
@@ -218,6 +236,24 @@ sentry:
   # An additional set of mounts for sentry
   sentryExtraVolumeMounts: []
 
+  # Default resource requests/limits for sentry
+  resources:
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "32Mi"
+
+  # Default resource requests/limits for sentry-vector
+  vectorResources:
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "32Mi"
+
 vermon:
   # Hush Security Vermon keeps hush sensor channel images up to date.
   # Hush Sensor containers must be deployed with image pull policy "Always"
@@ -275,3 +311,21 @@ vermon:
 
   # An additional set of mounts for vermon
   vermonExtraVolumeMounts: []
+
+  # Default resource requests/limits for vermon
+  resources:
+    limits:
+      cpu: "300m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "32Mi"
+
+  # Default resource requests/limits for vermon-vector
+  vectorResources:
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "32Mi"

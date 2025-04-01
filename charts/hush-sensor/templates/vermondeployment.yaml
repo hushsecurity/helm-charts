@@ -61,6 +61,9 @@ spec:
         - name: hush-vermon
           image: {{ include "hush-sensor.vermonImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.vermon .Values.vermon.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector
@@ -113,6 +116,9 @@ spec:
         - name: hush-vermon-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.vermon .Values.vermon.vectorResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector

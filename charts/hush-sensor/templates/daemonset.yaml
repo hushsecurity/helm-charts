@@ -69,6 +69,9 @@ spec:
         - name: hush-sensor
           image: {{ include "hush-sensor.sensorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.daemonSet .Values.daemonSet.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           securityContext:
             privileged: true
             seccompProfile:
@@ -124,6 +127,9 @@ spec:
         - name: hush-sensor-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.daemonSet .Values.daemonSet.vectorResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector

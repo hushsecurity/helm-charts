@@ -61,6 +61,9 @@ spec:
         - name: hush-sentry
           image: {{ include "hush-sensor.sentryImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.sentry .Values.sentry.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector
@@ -102,6 +105,9 @@ spec:
         - name: hush-sentry-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.sentry .Values.sentry.vectorResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector
