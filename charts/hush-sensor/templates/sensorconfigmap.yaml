@@ -24,3 +24,4 @@ data:
   channel_digests_uri: {{ $di.channelDigestsUri | quote }}
   org_id: {{ $di.orgId | quote }}
   deployment_id: {{ $di.deploymentId | quote }}
+  event_reporting_console: {{ .Values.eventReportingConsole | quote }}
