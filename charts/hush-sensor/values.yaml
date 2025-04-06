@@ -20,6 +20,12 @@ hostDir: "/var/lib/hush-security"
 # If not specified '.Release.Namespace' is used.
 namespaceOverride: ""
 
+# Mode of event logging:
+# - "yes"       - log everything (may be high volume)
+# - "no"        - log nothing
+# - "heartbeat" - log heartbeat events only (low volume)
+eventReportingConsole: "heartbeat"
+
 # Hush deployment configuration
 hushDeployment:
   # The deployment token as received from API/UI. Required.

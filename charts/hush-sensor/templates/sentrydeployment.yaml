@@ -139,4 +139,11 @@ spec:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
+            {{- if .Values.eventReportingConsole }}
+            - name: EVENT_REPORTING_CONSOLE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: event_reporting_console
+            {{- end }}
 {{- end -}}
