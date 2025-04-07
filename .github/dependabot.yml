@@ -9,3 +9,17 @@ updates:
       prefix: "HUSH-777 "
     reviewers:
       - "r-bk"
+  - package-ecosystem: "pip"
+    directories:
+      - "/cli"
+      - "/tests"
+    schedule:
+      interval: "monthly"
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "HUSH-777 "
+    reviewers:
+      - "r-bk"
