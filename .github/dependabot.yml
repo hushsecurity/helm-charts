@@ -7,3 +7,5 @@ updates:
       interval: daily
     commit-message:
       prefix: "HUSH-777 "
+    reviewers:
+      - "r-bk"
