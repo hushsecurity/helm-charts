@@ -34,7 +34,7 @@ def add_release_annotation(chart_name, chart_data):
             f"cannot add release annotation: annotations already exist {ants}"
         )
     with open(chart_path(chart_name), "a", encoding="utf-8") as f:
-        lines = ["annotations:\n" f'  security.hush/release: "{RELEASE}"\n']
+        lines = ["annotations:\n", f'  security.hush/release: "{RELEASE}"\n']
         f.writelines(lines)
         f.flush()
     bash("git diff")
