@@ -266,7 +266,7 @@ vermon:
   # for this feature to perform as expected.
   #    true  = Deploy the Vermon pod as part of the Sensor installation
   #    false = Do not deploy the Vermon pod
-  enabled: false
+  enabled: true
 
   # How often to check for channel updates, in go time.Duration format
   # Minimum 4 hours, maximum 360 hours (15 days)
