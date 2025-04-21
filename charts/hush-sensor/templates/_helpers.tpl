@@ -420,3 +420,12 @@ Containerd mount path
     {{- printf "%s" "/run/containerd" -}}
 {{- end -}}
 {{- end }}
+
+{{/*
+kubeSystemUid returns a stable cluster identifier
+that is also easy to retrieve with Helm.
+*/}}
+{{- define "hush-sensor.kubeSystemUid" -}}
+{{- $ks := lookup "v1" "Namespace" "" "kube-system" -}}
+{{- and $ks.metadata $ks.metadata.uid -}}
+{{- end }}
