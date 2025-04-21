@@ -146,4 +146,10 @@ spec:
                   name: {{ include "hush-sensor.sensorConfigMapName" . }}
                   key: event_reporting_console
             {{- end }}
+            - name: KUBE_SYSTEM_UID
+              value: {{ include "hush-sensor.kubeSystemUid" . }}
+            - name: HELM_RELEASE
+              value: {{ .Release.Name }}
+            - name: HELM_NAMESPACE
+              value: {{ include "hush-sensor.namespace" . }}
 {{- end -}}
