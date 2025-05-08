@@ -260,6 +260,11 @@ sentry:
       cpu: "10m"
       memory: "32Mi"
 
+  # Customizations for sentry service account
+  serviceAccount:
+    # Custom annotations for sentry service account
+    annotations: {}
+
 vermon:
   # Hush Security Vermon keeps hush sensor channel images up to date.
   # Hush Sensor containers must be deployed with image pull policy "Always"
