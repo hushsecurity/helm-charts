@@ -152,4 +152,6 @@ spec:
               value: {{ .Release.Name }}
             - name: HELM_NAMESPACE
               value: {{ include "hush-sensor.namespace" . }}
+            - name: HELM_CHART_VERSION
+              value: {{ .Chart.Version | quote }}
 {{- end -}}
