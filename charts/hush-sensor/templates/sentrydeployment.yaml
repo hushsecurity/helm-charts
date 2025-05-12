@@ -102,6 +102,8 @@ spec:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
+            - name: SENTRY_SCAN_CONFIG_MAPS
+              value: "1"
         - name: hush-sentry-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
