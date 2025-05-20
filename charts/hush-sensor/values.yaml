@@ -277,6 +277,12 @@ sentry:
     # Custom annotations for sentry service account
     annotations: {}
 
+  # Integration for external services
+  integrations:
+    aws:
+      # AWS IAM role ARN to configure with irsa annotations
+      irsa: ""
+
 vermon:
   # Hush Security Vermon keeps hush sensor channel images up to date.
   # Hush Sensor containers must be deployed with image pull policy "Always"
