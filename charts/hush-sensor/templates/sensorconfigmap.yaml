@@ -25,3 +25,15 @@ data:
   org_id: {{ $di.orgId | quote }}
   deployment_id: {{ $di.deploymentId | quote }}
   event_reporting_console: {{ .Values.eventReportingConsole | quote }}
+  sentry_config: |
+    trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
+    self_k8s_namespace: {{ include "hush-sensor.namespace" . | quote }}
+    org_id: {{ $di.orgId | quote }}
+    deployment_id: {{ $di.deploymentId | quote }}
+    {{- with .Values.sentry.creds }}
+    creds:
+    {{- if and .aws .aws.irsa }}
+      aws:
+        enabled: true
+    {{- end }}
+    {{- end }}

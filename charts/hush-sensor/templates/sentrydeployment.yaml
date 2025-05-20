@@ -48,7 +48,7 @@ spec:
           configMap:
             name: {{ include "hush-sensor.sensorConfigMapName" . }}
             items:
-              - key: sensor_config
+              - key: sentry_config
                 path: config.yaml
         - name: host-dir
           hostPath:

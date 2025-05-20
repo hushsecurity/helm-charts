@@ -277,6 +277,13 @@ sentry:
     # Custom annotations for sentry service account
     annotations: {}
 
+  # Credentials for sentry secret store crawler
+  # aws:
+  #   irsa: arn of role to configure with irsa annotations
+  creds:
+    aws:
+      irsa: ""
+
 vermon:
   # Hush Security Vermon keeps hush sensor channel images up to date.
   # Hush Sensor containers must be deployed with image pull policy "Always"
