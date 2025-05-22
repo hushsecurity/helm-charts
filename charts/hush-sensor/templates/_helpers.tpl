@@ -429,3 +429,24 @@ that is also easy to retrieve with Helm.
 {{- $ks := lookup "v1" "Namespace" "" "kube-system" -}}
 {{- and $ks.metadata $ks.metadata.uid -}}
 {{- end }}
+
+{{/* 
+Sentry service account annotations with AWS IAM role handling
+*/}}
+{{- define "hush-sensor.sentryServiceAccountAnnotations" -}}
+{{- $annotations := deepCopy (default dict .Values.sentry.serviceAccount.annotations) -}}
+{{- $roleArnKey := "eks.amazonaws.com/role-arn" -}}
+{{- if and .Values.sentry.integrations .Values.sentry.integrations.aws .Values.sentry.integrations.aws.irsa -}}
+  {{- if hasKey $annotations $roleArnKey -}}
+    {{- $existingRole := get $annotations $roleArnKey -}}
+    {{- if ne $existingRole .Values.sentry.integrations.aws.irsa -}}
+      {{- fail (printf "Error: inconsistent sentry service account annotation for %s. Expected %s" $roleArnKey .Values.sentry.integrations.aws.irsa) -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $_ := set $annotations $roleArnKey .Values.sentry.integrations.aws.irsa -}}
+  {{- end -}}
+{{- end -}}
+{{- if $annotations -}}
+  {{- toYaml $annotations -}}
+{{- end -}}
+{{- end -}}
