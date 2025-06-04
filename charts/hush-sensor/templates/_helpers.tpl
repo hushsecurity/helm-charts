@@ -246,6 +246,16 @@ Parse image.pullToken
 {{- end }}
 
 {{/*
+Should we create the daemon set?
+*/}}
+{{- define "hush-sensor.shouldCreateDaemonSet" -}}
+{{- $argIsMissing := and .Values.daemonSet (not (hasKey .Values.daemonSet "enabled")) -}}
+{{- if and .Values.daemonSet (or .Values.daemonSet.enabled $argIsMissing) -}}
+true
+{{- end }}
+{{- end }}
+
+{{/*
 Should we create the image pull secret?
 */}}
 {{- define "hush-sensor.shouldCreateImagePullSecret" -}}

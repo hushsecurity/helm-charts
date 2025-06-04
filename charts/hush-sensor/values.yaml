@@ -110,6 +110,12 @@ image:
   vermonRepository: vermon
 
 daemonSet:
+  # hush-sensor daemon set
+  #   true  = Deploy hush-sensor DaemonSet as part of helm-chart installation
+  #   false = Do not deploy hush-sensor DaemonSet.
+  #           Useful when specific functionality subset is required.
+  enabled: true
+
   # Custom priority class
   priorityClassName: ""
 
