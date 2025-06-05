@@ -159,7 +159,8 @@ Hush deployment info
 {{- end -}}
 {{- $zone := trimPrefix "m" $parts._1 | trimSuffix "prd" -}}
 {{- $zone = ternary "" (printf "%s." $zone) (not $zone) -}}
-{{- $baseUri := printf "https://events.%s.%shush-security.com/v1" $parts._2 $zone -}}
+{{- $baseFqdn := printf "%s.%shush-security.com" $parts._2 $zone -}}
+{{- $baseUri := printf "https://events.%s/v1" $baseFqdn -}}
 {{- $eventsUri := printf "%s/runtime-events" $baseUri -}}
 {{- $logsUri := printf "%s/runtime-logs" $baseUri -}}
 {{- $logsConfigUri := printf "%s/runtime-logs-config" $baseUri -}}
