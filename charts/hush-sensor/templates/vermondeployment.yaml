@@ -33,7 +33,7 @@ spec:
       {{- with .Values.vermon.affinity }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
-      dnsPolicy: ClusterFirstWithHostNet
+      dnsPolicy: ClusterFirst
       restartPolicy: Always
       {{- with (include "hush-sensor.imagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
