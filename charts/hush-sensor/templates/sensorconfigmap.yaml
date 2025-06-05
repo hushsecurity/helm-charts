@@ -32,8 +32,11 @@ data:
     deployment_id: {{ $di.deploymentId | quote }}
     {{- with .Values.sentry.integrations }}
     integrations:
-    {{- if and .aws .aws.irsa }}
+    {{- if and .aws (or .aws.irsa  .aws.assume_role_arn) }}
       aws:
         enabled: true
+        {{- if and .aws.assume_role_arn (not .aws.irsa) }}
+        assume_role_arn: {{ .aws.assume_role_arn | quote }}
+        {{- end }}
     {{- end }}
     {{- end }}
