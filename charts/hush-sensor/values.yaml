@@ -279,9 +279,13 @@ sentry:
 
   # Integration for external services
   integrations:
+    # for aws only one of the following is required: irsa or assume_role_arn
+    # if both defined, irsa will take precedence over assume_role_arn.
     aws:
       # AWS IAM role ARN to configure with irsa annotations
       irsa: ""
+      # AWS IAM role ARN to assume
+      assume_role_arn: ""
 
 vermon:
   # Hush Security Vermon keeps hush sensor channel images up to date.
