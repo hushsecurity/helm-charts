@@ -1,0 +1,83 @@
+{{- if .Values.connector.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hush-sensor.connectorFullName" . }}
+  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
+  namespace: {{ include "hush-sensor.namespace" . }}
+
+spec:
+  selector:
+    matchLabels: {{- include "hush-sensor.selectorLabels" . | nindent 6 }}
+  {{- with .Values.connector.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  template:
+    metadata:
+      labels: {{- include "hush-sensor.labels" . | nindent 8 }}
+      {{ with .Values.connector.annotations -}}
+      annotations: {{- . | nindent 8 }}
+      {{- end }}
+
+    spec:
+      {{- with .Values.connector.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.connector.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.connector.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.connector.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      {{- with (include "hush-sensor.imagePullSecretEffectiveList" .) }}
+      imagePullSecrets: {{- . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.connector.terminationGracePeriodSeconds }}
+      containers:
+        - name: hush-connector-client
+          image: {{ include "hush-sensor.connectorClientImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.connector .Values.connector.clientResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with and .Values.connector .Values.connector.clientExtraVolumeMounts }}
+          volumeMounts: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            - name: CONNECTOR_FQDN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: connector_fqdn
+            {{- with and .Values.connector .Values.connector.connectorClientRetryMaxBackoff }}
+            - name: RETRY_MAX_BACKOFF
+              value: {{ . | quote }}
+            {{- end }}
+        - name: hush-connector-forwarder
+          image: {{ include "hush-sensor.connectorForwarderImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.connector .Values.connector.forwarderResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with and .Values.connector .Values.connector.forwarderExtraVolumeMounts }}
+          volumeMounts: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.connector.forwarderTimeout }}
+          env:
+            - name: FORWARDER_TIMEOUT
+              value: {{ . | quote }}
+          {{- end }}
+{{- end -}}

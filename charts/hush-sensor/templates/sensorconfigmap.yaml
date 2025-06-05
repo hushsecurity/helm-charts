@@ -40,3 +40,4 @@ data:
         {{- end }}
     {{- end }}
     {{- end }}
+  connector_fqdn: {{ $di.connectorFqdn | quote }}
