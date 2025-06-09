@@ -102,3 +102,12 @@ def test_kubeconform(chart):
                 with open(path, "r", encoding="utf-8") as f:
                     logger.info("values:\n%s", f.read())
                     _test_ver_path(chart_path, kube_version, path)
+
+    ci_dir = os.path.join(chart_path, "ci")
+    if os.path.isdir(ci_dir):
+        for kube_version in KUBE_VERSION_VALUES:
+            for filename in os.listdir(ci_dir):
+                if not filename.endswith("-values.yaml"):
+                    continue
+                path = os.path.join(ci_dir, filename)
+                _test_ver_path(chart_path, kube_version, path)
