@@ -46,6 +46,13 @@ Create a default fully qualified app name for Vermon.
 {{- end }}
 
 {{/*
+Create a default fully qualified app name for Connector.
+*/}}
+{{- define "hush-sensor.connectorFullName" -}}
+{{- printf "%s-connector" (include "hush-sensor.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "hush-sensor.chart" -}}
@@ -159,12 +166,14 @@ Hush deployment info
 {{- end -}}
 {{- $zone := trimPrefix "m" $parts._1 | trimSuffix "prd" -}}
 {{- $zone = ternary "" (printf "%s." $zone) (not $zone) -}}
-{{- $baseUri := printf "https://events.%s.%shush-security.com/v1" $parts._2 $zone -}}
+{{- $baseFqdn := printf "%s.%shush-security.com" $parts._2 $zone -}}
+{{- $baseUri := printf "https://events.%s/v1" $baseFqdn -}}
 {{- $eventsUri := printf "%s/runtime-events" $baseUri -}}
 {{- $logsUri := printf "%s/runtime-logs" $baseUri -}}
 {{- $logsConfigUri := printf "%s/runtime-logs-config" $baseUri -}}
 {{- $registry := (include "hush-sensor.imageRegistry" .) -}}
 {{- $channelDigestsUri := printf "%s/runtime-versions?registry=%s" $baseUri $registry -}}
+{{- $connectorFqdn := printf "%s.ab.%s" $parts._4 $baseFqdn -}}
 {{- $result := dict
     "orgId" $parts._3
     "deploymentId" $parts._4
@@ -172,6 +181,7 @@ Hush deployment info
     "logReportingUri" $logsUri
     "logConfigUri" $logsConfigUri
     "channelDigestsUri" $channelDigestsUri
+    "connectorFqdn" $connectorFqdn
 -}}
 {{- $result | toYaml -}}
 {{- end }}
@@ -243,6 +253,16 @@ Parse image.pullToken
         | toYaml
     -}}
 {{- end -}}
+{{- end }}
+
+{{/*
+Should we create the daemon set?
+*/}}
+{{- define "hush-sensor.shouldCreateDaemonSet" -}}
+{{- $argIsMissing := and .Values.daemonSet (not (hasKey .Values.daemonSet "enabled")) -}}
+{{- if and .Values.daemonSet (or .Values.daemonSet.enabled $argIsMissing) -}}
+true
+{{- end }}
 {{- end }}
 
 {{/*
@@ -366,6 +386,30 @@ Sentry image path
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sentryRepository
     "tag" .Values.image.sensorTag
+-}}
+{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Connector Client image path
+*/}}
+{{- define "hush-sensor.connectorClientImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-sensor.imageRegistry" .)
+    "repository" .Values.image.connectorClientRepository
+    "tag" .Values.image.connectorTag
+-}}
+{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Connector Forwarder image path
+*/}}
+{{- define "hush-sensor.connectorForwarderImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-sensor.imageRegistry" .)
+    "repository" .Values.image.connectorForwarderRepository
+    "tag" .Values.image.connectorTag
 -}}
 {{- include "hush-sensor.buildImagePath" $ctx -}}
 {{- end }}

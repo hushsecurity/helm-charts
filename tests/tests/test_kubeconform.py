@@ -89,13 +89,25 @@ def values_tmp_file(values: dict):
 
 @pytest.mark.parametrize("chart", CHARTS)
 def test_kubeconform(chart):
+    def _test_ver_path(chart_path, kube_version, path):
+        args = f"--kube-version {kube_version} -f {path}"
+        conform_kube_version = kube_version.split("-")[0]
+        conform_args = f"-strict -kubernetes-version {conform_kube_version}"
+        bash(f"helm template {args} {chart_path} | kubeconform {conform_args}")
+
     chart_path = os.path.join(CHARTS_DIR, chart)
     for kube_version in KUBE_VERSION_VALUES:
         for values in CHART_VALUES.get(chart, []) + [{}]:
             with values_tmp_file(values) as path:
                 with open(path, "r", encoding="utf-8") as f:
                     logger.info("values:\n%s", f.read())
-                args = f"--kube-version {kube_version} -f {path}"
-                conform_kube_version = kube_version.split("-")[0]
-                conform_args = f"-strict -kubernetes-version {conform_kube_version}"
-                bash(f"helm template {args} {chart_path} | kubeconform {conform_args}")
+                    _test_ver_path(chart_path, kube_version, path)
+
+    ci_dir = os.path.join(chart_path, "ci")
+    if os.path.isdir(ci_dir):
+        for kube_version in KUBE_VERSION_VALUES:
+            for filename in os.listdir(ci_dir):
+                if not filename.endswith("-values.yaml"):
+                    continue
+                path = os.path.join(ci_dir, filename)
+                _test_ver_path(chart_path, kube_version, path)

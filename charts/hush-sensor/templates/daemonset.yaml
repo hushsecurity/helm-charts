@@ -1,3 +1,4 @@
+{{- if include "hush-sensor.shouldCreateDaemonSet" . -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -176,3 +177,4 @@ spec:
               value: {{ include "hush-sensor.namespace" . }}
             - name: HELM_CHART_VERSION
               value: {{ .Chart.Version | quote }}
+{{- end -}}

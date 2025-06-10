@@ -1,0 +1,8 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+connector:
+  forwarderTimeout: "777"
+  connectorClientRetryMaxBackoff: "3m"
