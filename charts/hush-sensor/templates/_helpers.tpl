@@ -135,11 +135,31 @@ type: Unconfined
 Verify hushDeployment.token was defined
 */}}
 {{- define "hush-sensor.getDeploymentToken" -}}
-{{- $token := and .Values.hushDeployment .Values.hushDeployment.token -}}
-{{- if not $token -}}
-    {{- fail "'hushDeployment.token' must be defined" -}}
+{{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
+{{- $secretName := and $keyRef $keyRef.name -}}
+{{- $secretKey := and $keyRef $keyRef.tokenKey -}}
+{{- if and $secretName $secretKey -}}
+    {{- $namespace := (include "hush-sensor.namespace" .) -}}
+    {{- $secret := lookup "v1" "Secret" $namespace $secretName -}}
+    {{- if not $secret -}}
+        {{- fail (printf "failed to lookup Secret=%s in Namespace=%s (hushDeployment.secretKeyRef.name)" $secretName $namespace) -}}
+    {{- else -}}
+        {{- $tokenB64 := (dig "data" $secretKey "<missing>" $secret) -}}
+        {{- if eq $tokenB64 "<missing>" -}}
+            {{- fail (printf "deployment token Key=%s is missing in Secret=%s (hushDeployment.secretKeyRef.tokenKey)" $secretKey $secretName) -}}
+        {{- else -}}
+            {{- $token := b64dec $tokenB64 -}}
+            {{- printf "%s" $token -}}
+        {{- end -}}
+    {{- end -}}
+{{- else -}}
+    {{- $token := and .Values.hushDeployment .Values.hushDeployment.token -}}
+    {{- if not $token -}}
+        {{- fail "'hushDeployment.token' is undefined" -}}
+    {{- else -}}
+        {{- printf "%s" $token -}}
+    {{- end -}}
 {{- end -}}
-{{- printf "%s" $token -}}
 {{- end }}
 
 {{/*
@@ -148,7 +168,7 @@ Verify hushDeployment.password was defined
 {{- define "hush-sensor.getDeploymentPassword" -}}
 {{- $password := and .Values.hushDeployment .Values.hushDeployment.password -}}
 {{- if not $password -}}
-    {{- fail "'hushDeployment.password' must be defined" -}}
+    {{- fail "'hushDeployment.password' is undefined" -}}
 {{- end -}}
 {{- printf "%s" $password -}}
 {{- end }}

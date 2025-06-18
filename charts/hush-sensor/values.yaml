@@ -28,23 +28,33 @@ eventReportingConsole: "heartbeat"
 
 # Hush deployment configuration
 hushDeployment:
-  # The deployment token as received from API/UI. Required.
+  # The deployment token as received from API/UI.
+  #
+  # When 'hushDeployment.secretKeyRef.{name,tokenKey}' are defined this value is ignored.
+  # Otherwise this value is required.
   token: ""
 
   # The deployment password as received from API/UI.
   #
-  # When 'hushDeployment.secretKeyRef' is defined this value is ignored.
+  # When 'hushDeployment.secretKeyRef.{name,key}' are defined this value is ignored.
+  # Otherwise this value is required.
   password: ""
 
-  # A reference to an existing Secret with deployment password.
+  # A reference to an existing Secret with deployment password and token.
   #
   # The secret must be defined in the same namespace where the chart is installed.
-  # All attributes are required.
+  #
+  # If deployment token is stored this way updating its value in the Secret
+  # must be followed by chart recompilation (helm upgrade/template) or
+  # fresh installation (helm install).
   secretKeyRef:
     # Secret name
     name: ""
-    # Secret key
+    # Password secret key
     key: ""
+    # Token secret key
+    tokenKey: ""
+
 
 # Values related to container images
 image:
