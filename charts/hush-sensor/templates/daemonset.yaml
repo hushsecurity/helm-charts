@@ -41,6 +41,7 @@ spec:
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.daemonSet.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "hush-sensor.fullName" . }}
       volumes:
         - name: cri
           hostPath:
