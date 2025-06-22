@@ -1,6 +1,6 @@
 {{- if .Values.vermon.enabled -}}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: {{ include "hush-sensor.vermonFullName" . }}
   labels: {{- include "hush-sensor.labels" . | nindent 4 }}
