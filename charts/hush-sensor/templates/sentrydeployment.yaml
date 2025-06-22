@@ -80,23 +80,15 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: LOG_CONFIG_ENDPOINT
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_TOKEN
               valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: log_config_uri
-            - name: EVENT_REPORTING_ORG_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: org_id
-            - name: EVENT_REPORTING_DEPLOYMENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: deployment_id
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
             {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
-            - name: EVENT_REPORTING_TOKEN
+            - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
@@ -106,8 +98,6 @@ spec:
               value: "1"
             - name: PLUTO_CRAWL_K8S_SECRETSTORE
               value: "1"
-            - name: KUBE_SYSTEM_UID
-              value: {{ include "hush-sensor.kubeSystemUid" . }}
         - name: hush-sentry-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -118,28 +108,15 @@ spec:
             - name: vector-socket
               mountPath: /tmp/vector
           env:
-            - name: EVENT_REPORTING_ENDPOINT
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_TOKEN
               valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: event_reporting_uri
-            - name: LOG_REPORTING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: log_reporting_uri
-            - name: EVENT_REPORTING_ORG_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: org_id
-            - name: EVENT_REPORTING_DEPLOYMENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: deployment_id
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
             {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
-            - name: EVENT_REPORTING_TOKEN
+            - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
@@ -152,8 +129,6 @@ spec:
                   name: {{ include "hush-sensor.sensorConfigMapName" . }}
                   key: event_reporting_console
             {{- end }}
-            - name: KUBE_SYSTEM_UID
-              value: {{ include "hush-sensor.kubeSystemUid" . }}
             - name: HELM_RELEASE
               value: {{ .Release.Name }}
             - name: HELM_NAMESPACE
