@@ -104,23 +104,15 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: LOG_CONFIG_ENDPOINT
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: HUSH_DEPLOYMENT_TOKEN
               valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: log_config_uri
-            - name: EVENT_REPORTING_ORG_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: org_id
-            - name: EVENT_REPORTING_DEPLOYMENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: deployment_id
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
             {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
-            - name: EVENT_REPORTING_TOKEN
+            - name: HUSH_DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
@@ -136,28 +128,15 @@ spec:
             - name: vector-socket
               mountPath: /tmp/vector
           env:
-            - name: EVENT_REPORTING_ENDPOINT
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: HUSH_DEPLOYMENT_TOKEN
               valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: event_reporting_uri
-            - name: LOG_REPORTING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: log_reporting_uri
-            - name: EVENT_REPORTING_ORG_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: org_id
-            - name: EVENT_REPORTING_DEPLOYMENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: deployment_id
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
             {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
-            - name: EVENT_REPORTING_TOKEN
+            - name: HUSH_DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}

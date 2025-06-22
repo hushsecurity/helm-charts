@@ -50,18 +50,20 @@ spec:
           volumeMounts: {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
-            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
-            - name: DEPLOYMENT_PASSWORD
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: HUSH_DEPLOYMENT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
-            - name: CONNECTOR_FQDN
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            - name: HUSH_DEPLOYMENT_PASSWORD
               valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: connector_fqdn
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
             {{- with and .Values.connector .Values.connector.connectorClientRetryMaxBackoff }}
             - name: RETRY_MAX_BACKOFF
               value: {{ . | quote }}

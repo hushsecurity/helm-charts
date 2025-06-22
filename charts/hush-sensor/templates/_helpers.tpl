@@ -134,32 +134,12 @@ type: Unconfined
 {{/*
 Verify hushDeployment.token was defined
 */}}
-{{- define "hush-sensor.getDeploymentToken" -}}
-{{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
-{{- $secretName := and $keyRef $keyRef.name -}}
-{{- $secretKey := and $keyRef $keyRef.tokenKey -}}
-{{- if and $secretName $secretKey -}}
-    {{- $namespace := (include "hush-sensor.namespace" .) -}}
-    {{- $secret := lookup "v1" "Secret" $namespace $secretName -}}
-    {{- if not $secret -}}
-        {{- fail (printf "failed to lookup Secret=%s in Namespace=%s (hushDeployment.secretKeyRef.name)" $secretName $namespace) -}}
-    {{- else -}}
-        {{- $tokenB64 := (dig "data" $secretKey "<missing>" $secret) -}}
-        {{- if eq $tokenB64 "<missing>" -}}
-            {{- fail (printf "deployment token Key=%s is missing in Secret=%s (hushDeployment.secretKeyRef.tokenKey)" $secretKey $secretName) -}}
-        {{- else -}}
-            {{- $token := b64dec $tokenB64 -}}
-            {{- printf "%s" $token -}}
-        {{- end -}}
-    {{- end -}}
-{{- else -}}
-    {{- $token := and .Values.hushDeployment .Values.hushDeployment.token -}}
-    {{- if not $token -}}
-        {{- fail "'hushDeployment.token' is undefined" -}}
-    {{- else -}}
-        {{- printf "%s" $token -}}
-    {{- end -}}
+{{- define "hush-sensor.getDeploymentTokenValue" -}}
+{{- $token := and .Values.hushDeployment .Values.hushDeployment.token -}}
+{{- if not $token -}}
+    {{- fail "'hushDeployment.token' is undefined" -}}
 {{- end -}}
+{{- printf "%s" $token -}}
 {{- end }}
 
 {{/*
@@ -171,39 +151,6 @@ Verify hushDeployment.password was defined
     {{- fail "'hushDeployment.password' is undefined" -}}
 {{- end -}}
 {{- printf "%s" $password -}}
-{{- end }}
-
-{{/*
-Hush deployment info
-*/}}
-{{- define "hush-sensor.deploymentInfo" -}}
-{{- $token := (include "hush-sensor.getDeploymentToken" .) -}}
-{{- $ctx := dict "name" "hushDeployment.token" "value" $token -}}
-{{- $deploymentToken := (include "hush-sensor.b64decode" $ctx) -}}
-{{- $parts := split ":" $deploymentToken -}}
-{{- if ne $parts._0 "d1" -}}
-    {{- fail (printf "'hushDeployment.token' version '%s' isn't supported" $parts._0) -}}
-{{- end -}}
-{{- $zone := trimPrefix "m" $parts._1 | trimSuffix "prd" -}}
-{{- $zone = ternary "" (printf "%s." $zone) (not $zone) -}}
-{{- $baseFqdn := printf "%s.%shush-security.com" $parts._2 $zone -}}
-{{- $baseUri := printf "https://events.%s/v1" $baseFqdn -}}
-{{- $eventsUri := printf "%s/runtime-events" $baseUri -}}
-{{- $logsUri := printf "%s/runtime-logs" $baseUri -}}
-{{- $logsConfigUri := printf "%s/runtime-logs-config" $baseUri -}}
-{{- $registry := (include "hush-sensor.imageRegistry" .) -}}
-{{- $channelDigestsUri := printf "%s/runtime-versions?registry=%s" $baseUri $registry -}}
-{{- $connectorFqdn := printf "%s.ab.%s" $parts._4 $baseFqdn -}}
-{{- $result := dict
-    "orgId" $parts._3
-    "deploymentId" $parts._4
-    "eventReportingUri" $eventsUri
-    "logReportingUri" $logsUri
-    "logConfigUri" $logsConfigUri
-    "channelDigestsUri" $channelDigestsUri
-    "connectorFqdn" $connectorFqdn
--}}
-{{- $result | toYaml -}}
 {{- end }}
 
 {{/*
@@ -333,14 +280,56 @@ PullSecret effective list
 {{- end }}
 
 {{/*
-Should we create deployment secret?
+Should we create the deployment token secret?
 */}}
-{{- define "hush-sensor.shouldCreateDeploymentSecret" -}}
+{{- define "hush-sensor.shouldCreateDeploymentTokenSecret" -}}
+{{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
+{{- $name := and $keyRef $keyRef.name -}}
+{{- $tokenKey := and $keyRef $keyRef.tokenKey -}}
+{{- if not (and $name $tokenKey) -}}
+true
+{{- end }}
+{{- end }}
+
+{{/*
+Should we create the deployment password secret?
+*/}}
+{{- define "hush-sensor.shouldCreateDeploymentPasswordSecret" -}}
 {{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
 {{- $name := and $keyRef $keyRef.name -}}
 {{- $key := and $keyRef $keyRef.key -}}
 {{- if not (and $name $key) -}}
 true
+{{- end }}
+{{- end }}
+
+{{/*
+Should we create deployment secret?
+*/}}
+{{- define "hush-sensor.shouldCreateDeploymentSecret" -}}
+{{- if or
+    (include "hush-sensor.shouldCreateDeploymentTokenSecret" .)
+    (include "hush-sensor.shouldCreateDeploymentPasswordSecret" .) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Effective deployment token secret ref
+*/}}
+{{- define "hush-sensor.effectiveDeploymentTokenSecretRef" -}}
+{{- if (include "hush-sensor.shouldCreateDeploymentTokenSecret" .) -}}
+    {{- dict
+        "name" (include "hush-sensor.deploymentSecretName" .)
+        "key" "deployment-token"
+        | toYaml
+    -}}
+{{- else -}}
+    {{- dict
+        "name" .Values.hushDeployment.secretKeyRef.name
+        "key" .Values.hushDeployment.secretKeyRef.tokenKey
+        | toYaml
+    -}}
 {{- end }}
 {{- end }}
 
