@@ -39,6 +39,7 @@ spec:
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.connector.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "hush-sensor.connectorFullName" . }}
       containers:
         - name: hush-connector-client
           image: {{ include "hush-sensor.connectorClientImagePath" . }}
