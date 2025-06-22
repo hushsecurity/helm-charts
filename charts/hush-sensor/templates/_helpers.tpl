@@ -165,7 +165,7 @@ Verify hushDeployment.token was defined
 {{/*
 Verify hushDeployment.password was defined
 */}}
-{{- define "hush-sensor.getDeploymentPassword" -}}
+{{- define "hush-sensor.getDeploymentPasswordValue" -}}
 {{- $password := and .Values.hushDeployment .Values.hushDeployment.password -}}
 {{- if not $password -}}
     {{- fail "'hushDeployment.password' is undefined" -}}
