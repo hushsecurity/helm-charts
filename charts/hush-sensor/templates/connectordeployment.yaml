@@ -51,6 +51,13 @@ spec:
           volumeMounts: {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
             {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
@@ -58,11 +65,6 @@ spec:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
-            - name: CONNECTOR_FQDN
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: connector_fqdn
             {{- with and .Values.connector .Values.connector.connectorClientRetryMaxBackoff }}
             - name: RETRY_MAX_BACKOFF
               value: {{ . | quote }}
@@ -76,9 +78,23 @@ spec:
           {{- with and .Values.connector .Values.connector.forwarderExtraVolumeMounts }}
           volumeMounts: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.connector.forwarderTimeout }}
           env:
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- with .Values.connector.forwarderTimeout }}
             - name: FORWARDER_TIMEOUT
               value: {{ . | quote }}
-          {{- end }}
+            {{- end }}
 {{- end -}}
