@@ -118,6 +118,8 @@ spec:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
+            - name: DEPLOYMENT_KIND
+              value: k8s
         - name: hush-sensor-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -142,6 +144,8 @@ spec:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
+            - name: DEPLOYMENT_KIND
+              value: k8s
             {{- if .Values.eventReportingConsole }}
             - name: EVENT_REPORTING_CONSOLE
               valueFrom:

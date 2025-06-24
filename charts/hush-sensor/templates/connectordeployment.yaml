@@ -65,6 +65,8 @@ spec:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
+            - name: DEPLOYMENT_KIND
+              value: k8s
             {{- with and .Values.connector .Values.connector.connectorClientRetryMaxBackoff }}
             - name: RETRY_MAX_BACKOFF
               value: {{ . | quote }}
@@ -93,6 +95,8 @@ spec:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
+            - name: DEPLOYMENT_KIND
+              value: k8s
             {{- with .Values.connector.forwarderTimeout }}
             - name: FORWARDER_TIMEOUT
               value: {{ . | quote }}
