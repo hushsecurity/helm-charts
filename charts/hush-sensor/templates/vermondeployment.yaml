@@ -102,6 +102,8 @@ spec:
             {{- end }}
             - name: DEPLOYMENT_KIND
               value: k8s
+            - name: CONTAINER_REGISTRY
+              value: {{ include "hush-sensor.imageRegistry" . | quote }}
         - name: hush-vermon-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
