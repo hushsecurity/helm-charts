@@ -7,8 +7,6 @@ updates:
       interval: daily
     commit-message:
       prefix: "HUSH-777 "
-    reviewers:
-      - "r-bk"
   - package-ecosystem: "pip"
     directories:
       - "/cli"
@@ -21,5 +19,3 @@ updates:
           - "*"
     commit-message:
       prefix: "HUSH-777 "
-    reviewers:
-      - "r-bk"
