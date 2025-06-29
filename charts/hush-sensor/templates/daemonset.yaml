@@ -37,7 +37,7 @@ spec:
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
-      {{- with (include "hush-sensor.imagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-sensor.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.daemonSet.terminationGracePeriodSeconds }}
@@ -104,14 +104,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
-            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -130,14 +130,14 @@ spec:
             - name: vector-socket
               mountPath: /tmp/vector
           env:
-            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
-            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:

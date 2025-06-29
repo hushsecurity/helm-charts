@@ -154,9 +154,9 @@ Verify hushDeployment.password was defined
 {{- end }}
 
 {{/*
-Deployment secret name
+Deployment K8S Secret name
 */}}
-{{- define "hush-sensor.deploymentSecretName" -}}
+{{- define "hush-sensor.deploymentKubeSecretName" -}}
 {{- printf "%s-deploymentsecret" (include "hush-sensor.fullName" .) }}
 {{- end }}
 
@@ -170,9 +170,9 @@ Get image registry
 {{- end }}
 
 {{/*
-Get image pull secret username
+Get image.pullSecret.username
 */}}
-{{- define "hush-sensor.imagePullSecretUsername" -}}
+{{- define "hush-sensor.kubeImagePullSecretUsername" -}}
 {{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
 {{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
 {{- $username := and $hasPullSecret .Values.image.pullSecret.username -}}
@@ -180,9 +180,9 @@ Get image pull secret username
 {{- end }}
 
 {{/*
-Get image pull secret password
+Get image.pullSecret.password
 */}}
-{{- define "hush-sensor.imagePullSecretPassword" -}}
+{{- define "hush-sensor.kubeImagePullSecretPassword" -}}
 {{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
 {{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
 {{- $password := and $hasPullSecret .Values.image.pullSecret.password -}}
@@ -190,7 +190,7 @@ Get image pull secret password
 {{- end }}
 
 {{/*
-Parse image.pullToken
+Parse Hush image.pullToken
 */}}
 {{- define "hush-sensor.parsePullToken" -}}
 {{- $pullToken := and .Values.image .Values.image.pullToken -}}
@@ -233,33 +233,33 @@ true
 {{- end }}
 
 {{/*
-Should we create the image pull secret?
+Should we create the K8S image pull secret?
 */}}
-{{- define "hush-sensor.shouldCreateImagePullSecret" -}}
-{{- $username := (include "hush-sensor.imagePullSecretUsername" .) -}}
-{{- $password := (include "hush-sensor.imagePullSecretPassword" .) -}}
+{{- define "hush-sensor.shouldCreateKubeImagePullSecret" -}}
+{{- $username := (include "hush-sensor.kubeImagePullSecretUsername" .) -}}
+{{- $password := (include "hush-sensor.kubeImagePullSecretPassword" .) -}}
 {{- if and $username $password -}}
 true
 {{- end }}
 {{- end }}
 
 {{/*
-PullSecret name
+K8S image pull secret name
 */}}
-{{- define "hush-sensor.imagePullSecretName" -}}
+{{- define "hush-sensor.kubeImagePullSecretName" -}}
 {{- $defaultPullSecretName :=
     (printf "%s-%s" (include "hush-sensor.fullName" .) "imagepullsecret") }}
 {{- default $defaultPullSecretName .Values.image.pullSecret.name }}
 {{- end }}
 
 {{/*
-PullSecret value
+The data to put in K8S image pull Secret
 */}}
-{{- define "hush-sensor.imagePullSecretValue" -}}
+{{- define "hush-sensor.kubeImagePullSecretData" -}}
 {{- $msg := "couldn't find image registry definition. 'image.registry' or 'image.pullToken' must be defined." -}}
 {{- $registry := required $msg (include "hush-sensor.imageRegistry" .) -}}
-{{- $username := (include "hush-sensor.imagePullSecretUsername" .) -}}
-{{- $password := (include "hush-sensor.imagePullSecretPassword" .) -}}
+{{- $username := (include "hush-sensor.kubeImagePullSecretUsername" .) -}}
+{{- $password := (include "hush-sensor.kubeImagePullSecretPassword" .) -}}
 {{- $userPass := printf "%s:%s" $username $password -}}
 {{- $value := printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}"
     $registry ($userPass | b64enc) -}}
@@ -269,20 +269,20 @@ PullSecret value
 {{/*
 PullSecret effective list
 */}}
-{{- define "hush-sensor.imagePullSecretEffectiveList" -}}
+{{- define "hush-sensor.kubeImagePullSecretEffectiveList" -}}
     {{- if and .Values.image .Values.image.pullSecretList -}}
         {{- .Values.image.pullSecretList | toYaml }}
     {{- else -}}
-        {{- if (include "hush-sensor.shouldCreateImagePullSecret" .) -}}
-- name: {{ include "hush-sensor.imagePullSecretName" . | quote }}
+        {{- if (include "hush-sensor.shouldCreateKubeImagePullSecret" .) -}}
+- name: {{ include "hush-sensor.kubeImagePullSecretName" . | quote }}
         {{- end }}
     {{- end }}
 {{- end }}
 
 {{/*
-Should we create the deployment token secret?
+Should we create the deployment token K8S Secret?
 */}}
-{{- define "hush-sensor.shouldCreateDeploymentTokenSecret" -}}
+{{- define "hush-sensor.shouldCreateDeploymentTokenKubeSecret" -}}
 {{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
 {{- $name := and $keyRef $keyRef.name -}}
 {{- $tokenKey := and $keyRef $keyRef.tokenKey -}}
@@ -292,9 +292,9 @@ true
 {{- end }}
 
 {{/*
-Should we create the deployment password secret?
+Should we create the deployment password K8S Secret?
 */}}
-{{- define "hush-sensor.shouldCreateDeploymentPasswordSecret" -}}
+{{- define "hush-sensor.shouldCreateDeploymentPasswordKubeSecret" -}}
 {{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
 {{- $name := and $keyRef $keyRef.name -}}
 {{- $key := and $keyRef $keyRef.key -}}
@@ -304,12 +304,12 @@ true
 {{- end }}
 
 {{/*
-Should we create deployment secret?
+Should we create deployment K8S Secret?
 */}}
-{{- define "hush-sensor.shouldCreateDeploymentSecret" -}}
+{{- define "hush-sensor.shouldCreateDeploymentKubeSecret" -}}
 {{- if or
-    (include "hush-sensor.shouldCreateDeploymentTokenSecret" .)
-    (include "hush-sensor.shouldCreateDeploymentPasswordSecret" .) -}}
+    (include "hush-sensor.shouldCreateDeploymentTokenKubeSecret" .)
+    (include "hush-sensor.shouldCreateDeploymentPasswordKubeSecret" .) -}}
 true
 {{- end -}}
 {{- end }}
@@ -317,10 +317,10 @@ true
 {{/*
 Effective deployment token secret ref
 */}}
-{{- define "hush-sensor.effectiveDeploymentTokenSecretRef" -}}
-{{- if (include "hush-sensor.shouldCreateDeploymentTokenSecret" .) -}}
+{{- define "hush-sensor.effectiveDeploymentTokenKubeSecretRef" -}}
+{{- if (include "hush-sensor.shouldCreateDeploymentTokenKubeSecret" .) -}}
     {{- dict
-        "name" (include "hush-sensor.deploymentSecretName" .)
+        "name" (include "hush-sensor.deploymentKubeSecretName" .)
         "key" "deployment-token"
         | toYaml
     -}}
@@ -336,10 +336,10 @@ Effective deployment token secret ref
 {{/*
 Effective deployment password secret ref
 */}}
-{{- define "hush-sensor.effectiveDeploymentPasswordSecretRef" -}}
-{{- if (include "hush-sensor.shouldCreateDeploymentSecret" .) -}}
+{{- define "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" -}}
+{{- if (include "hush-sensor.shouldCreateDeploymentKubeSecret" .) -}}
     {{- dict
-        "name" (include "hush-sensor.deploymentSecretName" .)
+        "name" (include "hush-sensor.deploymentKubeSecretName" .)
         "key" "deployment-password"
         | toYaml
     -}}
