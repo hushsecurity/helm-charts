@@ -39,6 +39,7 @@ spec:
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.connector.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "hush-sensor.connectorFullName" . }}
       containers:
         - name: hush-connector-client
           image: {{ include "hush-sensor.connectorClientImagePath" . }}
@@ -50,6 +51,13 @@ spec:
           volumeMounts: {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
             {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
@@ -57,11 +65,8 @@ spec:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
-            - name: CONNECTOR_FQDN
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
-                  key: connector_fqdn
+            - name: DEPLOYMENT_KIND
+              value: k8s
             {{- with and .Values.connector .Values.connector.connectorClientRetryMaxBackoff }}
             - name: RETRY_MAX_BACKOFF
               value: {{ . | quote }}
@@ -75,9 +80,25 @@ spec:
           {{- with and .Values.connector .Values.connector.forwarderExtraVolumeMounts }}
           volumeMounts: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.connector.forwarderTimeout }}
           env:
+            {{- with (include "hush-sensor.effectiveDeploymentTokenSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            - name: DEPLOYMENT_KIND
+              value: k8s
+            {{- with .Values.connector.forwarderTimeout }}
             - name: FORWARDER_TIMEOUT
               value: {{ . | quote }}
-          {{- end }}
+            {{- end }}
 {{- end -}}
