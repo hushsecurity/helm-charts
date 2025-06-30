@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 def bash(cmd, env=None, **kwargs):
+    traceErr = kwargs.pop("traceErr", True)
     if kwargs.pop("trace", True):
         logger.info("run: %s", cmd)
     try:
@@ -16,7 +17,11 @@ def bash(cmd, env=None, **kwargs):
             stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as e:
-        logger.error(
-            "command failed: %s\nstdout=\n%s\nstderr=\n%s\n", cmd, e.stdout, e.stderr
-        )
+        if traceErr:
+            logger.error(
+                "command failed: %s\nstdout=\n%s\nstderr=\n%s\n",
+                cmd,
+                e.stdout,
+                e.stderr,
+            )
         raise e
