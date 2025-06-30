@@ -367,6 +367,7 @@ Build image path from components
 Sensor image path
 */}}
 {{- define "hush-sensor.sensorImagePath" -}}
+{{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sensorRepository
@@ -379,6 +380,7 @@ Sensor image path
 Vector image path
 */}}
 {{- define "hush-sensor.sensorVectorImagePath" -}}
+{{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sensorVectorRepository
@@ -391,6 +393,7 @@ Vector image path
 Sentry image path
 */}}
 {{- define "hush-sensor.sentryImagePath" -}}
+{{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.sentryRepository
@@ -403,6 +406,7 @@ Sentry image path
 Connector Client image path
 */}}
 {{- define "hush-sensor.connectorClientImagePath" -}}
+{{- include "hush-sensor.verifyConnectorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.connectorClientRepository
@@ -415,6 +419,7 @@ Connector Client image path
 Connector Forwarder image path
 */}}
 {{- define "hush-sensor.connectorForwarderImagePath" -}}
+{{- include "hush-sensor.verifyConnectorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.connectorForwarderRepository
@@ -427,6 +432,7 @@ Connector Forwarder image path
 Vermon image path
 */}}
 {{- define "hush-sensor.vermonImagePath" -}}
+{{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-sensor.imageRegistry" .)
     "repository" .Values.image.vermonRepository
@@ -493,4 +499,68 @@ Sentry service account annotations with AWS IAM role handling
 {{- if $annotations -}}
   {{- toYaml $annotations -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Verify that minimum supported version holds for a Hush version tag.
+Exit with an error message if version constraint doesn't hold.
+Don't verify versions that look unofficial (do not start with "v" or "rc").
+Input: {
+  .version = <the version to check>,
+  .valueName = <the name of the checked value>,
+  .minVersion = <the minimum allowed version>,
+}
+*/}}
+{{- define "hush-sensor.verifyMinimumSupportedVersion" -}}
+{{- $msg := printf "Version %s in %s is below the minimum supported version %s" .version .valueName .minVersion -}}
+{{- $versionParts := splitList "." .version -}}
+{{- $version := trimPrefix "v" .version -}}
+{{- $version = trimPrefix "rc" $version -}}
+{{- $minVersionAtoms := semver .minVersion -}}
+{{- if not (or (hasPrefix "v" .version) (hasPrefix "rc" .version)) -}}
+    {{/* looks like unofficial version - skip verification */}}
+{{- else if eq (len $versionParts) 1 -}}
+    {{- $major := atoi (index $versionParts 0) -}}
+    {{- if lt $major $minVersionAtoms.Major -}}
+        {{- fail $msg -}}
+    {{- end -}}
+{{- else if eq (len $versionParts) 2 -}}
+    {{- $major := atoi (index $versionParts 0) -}}
+    {{- $minor := atoi (index $versionParts 1) -}}
+    {{- if lt $major $minVersionAtoms.Major -}}
+        {{- fail $msg -}}
+    {{- else if and (eq $major $minVersionAtoms.Major) (lt $minor $minVersionAtoms.Minor) -}}
+        {{- fail $msg -}}
+    {{- end -}}
+{{- else -}}
+    {{- $minVer := semver .minVersion -}}
+    {{- $ver := semver $version -}}
+    {{- if eq ($ver | $minVer.Compare) 1 -}}
+        {{- fail $msg -}}
+    {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Verify sensor minimum supported version.
+*/}}
+{{- define "hush-sensor.verifySensorMinimumSupportedVersion" -}}
+{{- $ctx := dict
+    "valueName" "'image.sensorTag'"
+    "version" .Values.image.sensorTag
+    "minVersion" "v0.25.0"
+-}}
+{{- include "hush-sensor.verifyMinimumSupportedVersion" $ctx -}}
+{{- end -}}
+
+{{/*
+Verify connector minimum supported version.
+*/}}
+{{- define "hush-sensor.verifyConnectorMinimumSupportedVersion" -}}
+{{- $ctx := dict
+    "valueName" "'image.connectorTag'"
+    "version" .Values.image.connectorTag
+    "minVersion" "v0.5.0"
+-}}
+{{- include "hush-sensor.verifyMinimumSupportedVersion" $ctx -}}
 {{- end -}}
