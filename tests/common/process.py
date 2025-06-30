@@ -9,7 +9,11 @@ def bash(cmd, env=None, **kwargs):
         logger.info("run: %s", cmd)
     try:
         return subprocess.check_output(
-            f"bash -ec 'set -o pipefail; {cmd}'", shell=True, text=True, env=env
+            f"bash -ec 'set -o pipefail; {cmd}'",
+            shell=True,
+            text=True,
+            env=env,
+            stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as e:
         logger.error(
