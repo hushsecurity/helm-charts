@@ -2,6 +2,7 @@ import base64
 import contextlib
 import logging
 import os
+import subprocess
 import tempfile
 import pytest
 from yaml import CDumper as Dumper
@@ -13,6 +14,44 @@ logger = logging.getLogger(__name__)
 TOP_DIR = os.environ["TOP_DIR"]
 CHARTS_DIR = os.path.join(TOP_DIR, "charts")
 CHARTS = os.listdir(CHARTS_DIR)
+
+SENSOR_MSV = "v0.25.0"
+CONNECTOR_MSV = "v0.5.0"
+SENSOR_UNSUPPORTED_VERSIONS = [
+    "v0.24",
+    "rc0.24",
+    "v0.24.0-rc1",
+    "v0.24.0",
+    f"{SENSOR_MSV}-rc1",
+]
+SENSOR_SUPPORTED_VERSIONS = [
+    "v0",
+    "rc0",
+    "v0.25",
+    "rc0.25",
+    SENSOR_MSV,
+    "v0.25.1",
+    "v0.26.0-rc1",
+    "v0.26.0",
+    "965353344f",  # such tag should be skipped by the version check
+]
+CONNECTOR_UNSUPPORTED_VERSIONS = [
+    "v0.4",
+    "v0.4.0-rc1",
+    "v0.4.0",
+    f"{CONNECTOR_MSV}-rc1",
+    "rc0.4",
+]
+CONNECTOR_SUPPORTED_VERSIONS = [
+    "v0",
+    "rc0",
+    "v0.5",
+    "rc0.5",
+    CONNECTOR_MSV,
+    "v0.6.0-rc1",
+    "v0.6.0",
+    "965353344f",  # such tag should be skipped by the version check
+]
 
 DUMMY_DEPLOYMENT_TOKEN = "d1:zone:realm:org-id:deployment-id"
 KUBE_MINORS = [28, 29, 30, 31]
@@ -111,3 +150,35 @@ def test_kubeconform(chart):
                     continue
                 path = os.path.join(ci_dir, filename)
                 _test_ver_path(chart_path, kube_version, path)
+
+
+def test_hush_sensor_minimum_supported_version():
+    values = os.path.join(CHARTS_DIR, "hush-sensor", "ci", "lint-values.yaml")
+    chart_path = os.path.join(CHARTS_DIR, "hush-sensor")
+
+    def _test_unsup_ver(ver):
+        args = f"-f {values} --set image.{ver}"
+        bash(f"helm template {args} {chart_path}", traceErr=False)
+
+    def _test_unsup_vers(valueName, versions, min_version):
+        for ver in versions:
+            with pytest.raises(subprocess.CalledProcessError) as e:
+                _test_unsup_ver(f"{valueName}={ver}")
+            assert (
+                f"Version {ver} in 'image.{valueName}' is below the minimum supported version {min_version}"
+                in e.value.stderr
+            )
+
+    def _test_sup_ver(ver):
+        args = f"-f {values} --set image.{ver}"
+        bash(f"helm template {args} {chart_path} | kubeconform -strict")
+
+    def _test_sup_vers(valueName, versions):
+        for ver in versions:
+            _test_sup_ver(f"{valueName}={ver}")
+
+    _test_unsup_vers("sensorTag", SENSOR_UNSUPPORTED_VERSIONS, SENSOR_MSV)
+    _test_sup_vers("sensorTag", SENSOR_SUPPORTED_VERSIONS)
+
+    _test_unsup_vers("connectorTag", CONNECTOR_UNSUPPORTED_VERSIONS, CONNECTOR_MSV)
+    _test_sup_vers("connectorTag", CONNECTOR_SUPPORTED_VERSIONS)

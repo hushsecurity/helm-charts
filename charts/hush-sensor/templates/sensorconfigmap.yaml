@@ -5,31 +5,20 @@ metadata:
   labels: {{- include "hush-sensor.labels" . | nindent 4 }}
   namespace: {{ include "hush-sensor.namespace" . }}
 data:
-  {{ $di := (include "hush-sensor.deploymentInfo" . | fromYaml) -}}
   sensor_config: |
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
     report_tls: {{ .Values.sensorConfigMap.report_tls }}
     self_k8s_namespace: {{ include "hush-sensor.namespace" . | quote }}
-    org_id: {{ $di.orgId | quote }}
-    deployment_id: {{ $di.deploymentId | quote }}
     {{- with (include "hush-sensor.criSocketPath" .) }}
     cri_socket_path: {{ . | quote }}
     {{- end }}
     {{- with .Values.sensorConfigMap.akeyless_gateway_domain }}
     akeyless_gateway_domain: {{ . | quote }}
     {{- end }}
-  event_reporting_uri: {{ $di.eventReportingUri | quote }}
-  log_reporting_uri: {{ $di.logReportingUri | quote }}
-  log_config_uri: {{ $di.logConfigUri | quote }}
-  channel_digests_uri: {{ $di.channelDigestsUri | quote }}
-  org_id: {{ $di.orgId | quote }}
-  deployment_id: {{ $di.deploymentId | quote }}
   event_reporting_console: {{ .Values.eventReportingConsole | quote }}
   sentry_config: |
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
     self_k8s_namespace: {{ include "hush-sensor.namespace" . | quote }}
-    org_id: {{ $di.orgId | quote }}
-    deployment_id: {{ $di.deploymentId | quote }}
     {{- with .Values.sentry.integrations }}
     integrations:
     {{- if and .aws (or .aws.irsa  .aws.assume_role_arn) }}
@@ -40,4 +29,3 @@ data:
         {{- end }}
     {{- end }}
     {{- end }}
-  connector_fqdn: {{ $di.connectorFqdn | quote }}
