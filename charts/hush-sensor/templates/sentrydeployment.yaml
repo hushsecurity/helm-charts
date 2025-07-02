@@ -100,6 +100,8 @@ spec:
               value: "1"
             - name: PLUTO_CRAWL_K8S_SECRETSTORE
               value: "1"
+            - name: PLUTO_CRAWL_K8S_ESO_SECRETSTORE
+              value: "1"
         - name: hush-sentry-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
