@@ -10,7 +10,7 @@ optional = true
 [tool.poetry.group.ci.dependencies]
 pytest = "^8.4.1"
 pylint = "^3.3.7"
-ruff = "^0.12.1"
+ruff = "^0.12.7"
 pyyaml = "^6.0.2"
 
 [build-system]
