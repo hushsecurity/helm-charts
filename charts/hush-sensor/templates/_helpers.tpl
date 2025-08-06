@@ -98,6 +98,32 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Sentry AWS integrations configuration
+*/}}
+{{- define "hush-sensor.sentryAwsIntegrations" -}}
+{{- if and .Values.sentry.integrations .Values.sentry.integrations.aws -}}
+    {{- $hasIrsa := .Values.sentry.integrations.aws.irsa -}}
+    {{- $hasRoles := and .Values.sentry.integrations.aws.assume_roles (gt (len .Values.sentry.integrations.aws.assume_roles) 0) -}}
+    {{- if or $hasIrsa $hasRoles -}}
+aws:
+  enabled: true
+        {{- if $hasRoles }}
+  assume_roles:
+            {{- range .Values.sentry.integrations.aws.assume_roles }}
+                {{- if .role_arn }}
+    - role_arn: {{ .role_arn | quote }}
+                    {{- if .external_id }}
+      external_id: {{ .external_id | quote }}
+                    {{- end }}
+                {{- end }}
+            {{- end }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+
+{{/*
 Kubernetes version
 */}}
 {{- define "hush-sensor.kubeVersion" -}}

@@ -19,13 +19,5 @@ data:
   sentry_config: |
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
     self_k8s_namespace: {{ include "hush-sensor.namespace" . | quote }}
-    {{- with .Values.sentry.integrations }}
     integrations:
-    {{- if and .aws (or .aws.irsa  .aws.assume_role_arn) }}
-      aws:
-        enabled: true
-        {{- if and .aws.assume_role_arn (not .aws.irsa) }}
-        assume_role_arn: {{ .aws.assume_role_arn | quote }}
-        {{- end }}
-    {{- end }}
-    {{- end }}
+    {{- include "hush-sensor.sentryAwsIntegrations" . | nindent 6 }}
