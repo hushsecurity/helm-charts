@@ -23,7 +23,7 @@ jobs:
       HELM_SIGSTORE_VERSION: "0.3.0"
     steps:
       - name: Git Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Import PGP key
         run: |
           set -xe
