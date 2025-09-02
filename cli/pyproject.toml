@@ -4,15 +4,15 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.12"
 pyyaml = "^6.0.2"
-requests = "^2.32.4"
+requests = "^2.32.5"
 requests-toolbelt = "^1.0.0"
 
 [tool.poetry.group.ci]
 optional = true
 
 [tool.poetry.group.ci.dependencies]
-pylint = "^3.3.7"
-ruff = "^0.12.7"
+pylint = "^3.3.8"
+ruff = "^0.12.11"
 
 [build-system]
 requires = ["poetry-core"]
