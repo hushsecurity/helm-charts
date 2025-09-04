@@ -57,7 +57,7 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | \
             helm registry login -u "$GITHUB_ACTOR" --password-stdin ghcr.io
       - name: Install Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install poetry
