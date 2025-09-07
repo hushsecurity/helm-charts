@@ -122,6 +122,16 @@ aws:
 {{- end }}
 {{- end }}
 
+{{/*
+Sentry K8S integrations configuration
+*/}}
+{{- define "hush-sensor.sentryK8SIntegrations" -}}
+{{- if and .Values.sentry.integrations .Values.sentry.integrations.k8s -}}
+k8s:
+  enabled: {{ .Values.sentry.integrations.k8s.enabled }}
+  eso_enabled: {{ .Values.sentry.integrations.k8s.eso_enabled }}
+{{- end }}
+{{- end }}
 
 {{/*
 Kubernetes version
