@@ -33,7 +33,6 @@ spec:
       {{- with .Values.daemonSet.affinity }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
-      hostNetwork: true
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
