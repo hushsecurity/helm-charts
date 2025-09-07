@@ -20,4 +20,9 @@ data:
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
     self_k8s_namespace: {{ include "hush-sensor.namespace" . | quote }}
     integrations:
-    {{- include "hush-sensor.sentryAwsIntegrations" . | nindent 6 }}
+    {{- with (include "hush-sensor.sentryAwsIntegrations" .) }}
+    {{- . | nindent 6 -}}
+    {{- end }}
+    {{- with (include "hush-sensor.sentryK8SIntegrations" .) }}
+    {{- . | nindent 6 -}}
+    {{- end }}
