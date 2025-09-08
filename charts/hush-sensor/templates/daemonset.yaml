@@ -119,6 +119,16 @@ spec:
             {{- end }}
             - name: DEPLOYMENT_KIND
               value: k8s
+            {{- with (and .Values.daemonSet .Values.daemonSet.workloadSampling) -}}
+              {{- if .amountThreshold }}
+            - name: IDENTITY_SAMPLING_AMOUNT_THRESHOLD
+              value: {{ .amountThreshold | quote }}
+              {{- end }}
+              {{- if .timeThreshold }}
+            - name: IDENTITY_SAMPLING_TIME_THRESHOLD
+              value: {{ .timeThreshold | quote}}
+              {{- end }}
+            {{- end }}
         - name: hush-sensor-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
