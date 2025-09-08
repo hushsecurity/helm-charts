@@ -316,6 +316,12 @@ sentry:
       # If used in EKS with irsa annotation, irsa role should include permissions
       #       to assume listed roles.
       assume_roles: []
+    k8s:
+      # Enable/disable k8s discovery, disabled by default
+      enabled: false
+      # Enable/disable k8s ESO discovery, disabled by default
+      # will be ignored if k8s:enabled is false
+      eso_enabled: false
 
 vermon:
   # Hush Security Vermon keeps hush sensor channel images up to date.
