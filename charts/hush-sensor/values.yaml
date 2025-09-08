@@ -135,6 +135,21 @@ daemonSet:
   #           Useful when specific functionality subset is required.
   enabled: true
 
+  # Workload sampling parameters.
+  #
+  # Set to override the defaults (default values specified below):
+  #
+  # workloadSampling:
+  #   amountThreshold: "5"
+  #   timeThreshold: "15m" # Go duration format
+  #
+  # Set both thresholds to zero to disable workload sampling:
+  #
+  # workloadSampling:
+  #   amountThreshold: "0"
+  #   timeThreshold: "0s"
+  workloadSampling: {}
+
   # Custom priority class
   priorityClassName: ""
 
