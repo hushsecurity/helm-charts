@@ -43,7 +43,7 @@ jobs:
       - name: Install poetry
         uses: Gr1N/setup-poetry@v9
       - name: Install kube tools
-        uses: yokawasa/action-setup-kube-tools@v0.11.3
+        uses: yokawasa/action-setup-kube-tools@v0.13.0
         with:
           kubectl: '1.31.2'
           kubeconform: '0.6.7'
