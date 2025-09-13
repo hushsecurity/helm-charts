@@ -113,6 +113,9 @@ spec:
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector
+            - name: host-dir
+              mountPath: /var/lib/hush-security
+              readOnly: true
           env:
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
@@ -137,6 +140,16 @@ spec:
                   name: {{ include "hush-sensor.sensorConfigMapName" . }}
                   key: event_reporting_console
             {{- end }}
+            - name: REPORT_APP_METRICS
+              value: "1"
+            - name: AGENT_ID_PATH
+              value: "/var/lib/hush-security/vermon_uuid"
+            - name: REPORT_SUBSYSTEM_NAME
+              value: "lassie"
+            - name: REPORT_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: HELM_RELEASE
               value: {{ .Release.Name }}
             - name: HELM_NAMESPACE
