@@ -4,6 +4,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-sensor [unreleased]
+
+### Added
+
+- add support for metrics report in `sensor`, `vermon` and `sentry` vector
+
 ## hush-sensor 0.21.0 - 2025-07-03
 
 ### Added
