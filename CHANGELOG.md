@@ -4,11 +4,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## hush-sensor [unreleased]
+## hush-sensor 0.22.0 - 2025-09-14
 
 ### Added
 
 - add support for metrics report in `sensor`, `vermon` and `sentry` vector
+- add support for controlling (or disabling) workload sampling
+- add support for multiple AWS Assume Role configurations in `sentry`. Previously only
+  a single role could be defined.
+
+### Changed
+
+- stop running the DaemonSet on host network
+- remove "catch-all" tolerations from Deployments, leave them on DaemonSet only.
+  This is done to move Deployments out of cordoned nodes as we have only a single
+  instance of them. In the edge case of having no untainted nodes, a user needs to add
+  custom tolerations suitable to cluster needs.
 
 ## hush-sensor 0.21.0 - 2025-07-03
 
