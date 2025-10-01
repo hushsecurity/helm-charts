@@ -8,10 +8,10 @@ python = "^3.12"
 optional = true
 
 [tool.poetry.group.ci.dependencies]
-pytest = "^8.4.1"
+pytest = "^8.4.2"
 pylint = "^3.3.8"
-ruff = "^0.12.11"
-pyyaml = "^6.0.2"
+ruff = "^0.13.2"
+pyyaml = "^6.0.3"
 
 [build-system]
 requires = ["poetry-core"]
