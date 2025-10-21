@@ -1,0 +1,13 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "hush-secretless.spireBundleRoleFullName" . }}
+  namespace: {{ include "hush-common.namespace" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: spire-bundle-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["create", "get", "patch"]
+  resourceNames: [{{ include "hush-secretless.spireBundleConfigMapName" . | quote }}]
