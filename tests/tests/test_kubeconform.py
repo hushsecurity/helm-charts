@@ -113,13 +113,18 @@ CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
 
 
 @contextlib.contextmanager
-def values_tmp_file(values: dict):
+def values_tmp_file(chart: str, values: dict):
     hushDeployment = values.setdefault("hushDeployment", {})
     hushDeployment.setdefault(
         "token", base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode()
     )
     if "secretKeyRef" not in hushDeployment:
         hushDeployment.setdefault("password", "dummy_password")
+    if chart == "hush-secretless":
+        secretStore = values.setdefault("secretStore", {})
+        secretStore.setdefault("kind", "awssm")
+        aws = secretStore.setdefault("aws", {})
+        aws.setdefault("region", "eu-west-777")
     with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as tmp_file:
         dump(values, tmp_file, Dumper=Dumper)
         tmp_file.flush()
@@ -137,7 +142,7 @@ def test_kubeconform(chart):
     chart_path = os.path.join(CHARTS_DIR, chart)
     for kube_version in KUBE_VERSION_VALUES:
         for values in CHART_VALUES.get(chart, []) + [{}]:
-            with values_tmp_file(values) as path:
+            with values_tmp_file(chart, values) as path:
                 with open(path, "r", encoding="utf-8") as f:
                     logger.info("values:\n%s", f.read())
                     _test_ver_path(chart_path, kube_version, path)

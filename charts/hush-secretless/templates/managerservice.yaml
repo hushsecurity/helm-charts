@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hush-secretless.managerFullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: manager-service
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  type: ClusterIP
+  sessionAffinity: ClientIP
+  selector: {{- include "hush-common.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: manager
+  ports:
+    - name: spire
+      protocol: TCP
+      port: 8781
+    - name: rest
+      protocol: TCP
+      port: 8743
+    - name: admission
+      protocol: TCP
+      port: 8443

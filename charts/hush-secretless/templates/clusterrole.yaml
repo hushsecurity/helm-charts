@@ -1,0 +1,22 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "hush-secretless.clusterRoleFullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: cluster-role
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - nodes
+      - nodes/proxy
+    verbs:
+      - get
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
