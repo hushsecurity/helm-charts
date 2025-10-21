@@ -1,0 +1,27 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "hush-secretless.mutatingWebhookFullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mutating-webhook
+  namespace: {{ include "hush-common.namespace" . }}
+webhooks:
+  - name: {{ include "hush-secretless.mutatingWebhookFqdn" . }}
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    reinvocationPolicy: Never
+    failurePolicy: Ignore
+    timeoutSeconds: {{ .Values.admissionController.mutatingWebhookTimeout }}
+    clientConfig:
+      service:
+        namespace: {{ include "hush-common.namespace" . }}
+        name: {{ include "hush-secretless.managerFullName" . }}
+        path: /
+        port: 8443
+      caBundle: {{ (include "hush-secretless.admissionControllerRootCert" .) | b64enc }}
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["pods"]

@@ -1,0 +1,18 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+secretStore:
+  kind: "awssm"
+  aws:
+    region: "eu-central-1"
+
+manager:
+  volume:
+    size: 17Gi
+    storageClassName: "standard"
+    selector:
+      matchLabels:
+        name: my-volume
+    volumeName: "my-volume-name"

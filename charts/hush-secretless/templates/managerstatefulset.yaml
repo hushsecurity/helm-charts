@@ -1,0 +1,245 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "hush-secretless.managerFullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: manager
+  namespace: {{ include "hush-common.namespace" . }}
+
+spec:
+  selector:
+    matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: manager
+  replicas: {{ .Values.manager.replicas }}
+  serviceName: {{ include "hush-secretless.managerFullName" . }}
+  updateStrategy:
+    type: RollingUpdate
+  minReadySeconds: 10
+
+  template:
+    metadata:
+      labels: {{- include "hush-common.labels" . | nindent 8 }}
+        app.kubernetes.io/component: manager
+      {{ with .Values.manager.annotations -}}
+      annotations: {{- . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.manager.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.manager.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.manager.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.manager.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      {{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) }}
+      imagePullSecrets: {{- . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "hush-secretless.managerFullName" . }}
+      initContainers:
+        - name: secretless-manager-init
+          image: {{ include "hush-secretless.managerImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: spire-server-socket-dir
+              mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
+            - name: data-volume
+              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+          command: ["/bin/bash", "-xc"]
+          args:
+            - |
+              mkdir -p {{ include "hush-secretless.spireServerDataDirPath" . }}
+              chown -R 1000:1000 {{ include "hush-secretless.spireServerDataDirPath" . }}
+              mkdir -p {{ include "hush-secretless.spireServerSocketDirPath" . }}
+              chown -R 1000:1000 {{ include "hush-secretless.spireServerSocketDirPath" . }}
+              mkdir -p {{ include "hush-secretless.managerDataDirPath" . }}
+              . /usr/local/bin/hdc.sh
+              /mufasa init
+          env:
+            {{- include "hush-secretless.managerEnvs" . | nindent 12 }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+        - name: admission-controller-init
+          image: {{ include "hush-secretless.admissionControllerImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: data-volume
+              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+          command: ["/bin/bash", "-xc"]
+          args:
+            - |
+              mkdir -p {{ include "hush-secretless.admissionControllerDataDirPath" . }}
+              openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.key
+              openssl req -x509 -key {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.key \
+                -out {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.crt \
+                -sha256 -days 3650 \
+                -CA /opt/zazu/zazu-root.crt -CAkey /opt/zazu/zazu-root.key \
+                -subj "/CN=zazu" \
+                -addext "basicConstraints=critical,CA:FALSE" \
+                -addext "keyUsage=digitalSignature" \
+                -addext "extendedKeyUsage=serverAuth" \
+                -addext "subjectAltName={{ include "hush-secretless.managerServiceAltNames" . }}"
+              openssl x509 -in {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.crt -noout -text
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+      containers:
+        - name: spire-server
+          image: {{ include "hush-secretless.spireServerImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.manager .Values.manager.spireServerResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: vector-socket-dir
+              mountPath: /tmp/vector
+            - name: spire-server-socket-dir
+              mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
+            - name: data-volume
+              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+          env:
+            {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
+            {{- include "hush-secretless.siloEnvs" . | nindent 12 }}
+            - name: AUTH_PLUGIN_ROOT_CA_CERT_KEY
+              value: "auth-plugin/cert"
+            - name: AUTH_PLUGIN_ROOT_CA_PRIVATE_KEY
+              value: "auth-plugin/key"
+            - name: AUTH_PLUGIN_NAMESPACE_PREFIX
+              value: {{ include "hush-secretless.siloNamespacePrefix" . | quote }}
+        - name: secretless-manager
+          image: {{ include "hush-secretless.managerImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.manager .Values.manager.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: vector-socket-dir
+              mountPath: /tmp/vector
+            - name: spire-server-socket-dir
+              mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
+            - name: spire-agent-socket-dir
+              mountPath: {{ include "hush-secretless.spireAgentSocketDirMountPath" . }}
+            - name: data-volume
+              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+          env:
+            {{- include "hush-secretless.managerEnvs" . | nindent 12 }}
+        - name: admission-controller
+          image: {{ include "hush-secretless.admissionControllerImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.admissionController .Values.admissionController.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: vector-socket-dir
+              mountPath: /tmp/vector
+            - name: data-volume
+              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              readOnly: true
+          env:
+            {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
+            - name: HUSH_WRAPPER_IMAGE
+              value: {{ include "hush-secretless.injectorImagePath" . }}
+            - name: ZAZU_CERT_FILE_PATH
+              value: {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.crt
+            - name: ZAZU_KEY_FILE_PATH
+              value: {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.key
+            - name: MUFASA_POLICY_DB_PATH
+              value: {{ include "hush-secretless.policyDbFilePath" . }}
+            - name: MUFASA_SPIRE_AGENT_HOST_DIR
+              value: {{ .Values.spireAgent.hostDir }}
+            - name: MUFASA_SPIRE_AGENT_HOST_DIR_MOUNT_PATH
+              value: {{ include "hush-secretless.spireAgentSocketDirMountPath" . }}
+            - name: MUFASA_SPIRE_AGENT_SOCKET_PATH
+              value: {{ include "hush-secretless.spireAgentSocketPath" . }}
+            - name: MUFASA_REST_SERVER_ADDRESS
+              value: {{ include "hush-secretless.managerRestAddress" . }}
+            - name: MUFASA_IMAGE_PULL_POLICY
+              value: {{ .Values.image.pullPolicy }}
+        - name: vector
+          image: {{ include "hush-secretless.managerVectorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.manager .Values.manager.vectorResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: vector-socket-dir
+              mountPath: /tmp/vector
+            - name: data-volume
+              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              readOnly: true
+          env:
+            {{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            - name: DEPLOYMENT_KIND
+              value: k8s
+            - name: REPORT_SUBSYSTEM_NAME
+              value: "mufasa"
+            - name: REPORT_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- with .Values.eventReportingConsole }}
+            - name: EVENT_REPORTING_CONSOLE
+              value: {{ . | quote }}
+            {{- end }}
+            - name: HELM_RELEASE
+              value: {{ .Release.Name }}
+            - name: HELM_NAMESPACE
+              value: {{ include "hush-common.namespace" . }}
+            - name: HELM_CHART_VERSION
+              value: {{ .Chart.Version | quote }}
+            - name: MUFASA_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      volumes:
+        - name: vector-socket-dir
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: spire-server-socket-dir
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: spire-agent-socket-dir
+          hostPath:
+            path: {{ .Values.spireAgent.hostDir }}
+            type: DirectoryOrCreate
+  volumeClaimTemplates:
+    - metadata:
+        name: data-volume
+      spec:
+        {{- with .Values.manager.dataVolumeClaim.selector }}
+        selector: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.manager.dataVolumeClaim.accessModes }}
+        accessModes: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.manager.dataVolumeClaim.size }}
+        {{- with .Values.manager.dataVolumeClaim.storageClassName }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        {{- with .Values.manager.dataVolumeClaim.volumeName }}
+        volumeName: {{ . | quote }}
+        {{- end }}

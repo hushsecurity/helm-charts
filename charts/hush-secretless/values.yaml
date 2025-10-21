@@ -1,0 +1,327 @@
+# Default values for hush-secretless.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This is to override the chart name.
+nameOverride: ""
+
+# This is to override the chart fullname.
+fullnameOverride: ""
+
+# Override the namespace used for all objects.
+# If not specified '.Release.Namespace' is used.
+namespaceOverride: ""
+
+# Labels applied to all resources.
+# For more information see
+# https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+commonLabels: {}
+
+# Mode of event logging:
+# - "yes"       - log everything (may be high volume)
+# - "no"        - log nothing
+# - "heartbeat" - log heartbeat events only (low volume)
+eventReportingConsole: "heartbeat"
+
+# The cluster domain.
+clusterDomain: cluster.local
+
+# Hush deployment configuration
+hushDeployment:
+  # The deployment token as received from API/UI.
+  #
+  # When 'hushDeployment.secretKeyRef.{name,tokenKey}' are defined this value is ignored.
+  # Otherwise this value is required.
+  token: ""
+
+  # The deployment password as received from API/UI.
+  #
+  # When 'hushDeployment.secretKeyRef.{name,key}' are defined this value is ignored.
+  # Otherwise this value is required.
+  password: ""
+
+  # A reference to an existing Secret with deployment password and token.
+  #
+  # The secret must be defined in the same namespace where the chart is installed.
+  #
+  # If deployment token is stored this way updating its value in the Secret
+  # must be followed by chart recompilation (helm upgrade/template) or
+  # fresh installation (helm install).
+  secretKeyRef:
+    # Secret name
+    name: ""
+    # Password secret key
+    key: ""
+    # Token secret key
+    tokenKey: ""
+
+# Values related to container images
+image:
+  # Image pull token contains registry information and credentials
+  pullToken: ""
+
+  # Container registry to pull images from
+  #
+  # This value is ignored when 'image.pullToken' is defined.
+  registry: hushsecurity.azurecr.io
+
+  # Overrides the image tag for secretless* images.
+  managerTag: "v0"
+
+  # Image repository for Secretless Manager container
+  managerRepository: secretless-manager
+
+  # Image repository for Secretless Manager Vector container
+  managerVectorRepository: secretless-manager-vector
+
+  # Image repository for Secretless Spire Server container
+  spireServerRepository: secretless-spire-server
+
+  # Image repository for Secretless Spire Agent container
+  spireAgentRepository: secretless-spire-agent
+
+  # Image repository for Admission Controller container
+  admissionControllerRepository: secretless-admission-controller
+
+  # Image repository for Secretless Injector container
+  injectorRepository: secretless-injector
+
+  # A list of pre-created image pull secrets of the form:
+  #
+  # pullSecretList:
+  #   - name: "<secret-name-here>"
+  #
+  # Secrets must be pre-created in the same namespace where the chart is installed.
+  #
+  # When this list is empty 'image.pullSecret' can be used to create a secret
+  # automatically.
+  #
+  # More information can be found here:
+  # https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  pullSecretList: []
+
+  # Creates a Secret for pulling images
+  #
+  # When 'image.pullToken' is defined the credentials for the Secret are taken
+  # from there. Otherwise both 'username' and 'password' must be defined.
+  #
+  # When 'image.pullSecretList' is non-empty the created secret is not used.
+  pullSecret:
+    # Custom pull secret name.
+    # When not defined chart's full name is used with '-imagepullsecret' suffix.
+    name: ""
+
+    # Pull secret username
+    #
+    # This value is ignored when 'image.pullToken' is defined.
+    username: ""
+
+    # Pull secret password
+    #
+    # This value is ignored when 'image.pullToken' is defined.
+    password: ""
+
+  # The pull policy for images.
+  pullPolicy: Always
+
+# Secret store configuration
+secretStore:
+  # The secret store kind
+  # Allowed values are:
+  # - awssm: AWS Secrets Manager
+  kind: ""
+
+  # A prefix used to distinguish secrets created by hush-secretless platform
+  prefix: "hush"
+
+  # AWS secret store configuration
+  aws:
+    # AWS authentication method
+    access:
+      # AWS IAM role ARN to configure with irsa annotations
+      # For more information see:
+      # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+      irsa: ""
+
+      # AWS access key (not recommended in production environments; used for testing)
+      access_key:
+        # AWS_SECRET_ACCESS_KEY value
+        secret_access_key: ""
+        # AWS_ACCESS_KEY_ID value
+        access_key_id: ""
+        # AWS_SESSION_TOKEN value (for temporary credentials)
+        session_token: ""
+    # AWS region name, e.g. "us-east-1"
+    region: ""
+
+# Values for Secretless Manager
+manager:
+  # Number of manager replicas
+  replicas: 2
+
+  # Priority class
+  priorityClassName: system-cluster-critical
+
+  # Custom node selector
+  nodeSelector: {}
+
+  # Termination grace period
+  terminationGracePeriodSeconds: 30
+
+  # Additional annotations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  annotations: {}
+
+  # Node affinity.
+  # Choose the node types by OS and Arch.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                  - linux
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - amd64
+                  - arm64
+
+  # A list of tolerations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: []
+
+  # Data volume claim configuration
+  dataVolumeClaim:
+    # Size of the volume claim
+    size: 8Gi
+
+    # Access modes for the volume claim
+    accessModes:
+      - ReadWriteOnce
+
+    # Storage class name
+    #
+    # When not specified the default storage class is used.
+    storageClassName: ""
+
+    # A label query over volumes to consider for binding.
+    #
+    # Example:
+    #
+    # matchLabels:
+    #   name: my-volume
+    #
+    # For more information see
+    # https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/persistent-volume-claim-v1/#PersistentVolumeClaimSpec
+    selector: {}
+
+    # The binding reference to the PersistentVolume backing PV claim.
+    volumeName: ""
+
+  # Default resource requests/limits for secretless-manager
+  resources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
+
+  # Default resource requests/limits for spire-server
+  spireServerResources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
+
+  # Default resource requests/limits for manager-vector
+  vectorResources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
+
+# Values for Spire Agent DaemonSet
+spireAgent:
+  # Host directory for Spire Agent socket
+  hostDir: "/var/lib/hush-security/secretless-spire-agent"
+
+  # Skip kubelet certificate verification
+  skipKubeletVerification: true
+
+  # Host directory where kubelet certificate is located
+  kubeletCertDir: "/var/lib/kubelet/pki"
+
+  # Name of the kubelet certificate file within 'kubeletCertDir'
+  # Common values:
+  # AWS EKS  = kubelet-server-current.pem
+  # minikube = kubelet.crt
+  kubeletCertFile: "kubelet-server-current.pem"
+
+  # Additional annotations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  annotations: {}
+
+  # Priority class
+  priorityClassName: system-node-critical
+
+  # Custom node selector
+  nodeSelector: {}
+
+  # Termination grace period
+  terminationGracePeriodSeconds: 30
+
+  # Node affinity.
+  # Choose the node types by OS and Arch.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                  - linux
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - amd64
+                  - arm64
+
+  # A list of tolerations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: []
+
+  # Default resource requests/limits for spire-agent
+  resources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
+
+# Values for Admission Controller
+admissionController:
+  # Mutating Webhook timeout in seconds
+  mutatingWebhookTimeout: 20
+
+  # Default resource requests/limits for Admission Controller
+  resources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"

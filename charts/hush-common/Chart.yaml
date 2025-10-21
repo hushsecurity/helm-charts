@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hush-common
+description: A library of reusable Helm components.
+type: library
+version: 0.1.0
+home: https://hush.security
