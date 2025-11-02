@@ -135,6 +135,9 @@ daemonSet:
   #           Useful when specific functionality subset is required.
   enabled: true
 
+  # Disable probing of Java applications
+  disableJavaProbing: false
+
   # Workload sampling parameters.
   #
   # Set to override the defaults (default values specified below):
