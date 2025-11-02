@@ -129,6 +129,10 @@ spec:
               value: {{ .timeThreshold | quote}}
               {{- end }}
             {{- end }}
+            {{- with (and .Values.daemonSet .Values.daemonSet.disableJavaProbing) }}
+            - name: SNOOPY_DISABLE_JAVA_PROBING
+              value: "1"
+            {{- end }}
         - name: hush-sensor-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
