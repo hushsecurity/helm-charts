@@ -54,7 +54,7 @@ CONNECTOR_SUPPORTED_VERSIONS = [
 ]
 
 DUMMY_DEPLOYMENT_TOKEN = "d1:zone:realm:org-id:deployment-id"
-KUBE_MINORS = [28, 29, 30, 31]
+KUBE_MINORS = [28, 29, 30, 31, 32, 33, 34]
 KUBE_VERSION_VALUES = [f"1.{m}.0" for m in KUBE_MINORS] + ["1.29.10-eks-7f9249a"]
 HUSH_SENSOR_VALUES = [
     {
