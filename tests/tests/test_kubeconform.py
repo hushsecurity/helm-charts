@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 TOP_DIR = os.environ["TOP_DIR"]
 CHARTS_DIR = os.path.join(TOP_DIR, "charts")
-CHARTS = os.listdir(CHARTS_DIR)
+CHARTS = [name for name in os.listdir(CHARTS_DIR) if name != "hush-common"]
 
 SENSOR_MSV = "v0.25.0"
 CONNECTOR_MSV = "v0.5.0"
