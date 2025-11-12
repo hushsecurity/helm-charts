@@ -8,7 +8,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- add support for `sentry` `k8s` integration configuration. K8s integration is enabled by default. To disable it set `sentry.integrations.k8s.enabled=false`
+- add support for `sentry` `k8s` integration configuration. K8s integration is enabled
+  by default. To disable it set `sentry.integrations.k8s.enabled=false`
 
 ## hush-sensor 0.22.0 - 2025-09-14
 
