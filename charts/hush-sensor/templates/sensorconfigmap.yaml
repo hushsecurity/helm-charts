@@ -9,6 +9,9 @@ data:
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
     report_tls: {{ .Values.sensorConfigMap.report_tls }}
     self_k8s_namespace: {{ include "hush-sensor.namespace" . | quote }}
+    {{- with (and .Values.daemonSet .Values.daemonSet.disableJavaProbing) }}
+    disable_java_probing: true
+    {{- end }}
     {{- with (include "hush-sensor.criSocketPath" .) }}
     cri_socket_path: {{ . | quote }}
     {{- end }}
