@@ -9,6 +9,7 @@ metadata:
 spec:
   selector:
     matchLabels: {{- include "hush-sensor.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: vermon
   {{- with .Values.vermon.strategy }}
   strategy: {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -16,6 +17,7 @@ spec:
   template:
     metadata:
       labels: {{- include "hush-sensor.labels" . | nindent 8 }}
+        app.kubernetes.io/component: vermon
       {{ with .Values.vermon.annotations -}}
       annotations: {{- . | nindent 8 }}
       {{- end }}
