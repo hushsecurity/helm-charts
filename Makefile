@@ -12,7 +12,7 @@ lint: ct-lint-all
 
 .PHONY: ct-lint-all
 ct-lint-all:
-	ct lint --all --validate-maintainers=false
+	ct lint --all --validate-maintainers=false --skip-helm-dependencies
 
 .PHONY: tests
 tests:
