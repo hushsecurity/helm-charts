@@ -10,7 +10,7 @@ lint: ct-lint-all
 	$(MAKE) -C tests lint
 	$(MAKE) -C cli lint
 
-.PHONY: lint-all
+.PHONY: ct-lint-all
 ct-lint-all:
 	ct lint --all --validate-maintainers=false
 
