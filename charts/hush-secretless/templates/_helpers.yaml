@@ -1,0 +1,37 @@
+{{/*
+Create a default fully qualified app name for Secretless Manager.
+*/}}
+{{- define "hush-secretless.managerFullName" -}}
+{{- printf "%s-manager" (include "hush-common.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
+Create a default name for the common ClusterRole.
+*/}}
+{{- define "hush-secretless.clusterRoleFullName" -}}
+{{- printf "%s-cluster-role" (include "hush-common.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
+Image path for Secretless Manager container.
+*/}}
+{{- define "hush-secretless.managerImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.managerRepository
+    "tag" .Values.image.managerTag
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Image path for Secretless Manager Vector container.
+*/}}
+{{- define "hush-secretless.managerVectorImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.managerVectorRepository
+    "tag" .Values.image.managerTag
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
