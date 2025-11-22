@@ -118,6 +118,14 @@ image:
   # The pull policy for images.
   pullPolicy: Always
 
+# Secret storage configuration
+secretStore:
+  # A prefix used to distinguish secrets created by hush-secretless platform
+  prefix: "hush"
+
+  # The secret store kind
+  kind: awssm
+
 # Values for Secretless Manager
 manager:
   # Number of manager replicas
@@ -186,6 +194,15 @@ manager:
 
     # The binding reference to the PersistentVolume backing PV claim.
     volumeName: ""
+
+  # Default resource requests/limits for secretless-manager
+  resources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
 
   # Default resource requests/limits for spire-server
   spireServerResources:

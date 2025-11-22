@@ -89,10 +89,10 @@ Image path for Secretless Spire Agent container.
 {{- end }}
 
 {{/*
-Manager Persistent Volume mount path
+Secretless Manager Persistent Volume mount path
 */}}
 {{- define "hush-secretless.managerVolumeMountPath" -}}
-/mnt/hush
+/mnt/data
 {{- end }}
 
 {{/*
@@ -117,8 +117,40 @@ Spire Server socket dir path
 {{- end }}
 
 {{/*
-Manager Service FQDN
+Secretless Manager Service FQDN
 */}}
 {{- define "hush-secretless.managerServiceFqdn" -}}
 {{ printf "%s.%s.svc.%s" (include "hush-secretless.managerFullName" .) (include "hush-common.namespace" .) .Values.clusterDomain }}
+{{- end }}
+
+{{/*
+Secretless Manager data directory path
+*/}}
+{{- define "hush-secretless.managerDataDirPath" -}}
+{{- printf "%s/hush/secretless-manager" (include "hush-secretless.managerVolumeMountPath" .) -}}
+{{- end }}
+
+{{/*
+Policy DB file path
+*/}}
+{{- define "hush-secretless.policyDbFilePath" -}}
+{{- printf "%s/policydb.sqlite3" (include "hush-secretless.managerDataDirPath" .) -}}
+{{- end }}
+
+{{/*
+Key DB file path
+*/}}
+{{- define "hush-secretless.keyDbFilePath" -}}
+{{- printf "%s/keydb.sqlite3" (include "hush-secretless.managerDataDirPath" .) -}}
+{{- end }}
+
+{{/*
+Silo namespace prefix
+*/}}
+{{- define "hush-secretless.siloNamespacePrefix" -}}
+{{- $prefix := and .Values.secretStore .Values.secretStore.prefix -}}
+{{- if not (regexMatch "^[a-zA-Z0-9]+$" $prefix) -}}
+    {{- fail "'secretStore.prefix' is invalid" -}}
+{{- end -}}
+{{ $prefix }}
 {{- end }}

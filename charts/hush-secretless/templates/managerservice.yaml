@@ -17,4 +17,4 @@ spec:
       port: 8781
     - name: rest
       protocol: TCP
-      port: 8443
+      port: 8743
