@@ -1,6 +1,6 @@
 TOP_DIR=$(shell git rev-parse --show-toplevel)
 RELEASE=$(shell git describe --always --first-parent --dirty --exclude="*" --abbrev=10)
-CHART?=must-specify-chart
+CHART?=
 
 .PHONY: default
 default: lint
