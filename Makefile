@@ -1,18 +1,23 @@
 TOP_DIR=$(shell git rev-parse --show-toplevel)
 RELEASE=$(shell git describe --always --first-parent --dirty --exclude="*" --abbrev=10)
-CHART?=must-specify-chart
+CHART?=
+
+__CT_ARGS:=--all
+ifneq ($(CHART),)
+__CT_ARGS:=--charts=./charts/$(CHART)
+endif
 
 .PHONY: default
 default: lint
 
 .PHONY: lint
-lint: ct-lint-all
+lint: ct-lint
 	$(MAKE) -C tests lint
 	$(MAKE) -C cli lint
 
-.PHONY: ct-lint-all
-ct-lint-all:
-	ct lint --all --validate-maintainers=false --skip-helm-dependencies
+.PHONY: ct-lint
+ct-lint:
+	ct lint --validate-maintainers=false --skip-helm-dependencies $(__CT_ARGS)
 
 .PHONY: tests
 tests:
