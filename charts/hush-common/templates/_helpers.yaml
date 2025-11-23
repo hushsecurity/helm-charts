@@ -1,0 +1,304 @@
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "hush-common.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Build chart full name
+*/}}
+{{- define "hush-common.buildChartFullName" -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name }}
+    {{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+    {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this
+(by the DNS naming spec). If release name contains chart name it will be used as a
+full name.
+*/}}
+{{- define "hush-common.fullName" -}}
+{{- if .Values.fullnameOverride }}
+    {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+    {{- include "hush-common.buildChartFullName" . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "hush-common.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version
+    | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Calculate the namespace to use.
+*/}}
+{{- define "hush-common.namespace" -}}
+{{- default .Release.Namespace .Values.namespaceOverride }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "hush-common.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "hush-common.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "hush-common.labels" -}}
+helm.sh/chart: {{ include "hush-common.chart" . }}
+{{ include "hush-common.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.commonLabels -}}
+    {{- toYaml . | nindent 0 }}
+{{- end }}
+{{- end }}
+
+{{/*
+b64dec with error check
+*/}}
+{{- define "hush-common.b64decode" -}}
+{{- $decoded := b64dec .value -}}
+{{- if contains "illegal base64" $decoded -}}
+    {{- fail (printf "failed to base64 decode %s: %s" .name $decoded) -}}
+{{- end -}}
+{{- printf "%s" $decoded -}}
+{{- end }}
+
+{{/*
+Deployment K8S Secret name
+*/}}
+{{- define "hush-common.deploymentKubeSecretName" -}}
+{{- printf "%s-deploymentsecret" (include "hush-common.fullName" .) }}
+{{- end }}
+
+{{/*
+Verify hushDeployment.token was defined
+*/}}
+{{- define "hush-common.getDeploymentTokenValue" -}}
+{{- $token := and .Values.hushDeployment .Values.hushDeployment.token -}}
+{{- if not $token -}}
+    {{- fail "'hushDeployment.token' is undefined" -}}
+{{- end -}}
+{{- printf "%s" $token -}}
+{{- end }}
+
+{{/*
+Verify hushDeployment.password was defined
+*/}}
+{{- define "hush-common.getDeploymentPasswordValue" -}}
+{{- $password := and .Values.hushDeployment .Values.hushDeployment.password -}}
+{{- if not $password -}}
+    {{- fail "'hushDeployment.password' is undefined" -}}
+{{- end -}}
+{{- printf "%s" $password -}}
+{{- end }}
+
+{{/*
+Should we create the deployment token K8S Secret?
+*/}}
+{{- define "hush-common.shouldCreateDeploymentTokenKubeSecret" -}}
+{{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
+{{- $name := and $keyRef $keyRef.name -}}
+{{- $tokenKey := and $keyRef $keyRef.tokenKey -}}
+{{- if not (and $name $tokenKey) -}}
+true
+{{- end }}
+{{- end }}
+
+{{/*
+Should we create the deployment password K8S Secret?
+*/}}
+{{- define "hush-common.shouldCreateDeploymentPasswordKubeSecret" -}}
+{{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
+{{- $name := and $keyRef $keyRef.name -}}
+{{- $key := and $keyRef $keyRef.key -}}
+{{- if not (and $name $key) -}}
+true
+{{- end }}
+{{- end }}
+
+{{/*
+Should we create deployment K8S Secret?
+*/}}
+{{- define "hush-common.shouldCreateDeploymentKubeSecret" -}}
+{{- if or
+    (include "hush-common.shouldCreateDeploymentTokenKubeSecret" .)
+    (include "hush-common.shouldCreateDeploymentPasswordKubeSecret" .) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Effective deployment token secret ref
+*/}}
+{{- define "hush-common.effectiveDeploymentTokenKubeSecretRef" -}}
+{{- if (include "hush-common.shouldCreateDeploymentTokenKubeSecret" .) -}}
+    {{- dict
+        "name" (include "hush-common.deploymentKubeSecretName" .)
+        "key" "deployment-token"
+        | toYaml
+    -}}
+{{- else -}}
+    {{- dict
+        "name" .Values.hushDeployment.secretKeyRef.name
+        "key" .Values.hushDeployment.secretKeyRef.tokenKey
+        | toYaml
+    -}}
+{{- end }}
+{{- end }}
+
+{{/*
+Effective deployment password secret ref
+*/}}
+{{- define "hush-common.effectiveDeploymentPasswordKubeSecretRef" -}}
+{{- if (include "hush-common.shouldCreateDeploymentKubeSecret" .) -}}
+    {{- dict
+        "name" (include "hush-common.deploymentKubeSecretName" .)
+        "key" "deployment-password"
+        | toYaml
+    -}}
+{{- else -}}
+    {{- dict
+        "name" .Values.hushDeployment.secretKeyRef.name
+        "key" .Values.hushDeployment.secretKeyRef.key
+        | toYaml
+    -}}
+{{- end }}
+{{- end }}
+
+
+{{/*
+Build image path from components
+*/}}
+{{- define "hush-common.buildImagePath" -}}
+{{- if .registry -}}
+    {{- printf "%s/%s:%s" .registry .repository .tag -}}
+{{- else }}
+    {{- printf "%s:%s" .repository .tag -}}
+{{- end }}
+{{- end }}
+
+{{/*
+Parse Hush image.pullToken
+*/}}
+{{- define "hush-common.parsePullToken" -}}
+{{- $pullToken := and .Values.image .Values.image.pullToken -}}
+{{- if $pullToken -}}
+    {{- $ctx := dict "name" "image.pullToken" "value" $pullToken -}}
+    {{- $token := (include "hush-common.b64decode" $ctx) -}}
+    {{- $version := splitn ":" 2 $token -}}
+    {{- if ne $version._0 "p1" -}}
+        {{- fail (printf "image.pullToken version '%s' isn't supported" $version._0) -}}
+    {{- end -}}
+    {{- $registry := splitn ":" 2 $version._1 -}}
+    {{- if not $registry._0 -}}
+        {{- fail "invalid image.pullToken: registry is empty" -}}
+    {{- end -}}
+    {{- $username := splitn ":" 2 $registry._1 -}}
+    {{- if not $username._0 -}}
+        {{- fail "invalid image.pullToken: username is empty" -}}
+    {{- end -}}
+    {{- $password := splitn ":" 2 $username._1 -}}
+    {{- if not $password._0 -}}
+        {{- fail "invalid image.pullToken: password is empty" -}}
+    {{- end -}}
+    {{- dict
+        "registry" $registry._0
+        "username" $username._0
+        "password" $password._0
+        | toYaml
+    -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Get image registry
+*/}}
+{{- define "hush-common.imageRegistry" -}}
+{{- $token := (include "hush-common.parsePullToken" . | fromYaml) -}}
+{{- $registry := and .Values.image .Values.image.registry -}}
+{{- default $registry (get $token "registry") -}}
+{{- end }}
+
+{{/*
+Get image.pullSecret.username
+*/}}
+{{- define "hush-common.kubeImagePullSecretUsername" -}}
+{{- $token := (include "hush-common.parsePullToken" . | fromYaml) -}}
+{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
+{{- $username := and $hasPullSecret .Values.image.pullSecret.username -}}
+{{- default $username (get $token "username") -}}
+{{- end }}
+
+{{/*
+Get image.pullSecret.password
+*/}}
+{{- define "hush-common.kubeImagePullSecretPassword" -}}
+{{- $token := (include "hush-common.parsePullToken" . | fromYaml) -}}
+{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
+{{- $password := and $hasPullSecret .Values.image.pullSecret.password -}}
+{{- default $password (get $token "password") -}}
+{{- end }}
+
+{{/*
+Should we create the K8S image pull secret?
+*/}}
+{{- define "hush-common.shouldCreateKubeImagePullSecret" -}}
+{{- $username := (include "hush-common.kubeImagePullSecretUsername" .) -}}
+{{- $password := (include "hush-common.kubeImagePullSecretPassword" .) -}}
+{{- if and $username $password -}}
+true
+{{- end }}
+{{- end }}
+
+{{/*
+K8S image pull secret name
+*/}}
+{{- define "hush-common.kubeImagePullSecretName" -}}
+{{- $defaultPullSecretName :=
+    (printf "%s-%s" (include "hush-common.fullName" .) "imagepullsecret") }}
+{{- default $defaultPullSecretName .Values.image.pullSecret.name }}
+{{- end }}
+
+{{/*
+The data to put in K8S image pull Secret
+*/}}
+{{- define "hush-common.kubeImagePullSecretData" -}}
+{{- $msg := "couldn't find image registry definition. 'image.registry' or 'image.pullToken' must be defined." -}}
+{{- $registry := required $msg (include "hush-common.imageRegistry" .) -}}
+{{- $username := (include "hush-common.kubeImagePullSecretUsername" .) -}}
+{{- $password := (include "hush-common.kubeImagePullSecretPassword" .) -}}
+{{- $userPass := printf "%s:%s" $username $password -}}
+{{- $value := printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}"
+    $registry ($userPass | b64enc) -}}
+{{- $value | b64enc }}
+{{- end }}
+
+{{/*
+PullSecret effective list
+*/}}
+{{- define "hush-common.kubeImagePullSecretEffectiveList" -}}
+    {{- if and .Values.image .Values.image.pullSecretList -}}
+        {{- .Values.image.pullSecretList | toYaml }}
+    {{- else -}}
+        {{- if (include "hush-common.shouldCreateKubeImagePullSecret" .) -}}
+- name: {{ include "hush-common.kubeImagePullSecretName" . | quote }}
+        {{- end }}
+    {{- end }}
+{{- end }}
