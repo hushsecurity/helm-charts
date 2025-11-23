@@ -154,3 +154,31 @@ Silo namespace prefix
 {{- end -}}
 {{ $prefix }}
 {{- end }}
+
+{{/*
+Secret store AWS region
+*/}}
+{{- define "hush-secretless.siloAwsRegion" -}}
+{{- $region := and (and .Values.secretStore .Values.secretStore.aws) .Values.secretStore.aws.region -}}
+{{- if not $region -}}
+    {{- fail "'secretStore.aws.region' must be defined for AWS secret store" -}}
+{{- end -}}
+{{ $region }}
+{{- end }}
+
+{{/*
+Silo env vars
+*/}}
+{{- define "hush-secretless.siloEnvs" -}}
+{{- $siloKind := and .Values.secretStore .Values.secretStore.kind -}}
+{{- if eq $siloKind "awssm" -}}
+- name: SILO_KIND
+  value: "awssm"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-secretless.siloNamespacePrefix" . | quote }}
+- name: SILO_AWS_SM_REGION
+  value: {{ include "hush-secretless.siloAwsRegion" . | quote }}
+{{- else -}}
+    {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
+{{- end -}}
+{{- end }}

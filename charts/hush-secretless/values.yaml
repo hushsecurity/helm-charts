@@ -120,11 +120,18 @@ image:
 
 # Secret storage configuration
 secretStore:
+  # The secret store kind
+  # Allowed values are:
+  # - awssm: AWS Secrets Manager
+  kind: ""
+
   # A prefix used to distinguish secrets created by hush-secretless platform
   prefix: "hush"
 
-  # The secret store kind
-  kind: awssm
+  # AWS secret store configuration
+  aws:
+    # AWS region name, e.g. "us-east-1"
+    region: ""
 
 # Values for Secretless Manager
 manager:

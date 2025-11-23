@@ -127,12 +127,7 @@ spec:
               value: {{ include "hush-secretless.policyDbFilePath" . }}
             - name: MUFASA_KEY_DB_PATH
               value: {{ include "hush-secretless.keyDbFilePath" . }}
-            - name: SILO_NAMESPACE_PREFIX
-              value: {{ include "hush-secretless.siloNamespacePrefix" . }}
-            - name: SILO_KIND
-              value: {{ .Values.secretStore.kind }}
-            - name: SILO_AWS_SM_REGION
-              value: finish-this
+            {{- include "hush-secretless.siloEnvs" . | nindent 12 }}
         - name: vector
           image: {{ include "hush-secretless.managerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
