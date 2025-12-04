@@ -104,12 +104,25 @@ Image path for Admission Controller container.
 Image path for Injector container.
 */}}
 {{- define "hush-secretless.injectorImagePath" -}}
-{{- $ctx := dict
-    "registry" (include "hush-common.imageRegistry" .)
-    "repository" .Values.image.injectorRepository
-    "tag" .Values.image.managerTag
--}}
-{{- include "hush-common.buildImagePath" $ctx -}}
+{{- $base := printf "%s/%s" .Values.image.anonymousRegistry .Values.image.injectorRepository -}}
+{{- if and .Values.image .Values.image.injectorTag -}}
+  {{- printf "%s:%s" $base .Values.image.injectorTag -}}
+{{- else -}}
+  {{ $base }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Image pull policy for the injector image.
+*/}}
+{{- define "hush-secretless.injectorImagePullPolicy" -}}
+{{- if and .Values.image .Values.image.injectorPullPolicy -}}
+  {{ .Values.image.injectorPullPolicy }}
+{{- else if not (and .Values.image .Values.image.injectorTag) -}}
+  {{- printf "IfNotPresent" -}}
+{{- else -}}
+  {{- printf "Always" -}}
+{{- end -}}
 {{- end }}
 
 {{/*
