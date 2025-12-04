@@ -65,8 +65,16 @@ image:
   # This value is ignored when 'image.pullToken' is defined.
   registry: hushsecurity.azurecr.io
 
+  # Container registry with anonymous read access
+  anonymousRegistry: hushsecuritypub.azurecr.io
+
   # Overrides the image tag for secretless* images.
   managerTag: "v0"
+
+  # Custom tag for Secretless Injector image
+  #
+  # When not defined the runtime version of admission controller is used.
+  injectorTag: ""
 
   # Image repository for Secretless Manager container
   managerRepository: secretless-manager
@@ -123,6 +131,9 @@ image:
 
   # The pull policy for images.
   pullPolicy: Always
+
+  # Custom pull policy for secretless injector
+  injectorPullPolicy: ""
 
 # Secret store configuration
 secretStore:

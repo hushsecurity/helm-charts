@@ -163,7 +163,7 @@ spec:
             - name: MUFASA_REST_SERVER_ADDRESS
               value: {{ include "hush-secretless.managerRestAddress" . }}
             - name: MUFASA_IMAGE_PULL_POLICY
-              value: {{ .Values.image.pullPolicy }}
+              value: {{ include "hush-secretless.injectorImagePullPolicy" . }}
         - name: vector
           image: {{ include "hush-secretless.managerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
