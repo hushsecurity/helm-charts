@@ -146,7 +146,7 @@ spec:
               readOnly: true
           env:
             {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
-            - name: HUSH_WRAPPER_IMAGE
+            - name: MUFASA_INJECTOR_IMAGE
               value: {{ include "hush-secretless.injectorImagePath" . }}
             - name: ZAZU_CERT_FILE_PATH
               value: {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.crt
@@ -162,7 +162,7 @@ spec:
               value: {{ include "hush-secretless.spireAgentSocketPath" . }}
             - name: MUFASA_REST_SERVER_ADDRESS
               value: {{ include "hush-secretless.managerRestAddress" . }}
-            - name: MUFASA_IMAGE_PULL_POLICY
+            - name: MUFASA_INJECTOR_IMAGE_PULL_POLICY
               value: {{ include "hush-secretless.injectorImagePullPolicy" . }}
         - name: vector
           image: {{ include "hush-secretless.managerVectorImagePath" . }}
