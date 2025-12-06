@@ -1,0 +1,12 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+secretStore:
+  kind: "awssm"
+  aws:
+    region: "eu-central-1"
+
+manager:
+  kind: deployment
