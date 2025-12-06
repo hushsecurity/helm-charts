@@ -1,6 +1,11 @@
+{{- $kind := (include "hush-secretless.managerKind" .) -}}
 ---
 apiVersion: apps/v1
+{{- if eq $kind "statefulset" }}
 kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
 metadata:
   name: {{ include "hush-secretless.managerFullName" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
@@ -12,9 +17,14 @@ spec:
     matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: manager
   replicas: {{ .Values.manager.replicas }}
+  {{- if eq $kind "statefulset" }}
   serviceName: {{ include "hush-secretless.managerFullName" . }}
   updateStrategy:
     type: RollingUpdate
+  {{- else }}
+  strategy:
+    type: RollingUpdate
+  {{- end }}
   minReadySeconds: 10
 
   template:
@@ -214,6 +224,10 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
       volumes:
+        {{- if eq $kind "deployment" }}
+        - name: data-volume
+          emptyDir: {}
+        {{- end }}
         - name: vector-socket-dir
           emptyDir:
             sizeLimit: 1Mi
@@ -224,6 +238,7 @@ spec:
           hostPath:
             path: {{ .Values.spireAgent.hostDir }}
             type: DirectoryOrCreate
+  {{- if eq $kind "statefulset" }}
   volumeClaimTemplates:
     - metadata:
         name: data-volume
@@ -243,3 +258,4 @@ spec:
         {{- with .Values.manager.dataVolumeClaim.volumeName }}
         volumeName: {{ . | quote }}
         {{- end }}
+  {{- end }}
