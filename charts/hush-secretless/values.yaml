@@ -167,6 +167,20 @@ secretStore:
 
 # Values for Secretless Manager
 manager:
+  # Kind of workload to use for the secretless manager
+  #
+  # Allowed values:
+  # - deployment
+  # - statefulset
+  #
+  # Description:
+  # 'deployment' mode uses K8S Deployment workload type for the manager, and
+  # ephemeral 'emptyDir' storage for its data.
+  #
+  # 'statefulset' mode uses K8S StatefulSet workload type for the manager, and
+  # Persistent Volume Claim (PVC) for its data.
+  kind: statefulset
+
   # Number of manager replicas
   replicas: 2
 
@@ -206,7 +220,8 @@ manager:
   # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
   tolerations: []
 
-  # Data volume claim configuration
+  # Data volume claim configuration.
+  # This is ignored when 'manager.kind' is 'deployment'.
   dataVolumeClaim:
     # Size of the volume claim
     size: 8Gi

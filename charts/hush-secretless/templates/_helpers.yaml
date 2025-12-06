@@ -417,3 +417,15 @@ Secretless Manager envs
 - name: MUFASA_K8S_CONTAINER_NAME
   value: secretless-manager
 {{- end }}
+
+{{/*
+Secretless Manager Kind
+*/}}
+{{- define "hush-secretless.managerKind" -}}
+{{- $kind := and .Values.manager .Values.manager.kind -}}
+{{- $validKinds := list "deployment" "statefulset" -}}
+{{- if not (has $kind $validKinds) -}}
+    {{- fail (printf "'manager.kind' must be one of %v" $validKinds) -}}
+{{- end -}}
+{{- $kind -}}
+{{- end }}
