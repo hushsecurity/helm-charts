@@ -240,6 +240,13 @@ Key DB file path
 {{- end }}
 
 {{/*
+Acr DB file path
+*/}}
+{{- define "hush-secretless.acrDbFilePath" -}}
+{{- printf "%s/acrdb.sqlite3" (include "hush-secretless.managerDataDirPath" .) -}}
+{{- end }}
+
+{{/*
 Kubelet certificate directory mount path
 */}}
 {{- define "hush-secretless.kubeletCertDirMountPath" -}}
@@ -402,6 +409,8 @@ Secretless Manager envs
   value: {{ include "hush-secretless.policyDbFilePath" . }}
 - name: MUFASA_KEY_DB_PATH
   value: {{ include "hush-secretless.keyDbFilePath" . }}
+- name: MUFASA_ACR_DB_PATH
+  value: {{ include "hush-secretless.acrDbFilePath" . }}
 - name: MUFASA_SPIRESERVER_UDS_PATH
   value: {{ include "hush-secretless.spireServerSocketPath" . }}
 - name: SIMBA_SPIRE_AGENT_SOCKET_PATH
