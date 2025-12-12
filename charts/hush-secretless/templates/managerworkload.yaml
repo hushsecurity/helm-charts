@@ -119,12 +119,8 @@ spec:
           env:
             {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
             {{- include "hush-secretless.siloEnvs" . | nindent 12 }}
-            - name: AUTH_PLUGIN_ROOT_CA_CERT_KEY
-              value: "auth-plugin/cert"
-            - name: AUTH_PLUGIN_ROOT_CA_PRIVATE_KEY
-              value: "auth-plugin/key"
-            - name: AUTH_PLUGIN_NAMESPACE_PREFIX
-              value: {{ include "hush-secretless.siloNamespacePrefix" . | quote }}
+            - name: AUTH_PLUGIN_KEY_DB_PATH
+              value: {{ include "hush-secretless.keyDbFilePath" . }}
         - name: secretless-manager
           image: {{ include "hush-secretless.managerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
