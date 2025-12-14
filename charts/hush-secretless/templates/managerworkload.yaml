@@ -44,7 +44,7 @@ spec:
       {{- with .Values.manager.tolerations }}
       tolerations: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.manager.affinity }}
+      {{- with (include "hush-secretless.managerAffinity" . | fromYaml) }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
       dnsPolicy: ClusterFirst

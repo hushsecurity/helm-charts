@@ -438,3 +438,28 @@ Secretless Manager Kind
 {{- end -}}
 {{- $kind -}}
 {{- end }}
+
+{{/*
+Manager Pod Anti-Affinity rule
+*/}}
+{{- define "hush-secretless.managerAntiAffinity" -}}
+requiredDuringSchedulingIgnoredDuringExecution:
+  - topologyKey: kubernetes.io/hostname
+    labelSelector:
+      matchLabels: {{- include "hush-common.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: manager
+{{- end }}
+
+{{/*
+Manager affinity rules
+*/}}
+{{- define "hush-secretless.managerAffinity" -}}
+{{- $custom := (and .Values.manager .Values.manager.affinity) -}}
+{{- if not $custom -}}
+  {{- $custom = dict -}}
+{{- end -}}
+{{- if not (hasKey $custom "podAntiAffinity") -}}
+  {{- $_ := set $custom "podAntiAffinity" (include "hush-secretless.managerAntiAffinity" . | fromYaml) -}}
+{{- end -}}
+{{- $custom | toYaml -}}
+{{- end }}
