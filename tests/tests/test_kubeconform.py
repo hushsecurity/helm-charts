@@ -125,6 +125,12 @@ def values_tmp_file(chart: str, values: dict):
         secretStore.setdefault("kind", "awssm")
         aws = secretStore.setdefault("aws", {})
         aws.setdefault("region", "eu-west-777")
+        containerRegistry = values.setdefault("containerRegistry", {})
+        aws_cr = containerRegistry.setdefault("aws", {})
+        asc_cr_access = aws_cr.setdefault("access", {})
+        asc_cr_access.setdefault(
+            "irsa", "arn:aws:iam::000000000000:role/secretless-manager-iam-role"
+        )
     with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as tmp_file:
         dump(values, tmp_file, Dumper=Dumper)
         tmp_file.flush()

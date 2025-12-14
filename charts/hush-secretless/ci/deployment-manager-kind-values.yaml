@@ -8,5 +8,10 @@ secretStore:
   aws:
     region: "eu-central-1"
 
+containerRegistry:
+  aws:
+    access:
+      irsa: "arn:aws:iam::000000000000:role/secretless-manager-iam-role"
+
 manager:
   kind: deployment

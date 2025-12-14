@@ -368,8 +368,19 @@ zdquv84vGcviev0hoiJTwaY=
 Annotations for secretless manager
 */}}
 {{- define "hush-secretless.managerServiceAccountAnnotations" -}}
-{{- if .Values.secretStore.aws.access.irsa -}}
-eks.amazonaws.com/role-arn: {{ .Values.secretStore.aws.access.irsa | quote }}
+{{- $secretStoreIrsa := .Values.secretStore.aws.access.irsa -}}
+{{- $crIrsa := .Values.containerRegistry.aws.access.irsa -}}
+{{- if not $crIrsa -}}
+    {{- fail "'containerRegistry.aws.access.irsa' is required" -}}
+{{- end -}}
+{{- if and $secretStoreIrsa $crIrsa -}}
+    {{- if ne $secretStoreIrsa $crIrsa -}}
+        {{- fail "'secretStore.aws.access.irsa' and 'containerRegistry.aws.access.irsa' must be equal when both are defined" -}}
+    {{- end -}}
+{{- end -}}
+{{- $irsa := or $secretStoreIrsa $crIrsa -}}
+{{- if $irsa -}}
+eks.amazonaws.com/role-arn: {{ $irsa | quote }}
 {{- end }}
 {{- end }}
 

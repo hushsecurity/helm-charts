@@ -12,9 +12,3 @@ containerRegistry:
   aws:
     access:
       irsa: "arn:aws:iam::000000000000:role/secretless-manager-iam-role"
-
-image:
-  pullSecret:
-    name: "custom-pull-secret-name"
-    username: "custom-pull-secret-username"
-    password: "custom-pull-secret-password"
