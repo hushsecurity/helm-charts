@@ -55,7 +55,7 @@ hushDeployment:
     # Token secret key
     tokenKey: ""
 
-# Values related to container images
+# Values related to Hush Security container images
 image:
   # Image pull token contains registry information and credentials
   pullToken: ""
