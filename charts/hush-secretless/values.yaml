@@ -55,7 +55,7 @@ hushDeployment:
     # Token secret key
     tokenKey: ""
 
-# Values related to container images
+# Values related to Hush Security container images
 image:
   # Image pull token contains registry information and credentials
   pullToken: ""
@@ -150,6 +150,8 @@ secretStore:
     # AWS authentication method
     access:
       # AWS IAM role ARN to configure with irsa annotations
+      # This value must be equal to 'containerRegistry.aws.access.irsa' if both are defined.
+      #
       # For more information see:
       # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
       irsa: ""
@@ -164,6 +166,22 @@ secretStore:
         session_token: ""
     # AWS region name, e.g. "us-east-1"
     region: ""
+
+# Container registry configuration.
+# This affects the way Hush Secretless platform accesses workload container images'
+# manifest to update injector command accordingly
+containerRegistry:
+  aws:
+    access:
+      # AWS IAM role ARN to configure with irsa annotations
+      # This value must be equal to 'secretStore.aws.access.irsa' if both are defined.
+      #
+      # The role should give read access to ECR repositories from which workload images
+      # are pulled.
+      #
+      # For more information see:
+      # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+      irsa: ""
 
 # Values for Secretless Manager
 manager:
