@@ -317,7 +317,7 @@ Parse AWS Access Token parameters
 Secret store AWS access token
 */}}
 {{- define "hush-secretless.siloAwsAccessToken" -}}
-{{- with (dig "aws" "access" "access_key" "" .Values.secretStore) -}}
+{{- with (dig "aws" "access_key" "" .Values.secretStore) -}}
     {{- include "hush-secretless.awsAccessToken" . -}}
 {{- end -}}
 {{- end }}
@@ -368,14 +368,14 @@ zdquv84vGcviev0hoiJTwaY=
 Annotations for secretless manager
 */}}
 {{- define "hush-secretless.managerServiceAccountAnnotations" -}}
-{{- $secretStoreIrsa := .Values.secretStore.aws.access.irsa -}}
-{{- $crIrsa := .Values.containerRegistry.aws.access.irsa -}}
+{{- $secretStoreIrsa := .Values.secretStore.aws.irsa -}}
+{{- $crIrsa := .Values.containerRegistry.aws.irsa -}}
 {{- if not $crIrsa -}}
-    {{- fail "'containerRegistry.aws.access.irsa' is required" -}}
+    {{- fail "'containerRegistry.aws.irsa' is required" -}}
 {{- end -}}
 {{- if and $secretStoreIrsa $crIrsa -}}
     {{- if ne $secretStoreIrsa $crIrsa -}}
-        {{- fail "'secretStore.aws.access.irsa' and 'containerRegistry.aws.access.irsa' must be equal when both are defined" -}}
+        {{- fail "'secretStore.aws.irsa' and 'containerRegistry.aws.irsa' must be equal when both are defined" -}}
     {{- end -}}
 {{- end -}}
 {{- $irsa := or $secretStoreIrsa $crIrsa -}}
