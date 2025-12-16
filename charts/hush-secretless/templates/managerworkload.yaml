@@ -170,6 +170,12 @@ spec:
               value: {{ include "hush-secretless.managerRestAddress" . }}
             - name: MUFASA_INJECTOR_IMAGE_PULL_POLICY
               value: {{ include "hush-secretless.injectorImagePullPolicy" . }}
+            {{- with .Values.containerRegistry.default }}
+            - name: ZAZU_DEFAULT_REGISTRY
+              value: {{ . | quote }}
+            {{- end }}
+            - name: ZAZU_MUTATION_TIMEOUT
+              value: {{ .Values.admissionController.mutatingWebhookTimeout | quote }}
         - name: vector
           image: {{ include "hush-secretless.managerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
