@@ -170,6 +170,10 @@ secretStore:
 # This affects the way Hush Secretless platform accesses workload container images'
 # manifest to update injector command accordingly
 containerRegistry:
+  # Default container registry to use for images without explicit registry.
+  # When empty 'docker.io' is used.
+  default: ""
+
   # AWS ECR configuration
   aws:
     # AWS IAM role ARN to configure with irsa annotations
@@ -358,7 +362,7 @@ spireAgent:
 # Values for Admission Controller
 admissionController:
   # Mutating Webhook timeout in seconds
-  mutatingWebhookTimeout: 20
+  mutatingWebhookTimeout: 30
 
   # Default resource requests/limits for Admission Controller
   resources:
