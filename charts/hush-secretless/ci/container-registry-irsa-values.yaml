@@ -10,5 +10,4 @@ secretStore:
 
 containerRegistry:
   aws:
-    access:
-      irsa: "arn:aws:iam::000000000000:role/secretless-manager-iam-role"
+    irsa: "arn:aws:iam::000000000000:role/secretless-manager-iam-role"
