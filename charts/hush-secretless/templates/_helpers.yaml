@@ -524,3 +524,14 @@ Manager affinity rules
 {{- end -}}
 {{- $custom | toYaml -}}
 {{- end }}
+
+{{/*
+List of image pull secrets to use
+*/}}
+{{- define "hush-secretless.kubeImagePullSecretEffectiveList" -}}
+{{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) -}}
+  {{- . -}}
+{{- else -}}
+- name: {{ .Values.image.sensorImagePullSecretName | quote }}
+{{- end }}
+{{- end }}

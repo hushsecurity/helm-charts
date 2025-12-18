@@ -132,6 +132,9 @@ image:
     # This value is ignored when 'image.pullToken' is defined.
     password: ""
 
+  # Name of image pull secret created by hush-sensor chart
+  sensorImagePullSecretName: hush-sensor-imagepullsecret
+
   # The pull policy for images.
   pullPolicy: Always
 

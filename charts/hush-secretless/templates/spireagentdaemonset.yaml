@@ -39,7 +39,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
-      {{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-secretless.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.spireAgent.terminationGracePeriodSeconds }}
