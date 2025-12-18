@@ -385,10 +385,60 @@ eks.amazonaws.com/role-arn: {{ $irsa | quote }}
 {{- end }}
 
 {{/*
+Which secret to use for deployment token?
+*/}}
+{{- define "hush-secretless.effectiveDeploymentTokenKubeSecretRef" -}}
+{{- if .Values.hushDeployment.token -}}
+    {{- dict
+        "name" (include "hush-common.deploymentKubeSecretName" .)
+        "key" "deployment-token"
+        | toYaml
+    -}}
+{{- else if and .Values.hushDeployment.secretKeyRef.name .Values.hushDeployment.secretKeyRef.tokenKey -}}
+    {{- dict
+        "name" .Values.hushDeployment.secretKeyRef.name
+        "key" .Values.hushDeployment.secretKeyRef.tokenKey
+        | toYaml
+    -}}
+{{- else -}}
+    {{- dict
+        "name" .Values.hushDeployment.sensorDeploymentSecretName
+        "key" "deployment-token"
+        | toYaml
+    -}}
+{{- end }}
+{{- end }}
+
+{{/*
+Which secret to use for deployment password?
+*/}}
+{{- define "hush-secretless.effectiveDeploymentPasswordKubeSecretRef" -}}
+{{- if .Values.hushDeployment.password -}}
+    {{- dict
+        "name" (include "hush-common.deploymentKubeSecretName" .)
+        "key" "deployment-password"
+        | toYaml
+    -}}
+{{- else if and .Values.hushDeployment.secretKeyRef.name .Values.hushDeployment.secretKeyRef.key -}}
+    {{- dict
+        "name" .Values.hushDeployment.secretKeyRef.name
+        "key" .Values.hushDeployment.secretKeyRef.key
+        | toYaml
+    -}}
+{{- else -}}
+    {{- dict
+        "name" .Values.hushDeployment.sensorDeploymentSecretName
+        "key" "deployment-password"
+        | toYaml
+    -}}
+{{- end }}
+{{- end }}
+
+{{/*
 Mandatory envs
 */}}
 {{- define "hush-secretless.mandatoryEnvs" -}}
-{{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
+{{- with (include "hush-secretless.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
 - name: DEPLOYMENT_TOKEN
   valueFrom:
     secretKeyRef:
@@ -408,7 +458,7 @@ Secretless Manager envs
 */}}
 {{- define "hush-secretless.managerEnvs" -}}
 {{ include "hush-secretless.mandatoryEnvs" . }}
-{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+{{- with (include "hush-secretless.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
 - name: DEPLOYMENT_PASSWORD
   valueFrom:
     secretKeyRef:

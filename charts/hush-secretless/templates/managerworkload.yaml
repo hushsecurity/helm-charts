@@ -190,7 +190,7 @@ spec:
               readOnly: true
           env:
             {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
-            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            {{- with (include "hush-secretless.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:

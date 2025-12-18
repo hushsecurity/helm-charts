@@ -29,15 +29,9 @@ clusterDomain: cluster.local
 # Hush deployment configuration
 hushDeployment:
   # The deployment token as received from API/UI.
-  #
-  # When 'hushDeployment.secretKeyRef.{name,tokenKey}' are defined this value is ignored.
-  # Otherwise this value is required.
   token: ""
 
   # The deployment password as received from API/UI.
-  #
-  # When 'hushDeployment.secretKeyRef.{name,key}' are defined this value is ignored.
-  # Otherwise this value is required.
   password: ""
 
   # A reference to an existing Secret with deployment password and token.
@@ -50,10 +44,19 @@ hushDeployment:
   secretKeyRef:
     # Secret name
     name: ""
+
     # Password secret key
+    #
+    # If 'hushDeployment.password' is defined this value is ignored.
     key: ""
+
     # Token secret key
+    #
+    # If 'hushDeployment.token' is defined this value is ignored.
     tokenKey: ""
+
+  # Name of K8S Secret created by hush-sensor deployment
+  sensorDeploymentSecretName: hush-sensor-deploymentsecret
 
 # Values related to Hush Security container images
 image:
