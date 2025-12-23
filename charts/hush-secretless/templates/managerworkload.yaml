@@ -49,7 +49,7 @@ spec:
       {{- end }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      {{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-secretless.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
@@ -189,22 +189,14 @@ spec:
               mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
               readOnly: true
           env:
-            {{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
-            - name: DEPLOYMENT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .name }}
-                  key: {{ .key }}
-            {{- end }}
-            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
+            {{- with (include "hush-secretless.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
-            - name: DEPLOYMENT_KIND
-              value: k8s
             - name: REPORT_SUBSYSTEM_NAME
               value: "mufasa"
             - name: REPORT_NODE_NAME
@@ -221,10 +213,6 @@ spec:
               value: {{ include "hush-common.namespace" . }}
             - name: HELM_CHART_VERSION
               value: {{ .Chart.Version | quote }}
-            - name: MUFASA_K8S_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
       volumes:
         {{- if eq $kind "deployment" }}
         - name: data-volume
