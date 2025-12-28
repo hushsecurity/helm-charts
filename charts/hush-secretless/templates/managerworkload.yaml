@@ -114,6 +114,8 @@ spec:
               mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
             - name: data-volume
               mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+            - name: spire-server-log-dir
+              mountPath: {{ include "hush-secretless.spireServerLogDirMountPath" . }}
           env:
             {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
             {{- include "hush-secretless.siloEnvs" . | nindent 12 }}
@@ -186,6 +188,8 @@ spec:
             - name: data-volume
               mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
               readOnly: true
+            - name: spire-server-log-dir
+              mountPath: {{ include "hush-secretless.spireServerLogDirMountPath" . }}
           env:
             {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
             {{- with (include "hush-secretless.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
@@ -226,6 +230,8 @@ spec:
           hostPath:
             path: {{ .Values.spireAgent.hostDir }}
             type: DirectoryOrCreate
+        - name: spire-server-log-dir
+          emptyDir: {}
   {{- if eq $kind "statefulset" }}
   volumeClaimTemplates:
     - metadata:
