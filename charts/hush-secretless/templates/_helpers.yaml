@@ -161,6 +161,13 @@ Spire Server socket path
 {{- end }}
 
 {{/*
+Spire Server log dir mount path
+*/}}
+{{- define "hush-secretless.spireServerLogDirMountPath" -}}
+/var/log/spire
+{{- end }}
+
+{{/*
 Spire Agent socket dir mount path
 */}}
 {{- define "hush-secretless.spireAgentSocketDirMountPath" -}}
