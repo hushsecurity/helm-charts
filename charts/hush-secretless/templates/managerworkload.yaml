@@ -110,8 +110,6 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: vector-socket-dir
-              mountPath: /tmp/vector
             - name: spire-server-socket-dir
               mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
             - name: data-volume
