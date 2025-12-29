@@ -71,6 +71,8 @@ spec:
               mkdir -p {{ include "hush-secretless.spireServerSocketDirPath" . }}
               chown -R 1000:1000 {{ include "hush-secretless.spireServerSocketDirPath" . }}
               mkdir -p {{ include "hush-secretless.managerDataDirPath" . }}
+              mkdir -p {{ include "hush-secretless.spireServerLogDirMountPath" . }}
+              chown 1000:1000 {{ include "hush-secretless.spireServerLogDirMountPath" . }}
               . /usr/local/bin/hdc.sh
               /mufasa init
           env:
