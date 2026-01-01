@@ -12,7 +12,7 @@ optional = true
 
 [tool.poetry.group.ci.dependencies]
 pylint = "^4.0.4"
-ruff = "^0.14.7"
+ruff = "^0.14.10"
 
 [build-system]
 requires = ["poetry-core"]
