@@ -354,7 +354,8 @@ spireAgent:
   # A list of tolerations.
   # For more information see
   # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-  tolerations: []
+  tolerations:
+    - operator: "Exists"
 
   # Default resource requests/limits for spire-agent
   resources:
