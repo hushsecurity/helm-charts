@@ -304,6 +304,28 @@ Secret store AWS region
 {{- end }}
 
 {{/*
+K8S Secrets Silo namespace to use
+*/}}
+{{- define "hush-secretless.kubeSiloNamespace" -}}
+{{- if .Values.secretStore.k8s.namespace -}}
+  {{- .Values.secretStore.k8s.namespace -}}
+{{- else -}}
+  {{- include "hush-common.namespace" . -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Is K8S Silo using self namespace to store secrets?
+*/}}
+{{- define "hush-secretless.kubeSiloUsesSelfNamespace" -}}
+{{- $namespace := include "hush-common.namespace" . -}}
+{{- $kubeSiloNamespace := .Values.secretStore.k8s.namespace -}}
+{{- if or (not $kubeSiloNamespace) (eq $namespace $kubeSiloNamespace) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Parse AWS Access Token parameters
 */}}
 {{- define "hush-secretless.awsAccessToken" -}}
@@ -351,6 +373,13 @@ Silo env vars
   value: {{ .session_token | quote }}
         {{- end }}
     {{- end }}
+{{- else if eq $siloKind "kubesecrets" -}}
+- name: SILO_KIND
+  value: "kubesecrets"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-secretless.siloNamespacePrefix" . | quote }}
+- name: SILO_K8S_NAMESPACE
+  value: {{ include "hush-secretless.kubeSiloNamespace" . | quote }}
 {{- else -}}
     {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
 {{- end -}}
