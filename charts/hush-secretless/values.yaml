@@ -350,6 +350,14 @@ spireAgent:
                 values:
                   - amd64
                   - arm64
+              - key: type
+                operator: NotIn
+                values:
+                  - virtual-kubelet
+              - key: eks.amazonaws.com/compute-type
+                operator: NotIn
+                values:
+                  - fargate
 
   # A list of tolerations.
   # For more information see
