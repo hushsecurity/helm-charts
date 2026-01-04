@@ -386,6 +386,9 @@ admissionController:
   # Mutating Webhook timeout in seconds
   mutatingWebhookTimeout: 30
 
+  # Enable hushinjector verbose mode
+  verboseInjector: false
+
   # Default resource requests/limits for Admission Controller
   resources:
     limits:
