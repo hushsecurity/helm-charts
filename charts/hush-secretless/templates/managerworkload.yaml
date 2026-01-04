@@ -178,6 +178,10 @@ spec:
             {{- end }}
             - name: ZAZU_MUTATION_TIMEOUT
               value: "{{ .Values.admissionController.mutatingWebhookTimeout }}s"
+            {{- if .Values.admissionController.verboseInjector }}
+            - name: ZAZU_VERBOSE_INJECTOR
+              value: "true"
+            {{- end }}
         - name: vector
           image: {{ include "hush-secretless.managerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
