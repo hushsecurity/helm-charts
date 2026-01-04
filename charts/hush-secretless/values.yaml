@@ -146,6 +146,7 @@ secretStore:
   # The secret store kind
   # Allowed values are:
   # - awssm: AWS Secrets Manager
+  # - kubesecrets: K8S Secrets
   kind: ""
 
   # A prefix used to distinguish secrets created by hush-secretless platform
@@ -171,6 +172,12 @@ secretStore:
 
     # AWS region name, e.g. "us-east-1"
     region: ""
+
+  # Kubernetes secret store configuration
+  k8s:
+    # K8S namespace to store secrets in
+    # If not specified, the namespace where the chart is installed is used.
+    namespace: ""
 
 # Container registry configuration.
 # This affects the way Hush Secretless platform accesses workload container images'
