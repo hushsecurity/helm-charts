@@ -384,6 +384,11 @@ spireAgent:
       cpu: "10m"
       memory: "64Mi"
 
+# Values for Spire Server
+spireServer:
+  # Listening port for Spire Server
+  port: 8781
+
 # Values for Admission Controller
 admissionController:
   # Mutating Webhook timeout in seconds

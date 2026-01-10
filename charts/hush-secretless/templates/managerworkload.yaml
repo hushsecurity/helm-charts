@@ -123,6 +123,8 @@ spec:
             {{- include "hush-secretless.siloEnvs" . | nindent 12 }}
             - name: AUTH_PLUGIN_KEY_DB_PATH
               value: {{ include "hush-secretless.keyDbFilePath" . }}
+            - name: MUFASA_SPIRE_SERVER_PORT
+              value: {{ .Values.spireServer.port | quote }}
         - name: secretless-manager
           image: {{ include "hush-secretless.managerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
