@@ -20,4 +20,4 @@ spec:
       port: 8743
     - name: admission
       protocol: TCP
-      port: 8443
+      port: {{ .Values.admissionController.port }}

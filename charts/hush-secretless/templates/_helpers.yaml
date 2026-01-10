@@ -399,6 +399,12 @@ zdquv84vGcviev0hoiJTwaY=
 -----END CERTIFICATE-----
 {{- end }}
 
+{{/*
+Which address the admission controller should bind to?
+*/}}
+{{- define "hush-secretless.admissionControllerBindAddress" -}}
+{{- printf ":%d" (int64 .Values.admissionController.port) -}}
+{{- end }}
 
 {{/*
 Annotations for secretless manager

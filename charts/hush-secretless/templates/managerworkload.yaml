@@ -182,6 +182,8 @@ spec:
             - name: ZAZU_VERBOSE_INJECTOR
               value: "true"
             {{- end }}
+            - name: ZAZU_BIND_ADDRESS
+              value: {{ include "hush-secretless.admissionControllerBindAddress" . | quote }}
         - name: vector
           image: {{ include "hush-secretless.managerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
