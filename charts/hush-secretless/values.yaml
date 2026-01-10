@@ -215,6 +215,9 @@ manager:
   # Persistent Volume Claim (PVC) for its data.
   kind: statefulset
 
+  # Listening port for REST API
+  port: 8743
+
   # Number of manager replicas
   replicas: 2
 

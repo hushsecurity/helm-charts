@@ -17,7 +17,7 @@ spec:
       port: 8781
     - name: rest
       protocol: TCP
-      port: 8743
+      port: {{ .Values.manager.port }}
     - name: admission
       protocol: TCP
       port: {{ .Values.admissionController.port }}
