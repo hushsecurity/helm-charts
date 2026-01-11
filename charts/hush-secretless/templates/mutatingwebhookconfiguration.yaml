@@ -18,7 +18,7 @@ webhooks:
         namespace: {{ include "hush-common.namespace" . }}
         name: {{ include "hush-secretless.managerFullName" . }}
         path: /
-        port: 8443
+        port: {{ .Values.admissionController.port }}
       caBundle: {{ (include "hush-secretless.admissionControllerRootCert" .) | b64enc }}
     rules:
       - apiGroups: [""]

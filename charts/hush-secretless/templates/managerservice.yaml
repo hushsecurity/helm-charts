@@ -14,10 +14,10 @@ spec:
   ports:
     - name: spire
       protocol: TCP
-      port: 8781
+      port: {{ .Values.spireServer.port }}
     - name: rest
       protocol: TCP
-      port: 8743
+      port: {{ .Values.manager.port }}
     - name: admission
       protocol: TCP
-      port: 8443
+      port: {{ .Values.admissionController.port }}

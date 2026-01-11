@@ -93,6 +93,8 @@ spec:
             {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
             - name: MUFASA_SPIRE_AGENT_SERVER_HOSTNAME
               value: {{ include "hush-secretless.managerServiceShortName" . }}
+            - name: MUFASA_SPIRE_AGENT_SERVER_PORT
+              value: {{ .Values.spireServer.port | quote }}
             - name: MUFASA_SPIRE_AGENT_K8S_KUBELET_CA_PATH
               value: {{ include "hush-secretless.kubeletCertFilePath" . }}
             - name: MUFASA_SPIRE_AGENT_SKIP_KUBELET_VERIFICATION

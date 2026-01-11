@@ -47,7 +47,8 @@ spec:
       {{- with (include "hush-secretless.managerAffinity" . | fromYaml) }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
-      dnsPolicy: ClusterFirst
+      hostNetwork: {{ include "hush-secretless.managerHostNetwork" . }}
+      dnsPolicy: {{ include "hush-secretless.managerDnsPolicy" . }}
       restartPolicy: Always
       {{- with (include "hush-secretless.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
@@ -123,6 +124,8 @@ spec:
             {{- include "hush-secretless.siloEnvs" . | nindent 12 }}
             - name: AUTH_PLUGIN_KEY_DB_PATH
               value: {{ include "hush-secretless.keyDbFilePath" . }}
+            - name: MUFASA_SPIRE_SERVER_PORT
+              value: {{ .Values.spireServer.port | quote }}
         - name: secretless-manager
           image: {{ include "hush-secretless.managerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -182,6 +185,10 @@ spec:
             - name: ZAZU_VERBOSE_INJECTOR
               value: "true"
             {{- end }}
+            - name: ZAZU_BIND_ADDRESS
+              value: {{ include "hush-secretless.admissionControllerBindAddress" . | quote }}
+            - name: ZAZU_AWS_ECR_CFG_MODE
+              value: {{ include "hush-secretless.admissionControllerAwcEcrCfgMode" . | quote }}
         - name: vector
           image: {{ include "hush-secretless.managerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}

@@ -215,6 +215,9 @@ manager:
   # Persistent Volume Claim (PVC) for its data.
   kind: statefulset
 
+  # Listening port for REST API
+  port: 8743
+
   # Number of manager replicas
   replicas: 2
 
@@ -381,10 +384,18 @@ spireAgent:
       cpu: "10m"
       memory: "64Mi"
 
+# Values for Spire Server
+spireServer:
+  # Listening port for Spire Server
+  port: 8781
+
 # Values for Admission Controller
 admissionController:
   # Mutating Webhook timeout in seconds
   mutatingWebhookTimeout: 30
+
+  # Listening port for Admission Controller webhook
+  port: 8443
 
   # Enable hushinjector verbose mode
   verboseInjector: false

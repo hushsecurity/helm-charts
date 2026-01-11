@@ -202,10 +202,17 @@ Secretless Manager Service FQDN
 {{- end }}
 
 {{/*
+Which address the manager REST API server should bind to?
+*/}}
+{{- define "hush-secretless.managerRestBindAddress" -}}
+{{- printf ":%d" (int64 .Values.manager.port) -}}
+{{- end }}
+
+{{/*
 Secretless Manager Rest Server address
 */}}
 {{- define "hush-secretless.managerRestAddress" -}}
-{{- printf "%s:8743" (include "hush-secretless.managerServiceShortName" .) -}}
+{{- printf "%s:%d" (include "hush-secretless.managerServiceShortName" .) (int64 .Values.manager.port) -}}
 {{- end }}
 
 {{/*
@@ -399,6 +406,24 @@ zdquv84vGcviev0hoiJTwaY=
 -----END CERTIFICATE-----
 {{- end }}
 
+{{/*
+Which address the admission controller should bind to?
+*/}}
+{{- define "hush-secretless.admissionControllerBindAddress" -}}
+{{- printf ":%d" (int64 .Values.admissionController.port) -}}
+{{- end }}
+
+{{/*
+Admission-controller mode of AWS Config for Container Registry access
+*/}}
+{{- define "hush-secretless.admissionControllerAwcEcrCfgMode" -}}
+{{- $crIrsa := .Values.containerRegistry.aws.irsa -}}
+{{- if $crIrsa -}}
+default
+{{- else -}}
+ec2role
+{{- end -}}
+{{- end }}
 
 {{/*
 Annotations for secretless manager
@@ -406,9 +431,6 @@ Annotations for secretless manager
 {{- define "hush-secretless.managerServiceAccountAnnotations" -}}
 {{- $secretStoreIrsa := .Values.secretStore.aws.irsa -}}
 {{- $crIrsa := .Values.containerRegistry.aws.irsa -}}
-{{- if not $crIrsa -}}
-    {{- fail "'containerRegistry.aws.irsa' is required" -}}
-{{- end -}}
 {{- if and $secretStoreIrsa $crIrsa -}}
     {{- if ne $secretStoreIrsa $crIrsa -}}
         {{- fail "'secretStore.aws.irsa' and 'containerRegistry.aws.irsa' must be equal when both are defined" -}}
@@ -510,6 +532,8 @@ Secretless Manager envs
   value: {{ include "hush-secretless.acrDbFilePath" . }}
 - name: MUFASA_SPIRESERVER_UDS_PATH
   value: {{ include "hush-secretless.spireServerSocketPath" . }}
+- name: SIMBA_BIND_ADDRESS
+  value: {{ include "hush-secretless.managerRestBindAddress" . | quote }}
 - name: SIMBA_SPIRE_AGENT_SOCKET_PATH
   value: {{ include "hush-secretless.spireAgentSocketPath" . }}
 - name: SIMBA_X509_CTX_WAIT_DURATION
@@ -559,6 +583,26 @@ Manager affinity rules
   {{- $_ := set $custom "podAntiAffinity" (include "hush-secretless.managerAntiAffinity" . | fromYaml) -}}
 {{- end -}}
 {{- $custom | toYaml -}}
+{{- end }}
+
+{{/*
+Should manager use host network?
+*/}}
+{{- define "hush-secretless.managerHostNetwork" -}}
+{{- $awsEcrCfgMode := include "hush-secretless.admissionControllerAwcEcrCfgMode" . -}}
+{{- printf "%t" (eq $awsEcrCfgMode "ec2role") -}}
+{{- end }}
+
+{{/*
+Manager DNS Policy
+*/}}
+{{- define "hush-secretless.managerDnsPolicy" -}}
+{{- $managerHostNetwork := include "hush-secretless.managerHostNetwork" . -}}
+{{- if eq $managerHostNetwork "true" -}}
+ClusterFirstWithHostNet
+{{- else -}}
+ClusterFirst
+{{- end -}}
 {{- end }}
 
 {{/*
