@@ -74,6 +74,21 @@ spec:
           {{- with and .Values.spireAgent .Values.spireAgent.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - /opt/spire/bin/spire-agent
+                - healthcheck
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            exec:
+              command:
+                - /opt/spire/bin/spire-agent
+                - healthcheck
+            failureThreshold: 12
+            periodSeconds: 10
           volumeMounts:
             - name: data-volume
               mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}

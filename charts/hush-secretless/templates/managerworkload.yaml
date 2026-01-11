@@ -112,6 +112,21 @@ spec:
           {{- with and .Values.manager .Values.manager.spireServerResources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - /opt/spire/bin/spire-server
+                - healthcheck
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            exec:
+              command:
+                - /opt/spire/bin/spire-server
+                - healthcheck
+            failureThreshold: 12
+            periodSeconds: 10
           volumeMounts:
             - name: spire-server-socket-dir
               mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
