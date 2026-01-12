@@ -147,7 +147,7 @@ secretStore:
   # Allowed values are:
   # - awssm: AWS Secrets Manager
   # - kubesecrets: K8S Secrets
-  kind: ""
+  kind: "kubesecrets"
 
   # A prefix used to distinguish secrets created by hush-secretless platform
   prefix: "hush"
