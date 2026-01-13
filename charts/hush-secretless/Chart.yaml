@@ -2,7 +2,7 @@ apiVersion: v2
 name: hush-secretless
 description: A Helm chart for Hush Security secretless platform.
 type: application
-version: 0.1.0
+version: 0.2.0
 home: https://hush.security
 dependencies:
   - name: hush-common
