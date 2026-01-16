@@ -9,4 +9,4 @@ secretStore:
     region: "eu-central-1"
 
 manager:
-  kind: deployment
+  kind: statefulset

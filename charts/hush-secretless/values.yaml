@@ -213,7 +213,7 @@ manager:
   #
   # 'statefulset' mode uses K8S StatefulSet workload type for the manager, and
   # Persistent Volume Claim (PVC) for its data.
-  kind: statefulset
+  kind: deployment
 
   # Listening port for REST API
   port: 8743
