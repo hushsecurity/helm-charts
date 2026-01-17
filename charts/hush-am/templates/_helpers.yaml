@@ -216,9 +216,9 @@ Access Manager Rest Server address
 {{- end }}
 
 {{/*
-Secretless Manager Service Cert Alt Names
+Access Manager Service Cert Alt Names
 */}}
-{{- define "hush-am.managerServiceAltNames" -}}
+{{- define "hush-am.accessManagerServiceAltNames" -}}
 {{- printf "DNS:%s,DNS:%s"
     (include "hush-am.accessManagerServiceFqdn" .)
     (include "hush-am.accessManagerServiceShortName" .)

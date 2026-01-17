@@ -100,7 +100,7 @@ spec:
                 -addext "basicConstraints=critical,CA:FALSE" \
                 -addext "keyUsage=digitalSignature" \
                 -addext "extendedKeyUsage=serverAuth" \
-                -addext "subjectAltName={{ include "hush-am.managerServiceAltNames" . }}"
+                -addext "subjectAltName={{ include "hush-am.accessManagerServiceAltNames" . }}"
               openssl x509 -in {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.crt -noout -text
           securityContext:
             runAsUser: 0
