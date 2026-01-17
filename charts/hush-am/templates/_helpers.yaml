@@ -549,9 +549,9 @@ Access Manager envs
 {{- end }}
 
 {{/*
-Secretless Manager Kind
+Access Manager Kind
 */}}
-{{- define "hush-am.managerKind" -}}
+{{- define "hush-am.accessManagerKind" -}}
 {{- $kind := and .Values.manager .Values.manager.kind -}}
 {{- $validKinds := list "deployment" "statefulset" -}}
 {{- if not (has $kind $validKinds) -}}

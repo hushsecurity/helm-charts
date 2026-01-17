@@ -1,4 +1,4 @@
-{{- $kind := (include "hush-am.managerKind" .) -}}
+{{- $kind := (include "hush-am.accessManagerKind" .) -}}
 ---
 apiVersion: apps/v1
 {{- if eq $kind "statefulset" }}
