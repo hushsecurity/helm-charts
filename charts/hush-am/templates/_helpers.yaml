@@ -41,9 +41,9 @@ spire-bundle
 {{- end }}
 
 {{/*
-Image path for Secretless Manager container.
+Image path for Access Manager container.
 */}}
-{{- define "hush-am.managerImagePath" -}}
+{{- define "hush-am.accessManagerImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.managerRepository
