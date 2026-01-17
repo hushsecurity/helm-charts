@@ -1,8 +1,8 @@
 {{/*
-Create a default fully qualified app name for Secretless Manager.
+Create a default fully qualified app name for Access Manager.
 */}}
-{{- define "hush-am.managerFullName" -}}
-{{- printf "%s-manager" (include "hush-common.fullName" .) | trunc 63 }}
+{{- define "hush-am.accessManagerFullName" -}}
+{{- printf "%s-access-manager" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
@@ -186,7 +186,7 @@ Secretless Manager Service Short Name
 */}}
 {{- define "hush-am.managerServiceShortName" -}}
 {{- printf "%s.%s.svc"
-    (include "hush-am.managerFullName" .)
+    (include "hush-am.accessManagerFullName" .)
     (include "hush-common.namespace" .)
 -}}
 {{- end }}
@@ -541,7 +541,7 @@ Secretless Manager envs
 - name: SIMBA_X509_CTX_WAIT_STEP
   value: "10s"
 - name: MUFASA_K8S_SERVICE_ACCOUNT
-  value: {{ include "hush-am.managerFullName" . }}
+  value: {{ include "hush-am.accessManagerFullName" . }}
 - name: MUFASA_K8S_AGENT_SERVICE_ACCOUNT
   value: {{ include "hush-am.spireAgentFullName" . }}
 - name: MUFASA_K8S_CONTAINER_NAME

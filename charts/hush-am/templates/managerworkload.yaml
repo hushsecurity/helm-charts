@@ -7,7 +7,7 @@ kind: StatefulSet
 kind: Deployment
 {{- end }}
 metadata:
-  name: {{ include "hush-am.managerFullName" . }}
+  name: {{ include "hush-am.accessManagerFullName" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
     app.kubernetes.io/component: manager
   namespace: {{ include "hush-common.namespace" . }}
@@ -18,7 +18,7 @@ spec:
       app.kubernetes.io/component: manager
   replicas: {{ .Values.manager.replicas }}
   {{- if eq $kind "statefulset" }}
-  serviceName: {{ include "hush-am.managerFullName" . }}
+  serviceName: {{ include "hush-am.accessManagerFullName" . }}
   updateStrategy:
     type: RollingUpdate
   {{- else }}
@@ -54,7 +54,7 @@ spec:
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
-      serviceAccountName: {{ include "hush-am.managerFullName" . }}
+      serviceAccountName: {{ include "hush-am.accessManagerFullName" . }}
       initContainers:
         - name: secretless-manager-init
           image: {{ include "hush-am.managerImagePath" . }}

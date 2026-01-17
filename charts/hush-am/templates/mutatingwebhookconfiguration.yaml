@@ -16,7 +16,7 @@ webhooks:
     clientConfig:
       service:
         namespace: {{ include "hush-common.namespace" . }}
-        name: {{ include "hush-am.managerFullName" . }}
+        name: {{ include "hush-am.accessManagerFullName" . }}
         path: /
         port: {{ .Values.admissionController.port }}
       caBundle: {{ (include "hush-am.admissionControllerRootCert" .) | b64enc }}
