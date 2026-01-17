@@ -79,8 +79,8 @@ image:
   # When not defined the runtime version of admission controller is used.
   injectorTag: ""
 
-  # Image repository for Secretless Manager container
-  managerRepository: secretless-manager
+  # Image repository for Access Manager container
+  accessManagerRepository: access-manager
 
   # Image repository for Secretless Manager Vector container
   managerVectorRepository: secretless-manager-vector

@@ -46,7 +46,7 @@ Image path for Access Manager container.
 {{- define "hush-am.accessManagerImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
-    "repository" .Values.image.managerRepository
+    "repository" .Values.image.accessManagerRepository
     "tag" .Values.image.tag
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
