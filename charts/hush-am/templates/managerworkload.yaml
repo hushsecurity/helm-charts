@@ -71,7 +71,7 @@ spec:
               chown -R 1000:1000 {{ include "hush-am.spireServerDataDirPath" . }}
               mkdir -p {{ include "hush-am.spireServerSocketDirPath" . }}
               chown -R 1000:1000 {{ include "hush-am.spireServerSocketDirPath" . }}
-              mkdir -p {{ include "hush-am.managerDataDirPath" . }}
+              mkdir -p {{ include "hush-am.accessManagerDataDirPath" . }}
               mkdir -p {{ include "hush-am.spireServerLogDirMountPath" . }}
               chown 1000:1000 {{ include "hush-am.spireServerLogDirMountPath" . }}
               . /usr/local/bin/hdc.sh

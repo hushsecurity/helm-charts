@@ -226,9 +226,9 @@ Access Manager Service Cert Alt Names
 {{- end }}
 
 {{/*
-Secretless Manager data directory path
+Access Manager data directory path
 */}}
-{{- define "hush-am.managerDataDirPath" -}}
+{{- define "hush-am.accessManagerDataDirPath" -}}
 {{- printf "%s/hush/secretless-manager" (include "hush-am.dataVolumeMountPath" .) -}}
 {{- end }}
 
@@ -243,21 +243,21 @@ Admission Controller data directory path
 Policy DB file path
 */}}
 {{- define "hush-am.policyDbFilePath" -}}
-{{- printf "%s/policydb.sqlite3" (include "hush-am.managerDataDirPath" .) -}}
+{{- printf "%s/policydb.sqlite3" (include "hush-am.accessManagerDataDirPath" .) -}}
 {{- end }}
 
 {{/*
 Key DB file path
 */}}
 {{- define "hush-am.keyDbFilePath" -}}
-{{- printf "%s/keydb.sqlite3" (include "hush-am.managerDataDirPath" .) -}}
+{{- printf "%s/keydb.sqlite3" (include "hush-am.accessManagerDataDirPath" .) -}}
 {{- end }}
 
 {{/*
 Acr DB file path
 */}}
 {{- define "hush-am.acrDbFilePath" -}}
-{{- printf "%s/acrdb.sqlite3" (include "hush-am.managerDataDirPath" .) -}}
+{{- printf "%s/acrdb.sqlite3" (include "hush-am.accessManagerDataDirPath" .) -}}
 {{- end }}
 
 {{/*
