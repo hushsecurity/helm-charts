@@ -147,21 +147,6 @@ spec:
           {{- with and .Values.manager .Values.manager.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          livenessProbe:
-            exec:
-              command:
-                - /mufasa
-                - healthcheck
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
-          startupProbe:
-            exec:
-              command:
-                - /mufasa
-                - healthcheck
-            failureThreshold: 30
-            periodSeconds: 10
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
