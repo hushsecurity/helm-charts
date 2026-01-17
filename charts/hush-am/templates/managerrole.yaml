@@ -5,7 +5,7 @@ metadata:
   name: {{ include "hush-am.accessManagerFullName" . }}
   namespace: {{ include "hush-common.namespace" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
-    app.kubernetes.io/component: manager-role
+    app.kubernetes.io/component: access-manager-role
 rules:
 - apiGroups: [""]
   resources:

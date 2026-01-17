@@ -568,7 +568,7 @@ requiredDuringSchedulingIgnoredDuringExecution:
   - topologyKey: kubernetes.io/hostname
     labelSelector:
       matchLabels: {{- include "hush-common.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: manager
+        app.kubernetes.io/component: access-manager
 {{- end }}
 
 {{/*
