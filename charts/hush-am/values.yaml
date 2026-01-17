@@ -74,7 +74,7 @@ image:
   # Overrides the image tag for access management images.
   tag: "v0"
 
-  # Custom tag for Secretless Injector image
+  # Custom tag for AM Injector image
   #
   # When not defined the runtime version of admission controller is used.
   injectorTag: ""
@@ -85,17 +85,17 @@ image:
   # Image repository for Access Manager Vector container
   accessManagerVectorRepository: access-manager-vector
 
-  # Image repository for Secretless Spire Server container
-  spireServerRepository: secretless-spire-server
+  # Image repository for Access Management Spire Server container
+  spireServerRepository: am-spire-server
 
-  # Image repository for Secretless Spire Agent container
-  spireAgentRepository: secretless-spire-agent
+  # Image repository for Access Management Spire Agent container
+  spireAgentRepository: am-spire-agent
 
   # Image repository for Admission Controller container
-  admissionControllerRepository: secretless-admission-controller
+  admissionControllerRepository: am-admission-controller
 
-  # Image repository for Secretless Injector container
-  injectorRepository: secretless-injector
+  # Image repository for Access Management Injector container
+  injectorRepository: am-injector
 
   # A list of pre-created image pull secrets of the form:
   #
@@ -138,7 +138,7 @@ image:
   # The pull policy for images.
   pullPolicy: Always
 
-  # Custom pull policy for secretless injector
+  # Custom pull policy for Access Management injector
   injectorPullPolicy: ""
 
 # Secret store configuration
@@ -149,7 +149,7 @@ secretStore:
   # - kubesecrets: K8S Secrets
   kind: "kubesecrets"
 
-  # A prefix used to distinguish secrets created by hush-secretless platform
+  # A prefix used to distinguish secrets created by hush-am platform
   prefix: "hush"
 
   # AWS secret store configuration
@@ -180,7 +180,7 @@ secretStore:
     namespace: ""
 
 # Container registry configuration.
-# This affects the way Hush Secretless platform accesses workload container images'
+# This affects the way Hush Access Management platform accesses workload container images'
 # manifest to update injector command accordingly
 containerRegistry:
   # Default container registry to use for images without explicit registry.
@@ -316,7 +316,7 @@ accessManager:
 # Values for Spire Agent DaemonSet
 spireAgent:
   # Host directory for Spire Agent socket
-  hostDir: "/var/lib/hush-security/secretless-spire-agent"
+  hostDir: "/var/lib/hush-security/am-spire-agent"
 
   # Skip kubelet certificate verification
   skipKubeletVerification: true
