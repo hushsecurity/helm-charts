@@ -82,8 +82,8 @@ image:
   # Image repository for Access Manager container
   accessManagerRepository: access-manager
 
-  # Image repository for Secretless Manager Vector container
-  managerVectorRepository: secretless-manager-vector
+  # Image repository for Access Manager Vector container
+  accessManagerVectorRepository: access-manager-vector
 
   # Image repository for Secretless Spire Server container
   spireServerRepository: secretless-spire-server
