@@ -199,9 +199,9 @@ containerRegistry:
     # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
     irsa: ""
 
-# Values for Secretless Manager
-manager:
-  # Kind of workload to use for the secretless manager
+# Values for Access Manager
+accessManager:
+  # Kind of workload to use for access manager
   #
   # Allowed values:
   # - deployment
@@ -286,7 +286,7 @@ manager:
     # The binding reference to the PersistentVolume backing PV claim.
     volumeName: ""
 
-  # Default resource requests/limits for secretless-manager
+  # Default resource requests/limits for access manager
   resources:
     limits:
       cpu: "330m"

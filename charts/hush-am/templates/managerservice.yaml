@@ -17,7 +17,7 @@ spec:
       port: {{ .Values.spireServer.port }}
     - name: rest
       protocol: TCP
-      port: {{ .Values.manager.port }}
+      port: {{ .Values.accessManager.port }}
     - name: admission
       protocol: TCP
       port: {{ .Values.admissionController.port }}

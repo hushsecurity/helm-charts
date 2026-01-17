@@ -205,14 +205,14 @@ Access Manager Service FQDN
 Which address access manager REST API server should bind to?
 */}}
 {{- define "hush-am.accessManagerRestBindAddress" -}}
-{{- printf ":%d" (int64 .Values.manager.port) -}}
+{{- printf ":%d" (int64 .Values.accessManager.port) -}}
 {{- end }}
 
 {{/*
 Access Manager Rest Server address
 */}}
 {{- define "hush-am.accessManagerRestAddress" -}}
-{{- printf "%s:%d" (include "hush-am.accessManagerServiceShortName" .) (int64 .Values.manager.port) -}}
+{{- printf "%s:%d" (include "hush-am.accessManagerServiceShortName" .) (int64 .Values.accessManager.port) -}}
 {{- end }}
 
 {{/*
@@ -552,7 +552,7 @@ Access Manager envs
 Access Manager Kind
 */}}
 {{- define "hush-am.accessManagerKind" -}}
-{{- $kind := and .Values.manager .Values.manager.kind -}}
+{{- $kind := and .Values.accessManager .Values.accessManager.kind -}}
 {{- $validKinds := list "deployment" "statefulset" -}}
 {{- if not (has $kind $validKinds) -}}
     {{- fail (printf "'manager.kind' must be one of %v" $validKinds) -}}
@@ -575,7 +575,7 @@ requiredDuringSchedulingIgnoredDuringExecution:
 Access Manager affinity rules
 */}}
 {{- define "hush-am.accessManagerAffinity" -}}
-{{- $custom := (and .Values.manager .Values.manager.affinity) -}}
+{{- $custom := (and .Values.accessManager .Values.accessManager.affinity) -}}
 {{- if not $custom -}}
   {{- $custom = dict -}}
 {{- end -}}
