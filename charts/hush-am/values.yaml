@@ -71,8 +71,8 @@ image:
   # Container registry with anonymous read access
   anonymousRegistry: hushsecuritypub.azurecr.io
 
-  # Overrides the image tag for secretless* images.
-  managerTag: "v0"
+  # Overrides the image tag for access management images.
+  tag: "v0"
 
   # Custom tag for Secretless Injector image
   #
