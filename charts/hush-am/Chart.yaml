@@ -1,6 +1,6 @@
 apiVersion: v2
-name: hush-secretless
-description: A Helm chart for Hush Security secretless platform.
+name: hush-am
+description: A Helm chart for Hush Security Access Management platform.
 type: application
 version: 0.2.0
 home: https://hush.security
