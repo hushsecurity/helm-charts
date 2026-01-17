@@ -120,7 +120,7 @@ def values_tmp_file(chart: str, values: dict):
     )
     if "secretKeyRef" not in hushDeployment:
         hushDeployment.setdefault("password", "dummy_password")
-    if chart == "hush-secretless":
+    if chart == "hush-am":
         secretStore = values.setdefault("secretStore", {})
         secretStore.setdefault("kind", "awssm")
         aws = secretStore.setdefault("aws", {})
@@ -128,7 +128,7 @@ def values_tmp_file(chart: str, values: dict):
         containerRegistry = values.setdefault("containerRegistry", {})
         aws_cr = containerRegistry.setdefault("aws", {})
         aws_cr.setdefault(
-            "irsa", "arn:aws:iam::000000000000:role/secretless-manager-iam-role"
+            "irsa", "arn:aws:iam::000000000000:role/access-manager-iam-role"
         )
     with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as tmp_file:
         dump(values, tmp_file, Dumper=Dumper)

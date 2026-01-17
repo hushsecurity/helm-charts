@@ -7,7 +7,7 @@ secretStore:
   kind: "awssm"
   aws:
     region: "eu-central-1"
-    irsa: "arn:aws:iam::000000000000:role/secretless-manager-iam-role"
+    irsa: "arn:aws:iam::000000000000:role/access-manager-iam-role"
 
 containerRegistry:
   default: "registry-1.docker.io"
