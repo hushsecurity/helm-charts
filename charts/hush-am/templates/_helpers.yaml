@@ -512,9 +512,9 @@ Mandatory envs
 {{- end }}
 
 {{/*
-Secretless Manager envs
+Access Manager envs
 */}}
-{{- define "hush-am.managerEnvs" -}}
+{{- define "hush-am.accessManagerEnvs" -}}
 {{ include "hush-am.mandatoryEnvs" . }}
 {{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
 - name: DEPLOYMENT_PASSWORD
