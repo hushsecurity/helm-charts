@@ -1,5 +1,5 @@
 ---
-namespaceOverride: "hush-secretless"
+namespaceOverride: "hush-am"
 
 hushDeployment:
   token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
@@ -8,4 +8,4 @@ hushDeployment:
 secretStore:
   kind: "kubesecrets"
   k8s:
-    namespace: "hush-secretless"
+    namespace: "hush-am"

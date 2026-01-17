@@ -1,89 +1,89 @@
 {{/*
-Create a default fully qualified app name for Secretless Manager.
+Create a default fully qualified app name for Access Manager.
 */}}
-{{- define "hush-secretless.managerFullName" -}}
-{{- printf "%s-manager" (include "hush-common.fullName" .) | trunc 63 }}
+{{- define "hush-am.accessManagerFullName" -}}
+{{- printf "%s-access-manager" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name for Spire Agent
 */}}
-{{- define "hush-secretless.spireAgentFullName" -}}
+{{- define "hush-am.spireAgentFullName" -}}
 {{- printf "%s-spire-agent" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
 The name of Role to update spire server's bundle publisher ConfigMap.
 */}}
-{{- define "hush-secretless.spireBundleRoleFullName" -}}
+{{- define "hush-am.spireBundleRoleFullName" -}}
 {{- printf "%s-spire-bundle-role" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
 Create a default name for the common ClusterRole.
 */}}
-{{- define "hush-secretless.clusterRoleFullName" -}}
+{{- define "hush-am.clusterRoleFullName" -}}
 {{- printf "%s-common" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
 Create a default name for the spire server ClusterRole.
 */}}
-{{- define "hush-secretless.spireServerClusterRoleFullName" -}}
+{{- define "hush-am.spireServerClusterRoleFullName" -}}
 {{- printf "%s-spire-server" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
 The name of ConfigMap for spire server's bundle publisher.
 */}}
-{{- define "hush-secretless.spireBundleConfigMapName" -}}
+{{- define "hush-am.spireBundleConfigMapName" -}}
 spire-bundle
 {{- end }}
 
 {{/*
-Image path for Secretless Manager container.
+Image path for Access Manager container.
 */}}
-{{- define "hush-secretless.managerImagePath" -}}
+{{- define "hush-am.accessManagerImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
-    "repository" .Values.image.managerRepository
-    "tag" .Values.image.managerTag
+    "repository" .Values.image.accessManagerRepository
+    "tag" .Values.image.tag
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
-Image path for Secretless Manager Vector container.
+Image path for Access Manager Vector container.
 */}}
-{{- define "hush-secretless.managerVectorImagePath" -}}
+{{- define "hush-am.accessManagerVectorImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
-    "repository" .Values.image.managerVectorRepository
-    "tag" .Values.image.managerTag
+    "repository" .Values.image.accessManagerVectorRepository
+    "tag" .Values.image.tag
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
-Image path for Secretless Spire Server container.
+Image path for Spire Server container.
 */}}
-{{- define "hush-secretless.spireServerImagePath" -}}
+{{- define "hush-am.spireServerImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.spireServerRepository
-    "tag" .Values.image.managerTag
+    "tag" .Values.image.tag
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
-Image path for Secretless Spire Agent container.
+Image path for Spire Agent container.
 */}}
-{{- define "hush-secretless.spireAgentImagePath" -}}
+{{- define "hush-am.spireAgentImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.spireAgentRepository
-    "tag" .Values.image.managerTag
+    "tag" .Values.image.tag
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -91,11 +91,11 @@ Image path for Secretless Spire Agent container.
 {{/*
 Image path for Admission Controller container.
 */}}
-{{- define "hush-secretless.admissionControllerImagePath" -}}
+{{- define "hush-am.admissionControllerImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.admissionControllerRepository
-    "tag" .Values.image.managerTag
+    "tag" .Values.image.tag
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -103,7 +103,7 @@ Image path for Admission Controller container.
 {{/*
 Image path for Injector container.
 */}}
-{{- define "hush-secretless.injectorImagePath" -}}
+{{- define "hush-am.injectorImagePath" -}}
 {{- $base := printf "%s/%s" .Values.image.anonymousRegistry .Values.image.injectorRepository -}}
 {{- if and .Values.image .Values.image.injectorTag -}}
   {{- printf "%s:%s" $base .Values.image.injectorTag -}}
@@ -115,7 +115,7 @@ Image path for Injector container.
 {{/*
 Image pull policy for the injector image.
 */}}
-{{- define "hush-secretless.injectorImagePullPolicy" -}}
+{{- define "hush-am.injectorImagePullPolicy" -}}
 {{- if and .Values.image .Values.image.injectorPullPolicy -}}
   {{ .Values.image.injectorPullPolicy }}
 {{- else if not (and .Values.image .Values.image.injectorTag) -}}
@@ -128,170 +128,170 @@ Image pull policy for the injector image.
 {{/*
 Data volume mount path
 */}}
-{{- define "hush-secretless.dataVolumeMountPath" -}}
+{{- define "hush-am.dataVolumeMountPath" -}}
 /mnt/data
 {{- end }}
 
 {{/*
 Spire Server persistent data dir path
 */}}
-{{- define "hush-secretless.spireServerDataDirPath" -}}
-{{- printf "%s/spire/server" (include "hush-secretless.dataVolumeMountPath" .) -}}
+{{- define "hush-am.spireServerDataDirPath" -}}
+{{- printf "%s/spire/server" (include "hush-am.dataVolumeMountPath" .) -}}
 {{- end }}
 
 {{/*
 Spire Server socket dir mount path
 */}}
-{{- define "hush-secretless.spireServerSocketDirMountPath" -}}
+{{- define "hush-am.spireServerSocketDirMountPath" -}}
 /tmp/spire-server
 {{- end }}
 
 {{/*
 Spire Server socket dir path
 */}}
-{{- define "hush-secretless.spireServerSocketDirPath" -}}
-{{- printf "%s/private" (include "hush-secretless.spireServerSocketDirMountPath" .) -}}
+{{- define "hush-am.spireServerSocketDirPath" -}}
+{{- printf "%s/private" (include "hush-am.spireServerSocketDirMountPath" .) -}}
 {{- end }}
 
 {{/*
 Spire Server socket path
 */}}
-{{- define "hush-secretless.spireServerSocketPath" -}}
-{{- printf "unix://%s/api.sock" (include "hush-secretless.spireServerSocketDirPath" .) -}}
+{{- define "hush-am.spireServerSocketPath" -}}
+{{- printf "unix://%s/api.sock" (include "hush-am.spireServerSocketDirPath" .) -}}
 {{- end }}
 
 {{/*
 Spire Server log dir mount path
 */}}
-{{- define "hush-secretless.spireServerLogDirMountPath" -}}
+{{- define "hush-am.spireServerLogDirMountPath" -}}
 /var/log/spire
 {{- end }}
 
 {{/*
 Spire Agent socket dir mount path
 */}}
-{{- define "hush-secretless.spireAgentSocketDirMountPath" -}}
+{{- define "hush-am.spireAgentSocketDirMountPath" -}}
 /tmp/spire-agent
 {{- end }}
 
 {{/*
 Spire Agent socket path
 */}}
-{{- define "hush-secretless.spireAgentSocketPath" -}}
-{{- printf "unix://%s/public/api.sock" (include "hush-secretless.spireAgentSocketDirMountPath" .) -}}
+{{- define "hush-am.spireAgentSocketPath" -}}
+{{- printf "unix://%s/public/api.sock" (include "hush-am.spireAgentSocketDirMountPath" .) -}}
 {{- end }}
 
 {{/*
-Secretless Manager Service Short Name
+Access Manager Service Short Name
 */}}
-{{- define "hush-secretless.managerServiceShortName" -}}
+{{- define "hush-am.accessManagerServiceShortName" -}}
 {{- printf "%s.%s.svc"
-    (include "hush-secretless.managerFullName" .)
+    (include "hush-am.accessManagerFullName" .)
     (include "hush-common.namespace" .)
 -}}
 {{- end }}
 
 {{/*
-Secretless Manager Service FQDN
+Access Manager Service FQDN
 */}}
-{{- define "hush-secretless.managerServiceFqdn" -}}
+{{- define "hush-am.accessManagerServiceFqdn" -}}
 {{- printf "%s.%s"
-    (include "hush-secretless.managerServiceShortName" .)
+    (include "hush-am.accessManagerServiceShortName" .)
     .Values.clusterDomain
 -}}
 {{- end }}
 
 {{/*
-Which address the manager REST API server should bind to?
+Which address access manager REST API server should bind to?
 */}}
-{{- define "hush-secretless.managerRestBindAddress" -}}
-{{- printf ":%d" (int64 .Values.manager.port) -}}
+{{- define "hush-am.accessManagerRestBindAddress" -}}
+{{- printf ":%d" (int64 .Values.accessManager.port) -}}
 {{- end }}
 
 {{/*
-Secretless Manager Rest Server address
+Access Manager Rest Server address
 */}}
-{{- define "hush-secretless.managerRestAddress" -}}
-{{- printf "%s:%d" (include "hush-secretless.managerServiceShortName" .) (int64 .Values.manager.port) -}}
+{{- define "hush-am.accessManagerRestAddress" -}}
+{{- printf "%s:%d" (include "hush-am.accessManagerServiceShortName" .) (int64 .Values.accessManager.port) -}}
 {{- end }}
 
 {{/*
-Secretless Manager Service Cert Alt Names
+Access Manager Service Cert Alt Names
 */}}
-{{- define "hush-secretless.managerServiceAltNames" -}}
+{{- define "hush-am.accessManagerServiceAltNames" -}}
 {{- printf "DNS:%s,DNS:%s"
-    (include "hush-secretless.managerServiceFqdn" .)
-    (include "hush-secretless.managerServiceShortName" .)
+    (include "hush-am.accessManagerServiceFqdn" .)
+    (include "hush-am.accessManagerServiceShortName" .)
 -}}
 {{- end }}
 
 {{/*
-Secretless Manager data directory path
+Access Manager data directory path
 */}}
-{{- define "hush-secretless.managerDataDirPath" -}}
-{{- printf "%s/hush/secretless-manager" (include "hush-secretless.dataVolumeMountPath" .) -}}
+{{- define "hush-am.accessManagerDataDirPath" -}}
+{{- printf "%s/hush/access-manager" (include "hush-am.dataVolumeMountPath" .) -}}
 {{- end }}
 
 {{/*
 Admission Controller data directory path
 */}}
-{{- define "hush-secretless.admissionControllerDataDirPath" -}}
-{{- printf "%s/hush/admission-controller" (include "hush-secretless.dataVolumeMountPath" .) -}}
+{{- define "hush-am.admissionControllerDataDirPath" -}}
+{{- printf "%s/hush/admission-controller" (include "hush-am.dataVolumeMountPath" .) -}}
 {{- end }}
 
 {{/*
 Policy DB file path
 */}}
-{{- define "hush-secretless.policyDbFilePath" -}}
-{{- printf "%s/policydb.sqlite3" (include "hush-secretless.managerDataDirPath" .) -}}
+{{- define "hush-am.policyDbFilePath" -}}
+{{- printf "%s/policydb.sqlite3" (include "hush-am.accessManagerDataDirPath" .) -}}
 {{- end }}
 
 {{/*
 Key DB file path
 */}}
-{{- define "hush-secretless.keyDbFilePath" -}}
-{{- printf "%s/keydb.sqlite3" (include "hush-secretless.managerDataDirPath" .) -}}
+{{- define "hush-am.keyDbFilePath" -}}
+{{- printf "%s/keydb.sqlite3" (include "hush-am.accessManagerDataDirPath" .) -}}
 {{- end }}
 
 {{/*
 Acr DB file path
 */}}
-{{- define "hush-secretless.acrDbFilePath" -}}
-{{- printf "%s/acrdb.sqlite3" (include "hush-secretless.managerDataDirPath" .) -}}
+{{- define "hush-am.acrDbFilePath" -}}
+{{- printf "%s/acrdb.sqlite3" (include "hush-am.accessManagerDataDirPath" .) -}}
 {{- end }}
 
 {{/*
 Kubelet certificate directory mount path
 */}}
-{{- define "hush-secretless.kubeletCertDirMountPath" -}}
+{{- define "hush-am.kubeletCertDirMountPath" -}}
 {{ .Values.spireAgent.kubeletCertDir }}
 {{- end }}
 
 {{/*
 Kubelet certificate file path
 */}}
-{{- define "hush-secretless.kubeletCertFilePath" -}}
-{{- printf "%s/%s" (include "hush-secretless.kubeletCertDirMountPath" .) .Values.spireAgent.kubeletCertFile -}}
+{{- define "hush-am.kubeletCertFilePath" -}}
+{{- printf "%s/%s" (include "hush-am.kubeletCertDirMountPath" .) .Values.spireAgent.kubeletCertFile -}}
 {{- end }}
 
 {{/*
 Mutating webhook name
 */}}
-{{- define "hush-secretless.mutatingWebhookFullName" -}}
+{{- define "hush-am.mutatingWebhookFullName" -}}
 {{- printf "%s-mutating-webhook" (include "hush-common.fullName" .) -}}
 {{- end }}
 
 {{/*
 Mutating webhook FQDN
 */}}
-{{- define "hush-secretless.mutatingWebhookFqdn" -}}
-{{- printf "%s.webhook.local" (include "hush-secretless.mutatingWebhookFullName" .) -}}
+{{- define "hush-am.mutatingWebhookFqdn" -}}
+{{- printf "%s.webhook.local" (include "hush-am.mutatingWebhookFullName" .) -}}
 {{- end }}
 
 {{/*
 Silo namespace prefix
 */}}
-{{- define "hush-secretless.siloNamespacePrefix" -}}
+{{- define "hush-am.siloNamespacePrefix" -}}
 {{- $prefix := and .Values.secretStore .Values.secretStore.prefix -}}
 {{- if not (regexMatch "^[a-z][a-z0-9]{0,9}$" $prefix) -}}
     {{- fail "'secretStore.prefix' is invalid" -}}
@@ -302,7 +302,7 @@ Silo namespace prefix
 {{/*
 Secret store AWS region
 */}}
-{{- define "hush-secretless.siloAwsRegion" -}}
+{{- define "hush-am.siloAwsRegion" -}}
 {{- $region := and (and .Values.secretStore .Values.secretStore.aws) .Values.secretStore.aws.region -}}
 {{- if not $region -}}
     {{- fail "'secretStore.aws.region' must be defined for AWS secret store" -}}
@@ -313,7 +313,7 @@ Secret store AWS region
 {{/*
 K8S Secrets Silo namespace to use
 */}}
-{{- define "hush-secretless.kubeSiloNamespace" -}}
+{{- define "hush-am.kubeSiloNamespace" -}}
 {{- if .Values.secretStore.k8s.namespace -}}
   {{- .Values.secretStore.k8s.namespace -}}
 {{- else -}}
@@ -324,7 +324,7 @@ K8S Secrets Silo namespace to use
 {{/*
 Is K8S Silo using self namespace to store secrets?
 */}}
-{{- define "hush-secretless.kubeSiloUsesSelfNamespace" -}}
+{{- define "hush-am.kubeSiloUsesSelfNamespace" -}}
 {{- $namespace := include "hush-common.namespace" . -}}
 {{- $kubeSiloNamespace := .Values.secretStore.k8s.namespace -}}
 {{- if or (not $kubeSiloNamespace) (eq $namespace $kubeSiloNamespace) -}}
@@ -335,7 +335,7 @@ true
 {{/*
 Parse AWS Access Token parameters
 */}}
-{{- define "hush-secretless.awsAccessToken" -}}
+{{- define "hush-am.awsAccessToken" -}}
 {{- $secretAccessKey := dig "secret_access_key" "" . -}}
 {{- $accessKeyId := dig "access_key_id" "" . -}}
 {{- $sessionToken := dig "session_token" "" . -}}
@@ -352,25 +352,25 @@ Parse AWS Access Token parameters
 {{/*
 Secret store AWS access token
 */}}
-{{- define "hush-secretless.siloAwsAccessToken" -}}
+{{- define "hush-am.siloAwsAccessToken" -}}
 {{- with (dig "aws" "access_key" "" .Values.secretStore) -}}
-    {{- include "hush-secretless.awsAccessToken" . -}}
+    {{- include "hush-am.awsAccessToken" . -}}
 {{- end -}}
 {{- end }}
 
 {{/*
 Silo env vars
 */}}
-{{- define "hush-secretless.siloEnvs" -}}
+{{- define "hush-am.siloEnvs" -}}
 {{- $siloKind := and .Values.secretStore .Values.secretStore.kind -}}
 {{- if eq $siloKind "awssm" -}}
 - name: SILO_KIND
   value: "awssm"
 - name: SILO_NAMESPACE_PREFIX
-  value: {{ include "hush-secretless.siloNamespacePrefix" . | quote }}
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
 - name: SILO_AWS_SM_REGION
-  value: {{ include "hush-secretless.siloAwsRegion" . | quote }}
-    {{- with (include "hush-secretless.siloAwsAccessToken" . | fromYaml) }}
+  value: {{ include "hush-am.siloAwsRegion" . | quote }}
+    {{- with (include "hush-am.siloAwsAccessToken" . | fromYaml) }}
 - name: AWS_SECRET_ACCESS_KEY
   value: {{ .secret_access_key | quote }}
 - name: AWS_ACCESS_KEY_ID
@@ -384,15 +384,15 @@ Silo env vars
 - name: SILO_KIND
   value: "kubesecrets"
 - name: SILO_NAMESPACE_PREFIX
-  value: {{ include "hush-secretless.siloNamespacePrefix" . | quote }}
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
 - name: SILO_K8S_NAMESPACE
-  value: {{ include "hush-secretless.kubeSiloNamespace" . | quote }}
+  value: {{ include "hush-am.kubeSiloNamespace" . | quote }}
 {{- else -}}
     {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
 {{- end -}}
 {{- end }}
 
-{{- define "hush-secretless.admissionControllerRootCert" -}}
+{{- define "hush-am.admissionControllerRootCert" -}}
 -----BEGIN CERTIFICATE-----
 MIIBjTCCATOgAwIBAgIUDWQE72A0mJnVr5Irib43J+lv6XMwCgYIKoZIzj0EAwIw
 FDESMBAGA1UEAwwJemF6dS1yb290MB4XDTI1MTEyNTA5NTIxNloXDTM1MTEyMzA5
@@ -409,14 +409,14 @@ zdquv84vGcviev0hoiJTwaY=
 {{/*
 Which address the admission controller should bind to?
 */}}
-{{- define "hush-secretless.admissionControllerBindAddress" -}}
+{{- define "hush-am.admissionControllerBindAddress" -}}
 {{- printf ":%d" (int64 .Values.admissionController.port) -}}
 {{- end }}
 
 {{/*
 Admission-controller mode of AWS Config for Container Registry access
 */}}
-{{- define "hush-secretless.admissionControllerAwcEcrCfgMode" -}}
+{{- define "hush-am.admissionControllerAwcEcrCfgMode" -}}
 {{- $crIrsa := .Values.containerRegistry.aws.irsa -}}
 {{- if $crIrsa -}}
 default
@@ -426,9 +426,9 @@ ec2role
 {{- end }}
 
 {{/*
-Annotations for secretless manager
+Annotations for access manager
 */}}
-{{- define "hush-secretless.managerServiceAccountAnnotations" -}}
+{{- define "hush-am.accessManagerServiceAccountAnnotations" -}}
 {{- $secretStoreIrsa := .Values.secretStore.aws.irsa -}}
 {{- $crIrsa := .Values.containerRegistry.aws.irsa -}}
 {{- if and $secretStoreIrsa $crIrsa -}}
@@ -445,7 +445,7 @@ eks.amazonaws.com/role-arn: {{ $irsa | quote }}
 {{/*
 Which secret to use for deployment token?
 */}}
-{{- define "hush-secretless.effectiveDeploymentTokenKubeSecretRef" -}}
+{{- define "hush-am.effectiveDeploymentTokenKubeSecretRef" -}}
 {{- if .Values.hushDeployment.token -}}
     {{- dict
         "name" (include "hush-common.deploymentKubeSecretName" .)
@@ -470,7 +470,7 @@ Which secret to use for deployment token?
 {{/*
 Which secret to use for deployment password?
 */}}
-{{- define "hush-secretless.effectiveDeploymentPasswordKubeSecretRef" -}}
+{{- define "hush-am.effectiveDeploymentPasswordKubeSecretRef" -}}
 {{- if .Values.hushDeployment.password -}}
     {{- dict
         "name" (include "hush-common.deploymentKubeSecretName" .)
@@ -495,8 +495,8 @@ Which secret to use for deployment password?
 {{/*
 Mandatory envs
 */}}
-{{- define "hush-secretless.mandatoryEnvs" -}}
-{{- with (include "hush-secretless.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
+{{- define "hush-am.mandatoryEnvs" -}}
+{{- with (include "hush-am.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
 - name: DEPLOYMENT_TOKEN
   valueFrom:
     secretKeyRef:
@@ -512,47 +512,47 @@ Mandatory envs
 {{- end }}
 
 {{/*
-Secretless Manager envs
+Access Manager envs
 */}}
-{{- define "hush-secretless.managerEnvs" -}}
-{{ include "hush-secretless.mandatoryEnvs" . }}
-{{- with (include "hush-secretless.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+{{- define "hush-am.accessManagerEnvs" -}}
+{{ include "hush-am.mandatoryEnvs" . }}
+{{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
 - name: DEPLOYMENT_PASSWORD
   valueFrom:
     secretKeyRef:
       name: {{ .name }}
       key: {{ .key }}
 {{- end }}
-{{ include "hush-secretless.siloEnvs" . }}
+{{ include "hush-am.siloEnvs" . }}
 - name: MUFASA_POLICY_DB_PATH
-  value: {{ include "hush-secretless.policyDbFilePath" . }}
+  value: {{ include "hush-am.policyDbFilePath" . }}
 - name: MUFASA_KEY_DB_PATH
-  value: {{ include "hush-secretless.keyDbFilePath" . }}
+  value: {{ include "hush-am.keyDbFilePath" . }}
 - name: MUFASA_ACR_DB_PATH
-  value: {{ include "hush-secretless.acrDbFilePath" . }}
+  value: {{ include "hush-am.acrDbFilePath" . }}
 - name: MUFASA_SPIRESERVER_UDS_PATH
-  value: {{ include "hush-secretless.spireServerSocketPath" . }}
+  value: {{ include "hush-am.spireServerSocketPath" . }}
 - name: SIMBA_BIND_ADDRESS
-  value: {{ include "hush-secretless.managerRestBindAddress" . | quote }}
+  value: {{ include "hush-am.accessManagerRestBindAddress" . | quote }}
 - name: SIMBA_SPIRE_AGENT_SOCKET_PATH
-  value: {{ include "hush-secretless.spireAgentSocketPath" . }}
+  value: {{ include "hush-am.spireAgentSocketPath" . }}
 - name: SIMBA_X509_CTX_WAIT_DURATION
   value: "-1s"
 - name: SIMBA_X509_CTX_WAIT_STEP
   value: "10s"
 - name: MUFASA_K8S_SERVICE_ACCOUNT
-  value: {{ include "hush-secretless.managerFullName" . }}
+  value: {{ include "hush-am.accessManagerFullName" . }}
 - name: MUFASA_K8S_AGENT_SERVICE_ACCOUNT
-  value: {{ include "hush-secretless.spireAgentFullName" . }}
+  value: {{ include "hush-am.spireAgentFullName" . }}
 - name: MUFASA_K8S_CONTAINER_NAME
-  value: secretless-manager
+  value: access-manager
 {{- end }}
 
 {{/*
-Secretless Manager Kind
+Access Manager Kind
 */}}
-{{- define "hush-secretless.managerKind" -}}
-{{- $kind := and .Values.manager .Values.manager.kind -}}
+{{- define "hush-am.accessManagerKind" -}}
+{{- $kind := and .Values.accessManager .Values.accessManager.kind -}}
 {{- $validKinds := list "deployment" "statefulset" -}}
 {{- if not (has $kind $validKinds) -}}
     {{- fail (printf "'manager.kind' must be one of %v" $validKinds) -}}
@@ -561,43 +561,43 @@ Secretless Manager Kind
 {{- end }}
 
 {{/*
-Manager Pod Anti-Affinity rule
+Access Manager Pod Anti-Affinity rule
 */}}
-{{- define "hush-secretless.managerAntiAffinity" -}}
+{{- define "hush-am.accessManagerAntiAffinity" -}}
 requiredDuringSchedulingIgnoredDuringExecution:
   - topologyKey: kubernetes.io/hostname
     labelSelector:
       matchLabels: {{- include "hush-common.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: manager
+        app.kubernetes.io/component: access-manager
 {{- end }}
 
 {{/*
-Manager affinity rules
+Access Manager affinity rules
 */}}
-{{- define "hush-secretless.managerAffinity" -}}
-{{- $custom := (and .Values.manager .Values.manager.affinity) -}}
+{{- define "hush-am.accessManagerAffinity" -}}
+{{- $custom := (and .Values.accessManager .Values.accessManager.affinity) -}}
 {{- if not $custom -}}
   {{- $custom = dict -}}
 {{- end -}}
 {{- if not (hasKey $custom "podAntiAffinity") -}}
-  {{- $_ := set $custom "podAntiAffinity" (include "hush-secretless.managerAntiAffinity" . | fromYaml) -}}
+  {{- $_ := set $custom "podAntiAffinity" (include "hush-am.accessManagerAntiAffinity" . | fromYaml) -}}
 {{- end -}}
 {{- $custom | toYaml -}}
 {{- end }}
 
 {{/*
-Should manager use host network?
+Should access manager use host network?
 */}}
-{{- define "hush-secretless.managerHostNetwork" -}}
-{{- $awsEcrCfgMode := include "hush-secretless.admissionControllerAwcEcrCfgMode" . -}}
+{{- define "hush-am.accessManagerHostNetwork" -}}
+{{- $awsEcrCfgMode := include "hush-am.admissionControllerAwcEcrCfgMode" . -}}
 {{- printf "%t" (eq $awsEcrCfgMode "ec2role") -}}
 {{- end }}
 
 {{/*
-Manager DNS Policy
+Access Manager DNS Policy
 */}}
-{{- define "hush-secretless.managerDnsPolicy" -}}
-{{- $managerHostNetwork := include "hush-secretless.managerHostNetwork" . -}}
+{{- define "hush-am.accessManagerDnsPolicy" -}}
+{{- $managerHostNetwork := include "hush-am.accessManagerHostNetwork" . -}}
 {{- if eq $managerHostNetwork "true" -}}
 ClusterFirstWithHostNet
 {{- else -}}
@@ -608,7 +608,7 @@ ClusterFirst
 {{/*
 List of image pull secrets to use
 */}}
-{{- define "hush-secretless.kubeImagePullSecretEffectiveList" -}}
+{{- define "hush-am.kubeImagePullSecretEffectiveList" -}}
 {{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) -}}
   {{- . -}}
 {{- else -}}

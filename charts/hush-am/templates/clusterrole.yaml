@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "hush-secretless.clusterRoleFullName" . }}
+  name: {{ include "hush-am.clusterRoleFullName" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
     app.kubernetes.io/component: cluster-role
 rules:
@@ -23,7 +23,7 @@ rules:
   - apiGroups: [""]
     resources:
       - secrets
-    {{- if (include "hush-secretless.kubeSiloUsesSelfNamespace" .) }}
+    {{- if (include "hush-am.kubeSiloUsesSelfNamespace" .) }}
     verbs:
       - get
       - watch

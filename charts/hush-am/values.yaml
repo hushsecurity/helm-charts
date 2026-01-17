@@ -1,4 +1,4 @@
-# Default values for hush-secretless.
+# Default values for hush-am.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -71,31 +71,31 @@ image:
   # Container registry with anonymous read access
   anonymousRegistry: hushsecuritypub.azurecr.io
 
-  # Overrides the image tag for secretless* images.
-  managerTag: "v0"
+  # Overrides the image tag for access management images.
+  tag: "v0"
 
-  # Custom tag for Secretless Injector image
+  # Custom tag for AM Injector image
   #
   # When not defined the runtime version of admission controller is used.
   injectorTag: ""
 
-  # Image repository for Secretless Manager container
-  managerRepository: secretless-manager
+  # Image repository for Access Manager container
+  accessManagerRepository: access-manager
 
-  # Image repository for Secretless Manager Vector container
-  managerVectorRepository: secretless-manager-vector
+  # Image repository for Access Manager Vector container
+  accessManagerVectorRepository: access-manager-vector
 
-  # Image repository for Secretless Spire Server container
-  spireServerRepository: secretless-spire-server
+  # Image repository for Access Management Spire Server container
+  spireServerRepository: am-spire-server
 
-  # Image repository for Secretless Spire Agent container
-  spireAgentRepository: secretless-spire-agent
+  # Image repository for Access Management Spire Agent container
+  spireAgentRepository: am-spire-agent
 
   # Image repository for Admission Controller container
-  admissionControllerRepository: secretless-admission-controller
+  admissionControllerRepository: am-admission-controller
 
-  # Image repository for Secretless Injector container
-  injectorRepository: secretless-injector
+  # Image repository for Access Management Injector container
+  injectorRepository: am-injector
 
   # A list of pre-created image pull secrets of the form:
   #
@@ -138,7 +138,7 @@ image:
   # The pull policy for images.
   pullPolicy: Always
 
-  # Custom pull policy for secretless injector
+  # Custom pull policy for Access Management injector
   injectorPullPolicy: ""
 
 # Secret store configuration
@@ -149,7 +149,7 @@ secretStore:
   # - kubesecrets: K8S Secrets
   kind: "kubesecrets"
 
-  # A prefix used to distinguish secrets created by hush-secretless platform
+  # A prefix used to distinguish secrets created by hush-am platform
   prefix: "hush"
 
   # AWS secret store configuration
@@ -180,7 +180,7 @@ secretStore:
     namespace: ""
 
 # Container registry configuration.
-# This affects the way Hush Secretless platform accesses workload container images'
+# This affects the way Hush Access Management platform accesses workload container images'
 # manifest to update injector command accordingly
 containerRegistry:
   # Default container registry to use for images without explicit registry.
@@ -199,9 +199,9 @@ containerRegistry:
     # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
     irsa: ""
 
-# Values for Secretless Manager
-manager:
-  # Kind of workload to use for the secretless manager
+# Values for Access Manager
+accessManager:
+  # Kind of workload to use for access manager
   #
   # Allowed values:
   # - deployment
@@ -286,7 +286,7 @@ manager:
     # The binding reference to the PersistentVolume backing PV claim.
     volumeName: ""
 
-  # Default resource requests/limits for secretless-manager
+  # Default resource requests/limits for access manager
   resources:
     limits:
       cpu: "330m"
@@ -316,7 +316,7 @@ manager:
 # Values for Spire Agent DaemonSet
 spireAgent:
   # Host directory for Spire Agent socket
-  hostDir: "/var/lib/hush-security/secretless-spire-agent"
+  hostDir: "/var/lib/hush-security/am-spire-agent"
 
   # Skip kubelet certificate verification
   skipKubeletVerification: true
