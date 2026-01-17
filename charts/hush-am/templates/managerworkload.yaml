@@ -141,6 +141,8 @@ spec:
               value: {{ include "hush-am.keyDbFilePath" . }}
             - name: MUFASA_SPIRE_SERVER_PORT
               value: {{ .Values.spireServer.port | quote }}
+            - name: MUFASA_SPIRE_AGENT_SERVICE_ACCOUNT
+              value: {{ include "hush-am.spireAgentFullName" . }}
         - name: access-manager
           image: {{ include "hush-am.accessManagerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
