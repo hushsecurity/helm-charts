@@ -65,7 +65,7 @@ Image path for Access Manager Vector container.
 {{- end }}
 
 {{/*
-Image path for Secretless Spire Server container.
+Image path for Spire Server container.
 */}}
 {{- define "hush-am.spireServerImagePath" -}}
 {{- $ctx := dict
@@ -77,7 +77,7 @@ Image path for Secretless Spire Server container.
 {{- end }}
 
 {{/*
-Image path for Secretless Spire Agent container.
+Image path for Spire Agent container.
 */}}
 {{- define "hush-am.spireAgentImagePath" -}}
 {{- $ctx := dict
