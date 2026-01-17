@@ -107,7 +107,7 @@ spec:
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             - name: MUFASA_SPIRE_AGENT_SERVER_HOSTNAME
-              value: {{ include "hush-am.managerServiceShortName" . }}
+              value: {{ include "hush-am.accessManagerServiceShortName" . }}
             - name: MUFASA_SPIRE_AGENT_SERVER_PORT
               value: {{ .Values.spireServer.port | quote }}
             - name: MUFASA_SPIRE_AGENT_K8S_KUBELET_CA_PATH

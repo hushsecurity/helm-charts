@@ -182,9 +182,9 @@ Spire Agent socket path
 {{- end }}
 
 {{/*
-Secretless Manager Service Short Name
+Access Manager Service Short Name
 */}}
-{{- define "hush-am.managerServiceShortName" -}}
+{{- define "hush-am.accessManagerServiceShortName" -}}
 {{- printf "%s.%s.svc"
     (include "hush-am.accessManagerFullName" .)
     (include "hush-common.namespace" .)
@@ -196,7 +196,7 @@ Secretless Manager Service FQDN
 */}}
 {{- define "hush-am.managerServiceFqdn" -}}
 {{- printf "%s.%s"
-    (include "hush-am.managerServiceShortName" .)
+    (include "hush-am.accessManagerServiceShortName" .)
     .Values.clusterDomain
 -}}
 {{- end }}
@@ -212,7 +212,7 @@ Which address the manager REST API server should bind to?
 Secretless Manager Rest Server address
 */}}
 {{- define "hush-am.managerRestAddress" -}}
-{{- printf "%s:%d" (include "hush-am.managerServiceShortName" .) (int64 .Values.manager.port) -}}
+{{- printf "%s:%d" (include "hush-am.accessManagerServiceShortName" .) (int64 .Values.manager.port) -}}
 {{- end }}
 
 {{/*
@@ -221,7 +221,7 @@ Secretless Manager Service Cert Alt Names
 {{- define "hush-am.managerServiceAltNames" -}}
 {{- printf "DNS:%s,DNS:%s"
     (include "hush-am.managerServiceFqdn" .)
-    (include "hush-am.managerServiceShortName" .)
+    (include "hush-am.accessManagerServiceShortName" .)
 -}}
 {{- end }}
 
