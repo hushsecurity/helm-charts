@@ -572,9 +572,9 @@ requiredDuringSchedulingIgnoredDuringExecution:
 {{- end }}
 
 {{/*
-Manager affinity rules
+Access Manager affinity rules
 */}}
-{{- define "hush-am.managerAffinity" -}}
+{{- define "hush-am.accessManagerAffinity" -}}
 {{- $custom := (and .Values.manager .Values.manager.affinity) -}}
 {{- if not $custom -}}
   {{- $custom = dict -}}

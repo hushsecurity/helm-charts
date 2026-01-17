@@ -44,7 +44,7 @@ spec:
       {{- with .Values.manager.tolerations }}
       tolerations: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (include "hush-am.managerAffinity" . | fromYaml) }}
+      {{- with (include "hush-am.accessManagerAffinity" . | fromYaml) }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
       hostNetwork: {{ include "hush-am.managerHostNetwork" . }}
