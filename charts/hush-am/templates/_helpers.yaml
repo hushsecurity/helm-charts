@@ -426,9 +426,9 @@ ec2role
 {{- end }}
 
 {{/*
-Annotations for secretless manager
+Annotations for access manager
 */}}
-{{- define "hush-am.managerServiceAccountAnnotations" -}}
+{{- define "hush-am.accessManagerServiceAccountAnnotations" -}}
 {{- $secretStoreIrsa := .Values.secretStore.aws.irsa -}}
 {{- $crIrsa := .Values.containerRegistry.aws.irsa -}}
 {{- if and $secretStoreIrsa $crIrsa -}}
