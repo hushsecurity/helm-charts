@@ -586,9 +586,9 @@ Access Manager affinity rules
 {{- end }}
 
 {{/*
-Should manager use host network?
+Should access manager use host network?
 */}}
-{{- define "hush-am.managerHostNetwork" -}}
+{{- define "hush-am.accessManagerHostNetwork" -}}
 {{- $awsEcrCfgMode := include "hush-am.admissionControllerAwcEcrCfgMode" . -}}
 {{- printf "%t" (eq $awsEcrCfgMode "ec2role") -}}
 {{- end }}
@@ -597,7 +597,7 @@ Should manager use host network?
 Manager DNS Policy
 */}}
 {{- define "hush-am.managerDnsPolicy" -}}
-{{- $managerHostNetwork := include "hush-am.managerHostNetwork" . -}}
+{{- $managerHostNetwork := include "hush-am.accessManagerHostNetwork" . -}}
 {{- if eq $managerHostNetwork "true" -}}
 ClusterFirstWithHostNet
 {{- else -}}
