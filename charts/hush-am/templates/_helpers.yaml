@@ -202,9 +202,9 @@ Access Manager Service FQDN
 {{- end }}
 
 {{/*
-Which address the manager REST API server should bind to?
+Which address access manager REST API server should bind to?
 */}}
-{{- define "hush-am.managerRestBindAddress" -}}
+{{- define "hush-am.accessManagerRestBindAddress" -}}
 {{- printf ":%d" (int64 .Values.manager.port) -}}
 {{- end }}
 
@@ -533,7 +533,7 @@ Access Manager envs
 - name: MUFASA_SPIRESERVER_UDS_PATH
   value: {{ include "hush-am.spireServerSocketPath" . }}
 - name: SIMBA_BIND_ADDRESS
-  value: {{ include "hush-am.managerRestBindAddress" . | quote }}
+  value: {{ include "hush-am.accessManagerRestBindAddress" . | quote }}
 - name: SIMBA_SPIRE_AGENT_SOCKET_PATH
   value: {{ include "hush-am.spireAgentSocketPath" . }}
 - name: SIMBA_X509_CTX_WAIT_DURATION
