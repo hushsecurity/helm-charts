@@ -561,9 +561,9 @@ Access Manager Kind
 {{- end }}
 
 {{/*
-Manager Pod Anti-Affinity rule
+Access Manager Pod Anti-Affinity rule
 */}}
-{{- define "hush-am.managerAntiAffinity" -}}
+{{- define "hush-am.accessManagerAntiAffinity" -}}
 requiredDuringSchedulingIgnoredDuringExecution:
   - topologyKey: kubernetes.io/hostname
     labelSelector:
@@ -580,7 +580,7 @@ Manager affinity rules
   {{- $custom = dict -}}
 {{- end -}}
 {{- if not (hasKey $custom "podAntiAffinity") -}}
-  {{- $_ := set $custom "podAntiAffinity" (include "hush-am.managerAntiAffinity" . | fromYaml) -}}
+  {{- $_ := set $custom "podAntiAffinity" (include "hush-am.accessManagerAntiAffinity" . | fromYaml) -}}
 {{- end -}}
 {{- $custom | toYaml -}}
 {{- end }}
