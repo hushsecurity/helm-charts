@@ -594,9 +594,9 @@ Should access manager use host network?
 {{- end }}
 
 {{/*
-Manager DNS Policy
+Access Manager DNS Policy
 */}}
-{{- define "hush-am.managerDnsPolicy" -}}
+{{- define "hush-am.accessManagerDnsPolicy" -}}
 {{- $managerHostNetwork := include "hush-am.accessManagerHostNetwork" . -}}
 {{- if eq $managerHostNetwork "true" -}}
 ClusterFirstWithHostNet

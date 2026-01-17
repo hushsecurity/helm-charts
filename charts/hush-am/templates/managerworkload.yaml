@@ -48,7 +48,7 @@ spec:
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
       hostNetwork: {{ include "hush-am.accessManagerHostNetwork" . }}
-      dnsPolicy: {{ include "hush-am.managerDnsPolicy" . }}
+      dnsPolicy: {{ include "hush-am.accessManagerDnsPolicy" . }}
       restartPolicy: Always
       {{- with (include "hush-am.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
