@@ -209,9 +209,9 @@ Which address the manager REST API server should bind to?
 {{- end }}
 
 {{/*
-Secretless Manager Rest Server address
+Access Manager Rest Server address
 */}}
-{{- define "hush-am.managerRestAddress" -}}
+{{- define "hush-am.accessManagerRestAddress" -}}
 {{- printf "%s:%d" (include "hush-am.accessManagerServiceShortName" .) (int64 .Values.manager.port) -}}
 {{- end }}
 

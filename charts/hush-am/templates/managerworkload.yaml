@@ -187,7 +187,7 @@ spec:
             - name: MUFASA_SPIRE_AGENT_SOCKET_PATH
               value: {{ include "hush-am.spireAgentSocketPath" . }}
             - name: MUFASA_REST_SERVER_ADDRESS
-              value: {{ include "hush-am.managerRestAddress" . }}
+              value: {{ include "hush-am.accessManagerRestAddress" . }}
             - name: MUFASA_INJECTOR_IMAGE_PULL_POLICY
               value: {{ include "hush-am.injectorImagePullPolicy" . }}
             {{- with .Values.containerRegistry.default }}
