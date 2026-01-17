@@ -229,7 +229,7 @@ Access Manager Service Cert Alt Names
 Access Manager data directory path
 */}}
 {{- define "hush-am.accessManagerDataDirPath" -}}
-{{- printf "%s/hush/secretless-manager" (include "hush-am.dataVolumeMountPath" .) -}}
+{{- printf "%s/hush/access-manager" (include "hush-am.dataVolumeMountPath" .) -}}
 {{- end }}
 
 {{/*
