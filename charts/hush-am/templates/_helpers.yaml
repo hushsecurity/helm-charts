@@ -53,9 +53,9 @@ Image path for Access Manager container.
 {{- end }}
 
 {{/*
-Image path for Secretless Manager Vector container.
+Image path for Access Manager Vector container.
 */}}
-{{- define "hush-am.managerVectorImagePath" -}}
+{{- define "hush-am.accessManagerVectorImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.managerVectorRepository

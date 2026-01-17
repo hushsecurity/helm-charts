@@ -205,7 +205,7 @@ spec:
             - name: ZAZU_AWS_ECR_CFG_MODE
               value: {{ include "hush-am.admissionControllerAwcEcrCfgMode" . | quote }}
         - name: vector
-          image: {{ include "hush-am.managerVectorImagePath" . }}
+          image: {{ include "hush-am.accessManagerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with and .Values.manager .Values.manager.vectorResources }}
           resources: {{- toYaml . | nindent 12 }}
