@@ -192,9 +192,9 @@ Access Manager Service Short Name
 {{- end }}
 
 {{/*
-Secretless Manager Service FQDN
+Access Manager Service FQDN
 */}}
-{{- define "hush-am.managerServiceFqdn" -}}
+{{- define "hush-am.accessManagerServiceFqdn" -}}
 {{- printf "%s.%s"
     (include "hush-am.accessManagerServiceShortName" .)
     .Values.clusterDomain
@@ -220,7 +220,7 @@ Secretless Manager Service Cert Alt Names
 */}}
 {{- define "hush-am.managerServiceAltNames" -}}
 {{- printf "DNS:%s,DNS:%s"
-    (include "hush-am.managerServiceFqdn" .)
+    (include "hush-am.accessManagerServiceFqdn" .)
     (include "hush-am.accessManagerServiceShortName" .)
 -}}
 {{- end }}
