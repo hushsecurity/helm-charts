@@ -56,7 +56,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
       serviceAccountName: {{ include "hush-am.accessManagerFullName" . }}
       initContainers:
-        - name: secretless-manager-init
+        - name: access-manager-init
           image: {{ include "hush-am.accessManagerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
@@ -141,7 +141,7 @@ spec:
               value: {{ include "hush-am.keyDbFilePath" . }}
             - name: MUFASA_SPIRE_SERVER_PORT
               value: {{ .Values.spireServer.port | quote }}
-        - name: secretless-manager
+        - name: access-manager
           image: {{ include "hush-am.accessManagerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with and .Values.manager .Values.manager.resources }}

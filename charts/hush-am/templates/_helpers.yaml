@@ -545,7 +545,7 @@ Access Manager envs
 - name: MUFASA_K8S_AGENT_SERVICE_ACCOUNT
   value: {{ include "hush-am.spireAgentFullName" . }}
 - name: MUFASA_K8S_CONTAINER_NAME
-  value: secretless-manager
+  value: access-manager
 {{- end }}
 
 {{/*
