@@ -10,7 +10,7 @@ on:
         type: choice
         options:
           - hush-sensor
-          - hush-secretless
+          - hush-am
 
 jobs:
   release:
