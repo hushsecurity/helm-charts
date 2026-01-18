@@ -2,10 +2,10 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "hush-secretless.managerFullName" . }}
+  name: {{ include "hush-am.accessManagerFullName" . }}
   namespace: {{ include "hush-common.namespace" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
-    app.kubernetes.io/component: manager-role
+    app.kubernetes.io/component: access-manager-role
 rules:
 - apiGroups: [""]
   resources:

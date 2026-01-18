@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "hush-secretless.spireAgentFullName" . }}
+  name: {{ include "hush-am.spireAgentFullName" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
     app.kubernetes.io/component: spire-agent
   namespace: {{ include "hush-common.namespace" . }}
@@ -39,11 +39,11 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
-      {{- with (include "hush-secretless.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-am.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.spireAgent.terminationGracePeriodSeconds }}
-      serviceAccountName: {{ include "hush-secretless.spireAgentFullName" . }}
+      serviceAccountName: {{ include "hush-am.spireAgentFullName" . }}
       volumes:
         - name: data-volume
           emptyDir:  {}
@@ -53,7 +53,7 @@ spec:
             type: DirectoryOrCreate
         - name: spire-bundle
           configMap:
-            name: {{ include "hush-secretless.spireBundleConfigMapName" . }}
+            name: {{ include "hush-am.spireBundleConfigMapName" . }}
         - name: spire-agent-psat
           projected:
             sources:
@@ -69,7 +69,7 @@ spec:
         {{- end }}
       containers:
         - name: spire-agent
-          image: {{ include "hush-secretless.spireAgentImagePath" . }}
+          image: {{ include "hush-am.spireAgentImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with and .Values.spireAgent .Values.spireAgent.resources }}
           resources: {{- toYaml . | nindent 12 }}
@@ -91,9 +91,9 @@ spec:
             periodSeconds: 10
           volumeMounts:
             - name: data-volume
-              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             - name: spire-agent-socket-dir
-              mountPath: {{ include "hush-secretless.spireAgentSocketDirMountPath" . }}
+              mountPath: {{ include "hush-am.spireAgentSocketDirMountPath" . }}
             - name: spire-bundle
               mountPath: /run/spire/bundle
               readOnly: true
@@ -101,16 +101,16 @@ spec:
               mountPath: /var/run/secrets/tokens
             {{- if not .Values.spireAgent.skipKubeletVerification }}
             - name: kubelet-cert-dir
-              mountPath: {{ include "hush-secretless.kubeletCertDirMountPath" . }}
+              mountPath: {{ include "hush-am.kubeletCertDirMountPath" . }}
               readOnly: true
             {{- end }}
           env:
-            {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
+            {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             - name: MUFASA_SPIRE_AGENT_SERVER_HOSTNAME
-              value: {{ include "hush-secretless.managerServiceShortName" . }}
+              value: {{ include "hush-am.accessManagerServiceShortName" . }}
             - name: MUFASA_SPIRE_AGENT_SERVER_PORT
               value: {{ .Values.spireServer.port | quote }}
             - name: MUFASA_SPIRE_AGENT_K8S_KUBELET_CA_PATH
-              value: {{ include "hush-secretless.kubeletCertFilePath" . }}
+              value: {{ include "hush-am.kubeletCertFilePath" . }}
             - name: MUFASA_SPIRE_AGENT_SKIP_KUBELET_VERIFICATION
               value: {{ .Values.spireAgent.skipKubeletVerification | quote }}

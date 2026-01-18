@@ -1,4 +1,4 @@
-{{- $kind := (include "hush-secretless.managerKind" .) -}}
+{{- $kind := (include "hush-am.accessManagerKind" .) -}}
 ---
 apiVersion: apps/v1
 {{- if eq $kind "statefulset" }}
@@ -7,18 +7,18 @@ kind: StatefulSet
 kind: Deployment
 {{- end }}
 metadata:
-  name: {{ include "hush-secretless.managerFullName" . }}
+  name: {{ include "hush-am.accessManagerFullName" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
-    app.kubernetes.io/component: manager
+    app.kubernetes.io/component: access-manager
   namespace: {{ include "hush-common.namespace" . }}
 
 spec:
   selector:
     matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: manager
-  replicas: {{ .Values.manager.replicas }}
+      app.kubernetes.io/component: access-manager
+  replicas: {{ .Values.accessManager.replicas }}
   {{- if eq $kind "statefulset" }}
-  serviceName: {{ include "hush-secretless.managerFullName" . }}
+  serviceName: {{ include "hush-am.accessManagerFullName" . }}
   updateStrategy:
     type: RollingUpdate
   {{- else }}
@@ -30,86 +30,86 @@ spec:
   template:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
-        app.kubernetes.io/component: manager
-      {{ with .Values.manager.annotations -}}
+        app.kubernetes.io/component: access-manager
+      {{ with .Values.accessManager.annotations -}}
       annotations: {{- . | nindent 8 }}
       {{- end }}
     spec:
-      {{- with .Values.manager.priorityClassName }}
+      {{- with .Values.accessManager.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
-      {{- with .Values.manager.nodeSelector }}
+      {{- with .Values.accessManager.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.manager.tolerations }}
+      {{- with .Values.accessManager.tolerations }}
       tolerations: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (include "hush-secretless.managerAffinity" . | fromYaml) }}
+      {{- with (include "hush-am.accessManagerAffinity" . | fromYaml) }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
-      hostNetwork: {{ include "hush-secretless.managerHostNetwork" . }}
-      dnsPolicy: {{ include "hush-secretless.managerDnsPolicy" . }}
+      hostNetwork: {{ include "hush-am.accessManagerHostNetwork" . }}
+      dnsPolicy: {{ include "hush-am.accessManagerDnsPolicy" . }}
       restartPolicy: Always
-      {{- with (include "hush-secretless.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-am.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
-      terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
-      serviceAccountName: {{ include "hush-secretless.managerFullName" . }}
+      terminationGracePeriodSeconds: {{ .Values.accessManager.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "hush-am.accessManagerFullName" . }}
       initContainers:
-        - name: secretless-manager-init
-          image: {{ include "hush-secretless.managerImagePath" . }}
+        - name: access-manager-init
+          image: {{ include "hush-am.accessManagerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: spire-server-socket-dir
-              mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
+              mountPath: {{ include "hush-am.spireServerSocketDirMountPath" . }}
             - name: data-volume
-              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
           command: ["/bin/bash", "-xc"]
           args:
             - |
-              mkdir -p {{ include "hush-secretless.spireServerDataDirPath" . }}
-              chown -R 1000:1000 {{ include "hush-secretless.spireServerDataDirPath" . }}
-              mkdir -p {{ include "hush-secretless.spireServerSocketDirPath" . }}
-              chown -R 1000:1000 {{ include "hush-secretless.spireServerSocketDirPath" . }}
-              mkdir -p {{ include "hush-secretless.managerDataDirPath" . }}
-              mkdir -p {{ include "hush-secretless.spireServerLogDirMountPath" . }}
-              chown 1000:1000 {{ include "hush-secretless.spireServerLogDirMountPath" . }}
+              mkdir -p {{ include "hush-am.spireServerDataDirPath" . }}
+              chown -R 1000:1000 {{ include "hush-am.spireServerDataDirPath" . }}
+              mkdir -p {{ include "hush-am.spireServerSocketDirPath" . }}
+              chown -R 1000:1000 {{ include "hush-am.spireServerSocketDirPath" . }}
+              mkdir -p {{ include "hush-am.accessManagerDataDirPath" . }}
+              mkdir -p {{ include "hush-am.spireServerLogDirMountPath" . }}
+              chown 1000:1000 {{ include "hush-am.spireServerLogDirMountPath" . }}
               . /usr/local/bin/hdc.sh
               /mufasa init
           env:
-            {{- include "hush-secretless.managerEnvs" . | nindent 12 }}
+            {{- include "hush-am.accessManagerEnvs" . | nindent 12 }}
           securityContext:
             runAsUser: 0
             runAsGroup: 0
         - name: admission-controller-init
-          image: {{ include "hush-secretless.admissionControllerImagePath" . }}
+          image: {{ include "hush-am.admissionControllerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: data-volume
-              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
           command: ["/bin/bash", "-xc"]
           args:
             - |
-              mkdir -p {{ include "hush-secretless.admissionControllerDataDirPath" . }}
-              openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.key
-              openssl req -x509 -key {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.key \
-                -out {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.crt \
+              mkdir -p {{ include "hush-am.admissionControllerDataDirPath" . }}
+              openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.key
+              openssl req -x509 -key {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.key \
+                -out {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.crt \
                 -sha256 -days 3650 \
                 -CA /opt/zazu/zazu-root.crt -CAkey /opt/zazu/zazu-root.key \
                 -subj "/CN=zazu" \
                 -addext "basicConstraints=critical,CA:FALSE" \
                 -addext "keyUsage=digitalSignature" \
                 -addext "extendedKeyUsage=serverAuth" \
-                -addext "subjectAltName={{ include "hush-secretless.managerServiceAltNames" . }}"
-              openssl x509 -in {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.crt -noout -text
+                -addext "subjectAltName={{ include "hush-am.accessManagerServiceAltNames" . }}"
+              openssl x509 -in {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.crt -noout -text
           securityContext:
             runAsUser: 0
             runAsGroup: 0
       containers:
         - name: spire-server
-          image: {{ include "hush-secretless.spireServerImagePath" . }}
+          image: {{ include "hush-am.spireServerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with and .Values.manager .Values.manager.spireServerResources }}
+          {{- with and .Values.accessManager .Values.accessManager.spireServerResources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           livenessProbe:
@@ -129,37 +129,39 @@ spec:
             periodSeconds: 10
           volumeMounts:
             - name: spire-server-socket-dir
-              mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
+              mountPath: {{ include "hush-am.spireServerSocketDirMountPath" . }}
             - name: data-volume
-              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             - name: spire-server-log-dir
-              mountPath: {{ include "hush-secretless.spireServerLogDirMountPath" . }}
+              mountPath: {{ include "hush-am.spireServerLogDirMountPath" . }}
           env:
-            {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
-            {{- include "hush-secretless.siloEnvs" . | nindent 12 }}
+            {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
+            {{- include "hush-am.siloEnvs" . | nindent 12 }}
             - name: AUTH_PLUGIN_KEY_DB_PATH
-              value: {{ include "hush-secretless.keyDbFilePath" . }}
+              value: {{ include "hush-am.keyDbFilePath" . }}
             - name: MUFASA_SPIRE_SERVER_PORT
               value: {{ .Values.spireServer.port | quote }}
-        - name: secretless-manager
-          image: {{ include "hush-secretless.managerImagePath" . }}
+            - name: MUFASA_SPIRE_AGENT_SERVICE_ACCOUNT
+              value: {{ include "hush-am.spireAgentFullName" . }}
+        - name: access-manager
+          image: {{ include "hush-am.accessManagerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with and .Values.manager .Values.manager.resources }}
+          {{- with and .Values.accessManager .Values.accessManager.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
             - name: spire-server-socket-dir
-              mountPath: {{ include "hush-secretless.spireServerSocketDirMountPath" . }}
+              mountPath: {{ include "hush-am.spireServerSocketDirMountPath" . }}
             - name: spire-agent-socket-dir
-              mountPath: {{ include "hush-secretless.spireAgentSocketDirMountPath" . }}
+              mountPath: {{ include "hush-am.spireAgentSocketDirMountPath" . }}
             - name: data-volume
-              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
           env:
-            {{- include "hush-secretless.managerEnvs" . | nindent 12 }}
+            {{- include "hush-am.accessManagerEnvs" . | nindent 12 }}
         - name: admission-controller
-          image: {{ include "hush-secretless.admissionControllerImagePath" . }}
+          image: {{ include "hush-am.admissionControllerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with and .Values.admissionController .Values.admissionController.resources }}
           resources: {{- toYaml . | nindent 12 }}
@@ -168,28 +170,28 @@ spec:
             - name: vector-socket-dir
               mountPath: /tmp/vector
             - name: data-volume
-              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
               readOnly: true
           env:
-            {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
+            {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             - name: MUFASA_INJECTOR_IMAGE
-              value: {{ include "hush-secretless.injectorImagePath" . }}
+              value: {{ include "hush-am.injectorImagePath" . }}
             - name: ZAZU_CERT_FILE_PATH
-              value: {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.crt
+              value: {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.crt
             - name: ZAZU_KEY_FILE_PATH
-              value: {{ include "hush-secretless.admissionControllerDataDirPath" . }}/tls.key
+              value: {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.key
             - name: MUFASA_POLICY_DB_PATH
-              value: {{ include "hush-secretless.policyDbFilePath" . }}
+              value: {{ include "hush-am.policyDbFilePath" . }}
             - name: MUFASA_SPIRE_AGENT_HOST_DIR
               value: {{ .Values.spireAgent.hostDir }}
             - name: MUFASA_SPIRE_AGENT_HOST_DIR_MOUNT_PATH
-              value: {{ include "hush-secretless.spireAgentSocketDirMountPath" . }}
+              value: {{ include "hush-am.spireAgentSocketDirMountPath" . }}
             - name: MUFASA_SPIRE_AGENT_SOCKET_PATH
-              value: {{ include "hush-secretless.spireAgentSocketPath" . }}
+              value: {{ include "hush-am.spireAgentSocketPath" . }}
             - name: MUFASA_REST_SERVER_ADDRESS
-              value: {{ include "hush-secretless.managerRestAddress" . }}
+              value: {{ include "hush-am.accessManagerRestAddress" . }}
             - name: MUFASA_INJECTOR_IMAGE_PULL_POLICY
-              value: {{ include "hush-secretless.injectorImagePullPolicy" . }}
+              value: {{ include "hush-am.injectorImagePullPolicy" . }}
             {{- with .Values.containerRegistry.default }}
             - name: ZAZU_DEFAULT_REGISTRY
               value: {{ . | quote }}
@@ -201,26 +203,26 @@ spec:
               value: "true"
             {{- end }}
             - name: ZAZU_BIND_ADDRESS
-              value: {{ include "hush-secretless.admissionControllerBindAddress" . | quote }}
+              value: {{ include "hush-am.admissionControllerBindAddress" . | quote }}
             - name: ZAZU_AWS_ECR_CFG_MODE
-              value: {{ include "hush-secretless.admissionControllerAwcEcrCfgMode" . | quote }}
+              value: {{ include "hush-am.admissionControllerAwcEcrCfgMode" . | quote }}
         - name: vector
-          image: {{ include "hush-secretless.managerVectorImagePath" . }}
+          image: {{ include "hush-am.accessManagerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with and .Values.manager .Values.manager.vectorResources }}
+          {{- with and .Values.accessManager .Values.accessManager.vectorResources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
             - name: data-volume
-              mountPath: {{ include "hush-secretless.dataVolumeMountPath" . }}
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
               readOnly: true
             - name: spire-server-log-dir
-              mountPath: {{ include "hush-secretless.spireServerLogDirMountPath" . }}
+              mountPath: {{ include "hush-am.spireServerLogDirMountPath" . }}
           env:
-            {{- include "hush-secretless.mandatoryEnvs" . | nindent 12 }}
-            {{- with (include "hush-secretless.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
+            {{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -265,19 +267,19 @@ spec:
     - metadata:
         name: data-volume
       spec:
-        {{- with .Values.manager.dataVolumeClaim.selector }}
+        {{- with .Values.accessManager.dataVolumeClaim.selector }}
         selector: {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- with .Values.manager.dataVolumeClaim.accessModes }}
+        {{- with .Values.accessManager.dataVolumeClaim.accessModes }}
         accessModes: {{- toYaml . | nindent 10 }}
         {{- end }}
         resources:
           requests:
-            storage: {{ .Values.manager.dataVolumeClaim.size }}
-        {{- with .Values.manager.dataVolumeClaim.storageClassName }}
+            storage: {{ .Values.accessManager.dataVolumeClaim.size }}
+        {{- with .Values.accessManager.dataVolumeClaim.storageClassName }}
         storageClassName: {{ . | quote }}
         {{- end }}
-        {{- with .Values.manager.dataVolumeClaim.volumeName }}
+        {{- with .Values.accessManager.dataVolumeClaim.volumeName }}
         volumeName: {{ . | quote }}
         {{- end }}
   {{- end }}

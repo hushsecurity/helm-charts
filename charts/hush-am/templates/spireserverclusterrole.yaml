@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "hush-secretless.spireServerClusterRoleFullName" . }}
+  name: {{ include "hush-am.spireServerClusterRoleFullName" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
     app.kubernetes.io/component: spire-server-cluster-role
 rules:
