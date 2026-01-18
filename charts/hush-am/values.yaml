@@ -80,10 +80,10 @@ image:
   injectorTag: ""
 
   # Image repository for Access Manager container
-  accessManagerRepository: access-manager
+  accessManagerRepository: am-access-manager
 
   # Image repository for Access Manager Vector container
-  accessManagerVectorRepository: access-manager-vector
+  accessManagerVectorRepository: am-access-manager-vector
 
   # Image repository for Access Management Spire Server container
   spireServerRepository: am-spire-server
