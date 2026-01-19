@@ -3,6 +3,7 @@ name: hush-am
 description: A Helm chart for Hush Security Access Management platform.
 type: application
 version: 0.3.0
+appVersion: "v0.0.22"
 home: https://hush.security
 dependencies:
   - name: hush-common

@@ -72,7 +72,9 @@ image:
   anonymousRegistry: hushsecuritypub.azurecr.io
 
   # Overrides the image tag for access management images.
-  tag: "v0"
+  #
+  # When not defined '.Chart.appVersion' is used. Ensure compatibility when overriding.
+  tag: ""
 
   # Custom tag for AM Injector image
   #
