@@ -41,13 +41,24 @@ spire-bundle
 {{- end }}
 
 {{/*
+Image tag to use
+*/}}
+{{- define "hush-am.imageTag" -}}
+{{- if and .Values.image .Values.image.tag -}}
+  {{- .Values.image.tag -}}
+{{- else -}}
+  {{- .Chart.AppVersion -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Image path for Access Manager container.
 */}}
 {{- define "hush-am.accessManagerImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.accessManagerRepository
-    "tag" .Values.image.tag
+    "tag" (include "hush-am.imageTag" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -59,7 +70,7 @@ Image path for Access Manager Vector container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.accessManagerVectorRepository
-    "tag" .Values.image.tag
+    "tag" (include "hush-am.imageTag" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -71,7 +82,7 @@ Image path for Spire Server container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.spireServerRepository
-    "tag" .Values.image.tag
+    "tag" (include "hush-am.imageTag" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -83,7 +94,7 @@ Image path for Spire Agent container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.spireAgentRepository
-    "tag" .Values.image.tag
+    "tag" (include "hush-am.imageTag" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -95,7 +106,7 @@ Image path for Admission Controller container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.admissionControllerRepository
-    "tag" .Values.image.tag
+    "tag" (include "hush-am.imageTag" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
