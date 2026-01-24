@@ -23,8 +23,8 @@ spec:
       {{- end }}
 
     spec:
-      {{- with .Values.spireAgent.priorityClassName }}
-      priorityClassName: {{ . }}
+      {{- with (include "hush-am.spireAgentPriorityClassName" .) }}
+      priorityClassName: {{ . | quote }}
       {{- end }}
       {{- with .Values.spireAgent.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}

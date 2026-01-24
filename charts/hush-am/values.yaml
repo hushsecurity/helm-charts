@@ -223,8 +223,13 @@ accessManager:
   # Number of manager replicas
   replicas: 2
 
-  # Priority class
-  priorityClassName: system-cluster-critical
+  # Priority value for dedicated priority class
+  priority: 1000000000
+
+  # Custom priority class to use.
+  #
+  # When not specified a dedicated priority class is used with 'accessManager.priority' value.
+  priorityClassName: ""
 
   # Custom node selector
   nodeSelector: {}
@@ -337,8 +342,13 @@ spireAgent:
   # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
   annotations: {}
 
-  # Priority class
-  priorityClassName: system-node-critical
+  # Priority value for dedicated priority class
+  priority: 1000000000
+
+  # Custom priority class to use.
+  #
+  # When not specified a dedicated priority class is used with 'spireAgent.priority' value.
+  priorityClassName: ""
 
   # Custom node selector
   nodeSelector: {}

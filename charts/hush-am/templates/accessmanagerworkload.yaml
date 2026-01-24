@@ -35,8 +35,8 @@ spec:
       annotations: {{- . | nindent 8 }}
       {{- end }}
     spec:
-      {{- with .Values.accessManager.priorityClassName }}
-      priorityClassName: {{ . }}
+      {{- with (include "hush-am.accessManagerPriorityClassName" .) }}
+      priorityClassName: {{ . | quote }}
       {{- end }}
       {{- with .Values.accessManager.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}

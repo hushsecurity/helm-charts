@@ -617,6 +617,17 @@ ClusterFirst
 {{- end }}
 
 {{/*
+Access Manager Priority Class Name
+*/}}
+{{- define "hush-am.accessManagerPriorityClassName" -}}
+{{- if .Values.accessManager.priorityClassName -}}
+  {{ .Values.accessManager.priorityClassName }}
+{{- else -}}
+  {{ include "hush-am.accessManagerFullName" . }}
+{{- end -}}
+{{- end }}
+
+{{/*
 List of image pull secrets to use
 */}}
 {{- define "hush-am.kubeImagePullSecretEffectiveList" -}}
@@ -625,4 +636,15 @@ List of image pull secrets to use
 {{- else -}}
 - name: {{ .Values.image.sensorImagePullSecretName | quote }}
 {{- end }}
+{{- end }}
+
+{{/*
+Spire Agent Priority Class Name
+*/}}
+{{- define "hush-am.spireAgentPriorityClassName" -}}
+{{- if .Values.spireAgent.priorityClassName -}}
+  {{ .Values.spireAgent.priorityClassName }}
+{{- else -}}
+  {{ include "hush-am.spireAgentFullName" . }}
+{{- end -}}
 {{- end }}
