@@ -161,6 +161,26 @@ spec:
           {{- with and .Values.accessManager .Values.accessManager.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
+          readinessProbe:
+            exec:
+              command:
+                - /mufasa
+                - healthcheck
+                - --shallow
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+            initialDelaySeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - /mufasa
+                - healthcheck
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            initialDelaySeconds: 300
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
