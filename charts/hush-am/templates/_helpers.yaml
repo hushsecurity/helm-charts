@@ -451,6 +451,9 @@ Annotations for access manager
 {{- if $irsa -}}
 eks.amazonaws.com/role-arn: {{ $irsa | quote }}
 {{- end }}
+{{- with .Values.containerRegistry.gcp.sa }}
+iam.gke.io/gcp-service-account: {{ . | quote }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -601,7 +604,8 @@ Should access manager use host network?
 */}}
 {{- define "hush-am.accessManagerHostNetwork" -}}
 {{- $awsEcrCfgMode := include "hush-am.admissionControllerAwcEcrCfgMode" . -}}
-{{- printf "%t" (eq $awsEcrCfgMode "ec2role") -}}
+{{- $noGcpSa := empty .Values.containerRegistry.gcp.sa -}}
+{{- printf "%t" (and (eq $awsEcrCfgMode "ec2role") $noGcpSa) -}}
 {{- end }}
 
 {{/*

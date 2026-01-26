@@ -201,6 +201,14 @@ containerRegistry:
     # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
     irsa: ""
 
+  # GCP configuration
+  gcp:
+    # GCP IAM Service Account to use for Workload Identity annotation
+    #
+    # For more information see:
+    # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#kubernetes-sa-to-iam
+    sa: ""
+
 # Values for Access Manager
 accessManager:
   # Kind of workload to use for access manager
