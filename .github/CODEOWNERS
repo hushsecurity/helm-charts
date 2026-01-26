@@ -1,3 +1,4 @@
-pyproject.toml @danaHush @moshe-hush @sladkani @r-bk
-poetry.toml @danaHush @moshe-hush @sladkani @r-bk
-poetry.lock @danaHush @moshe-hush @sladkani @r-bk
+pyproject.toml @danaHush @moshe-hush @sladkani
+poetry.toml @danaHush @moshe-hush @sladkani
+poetry.lock @danaHush @moshe-hush @sladkani
+* @r-bk
