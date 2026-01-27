@@ -1,0 +1,8 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+containerRegistry:
+  gcp:
+    sa: "custom-workload-sa@project-id-000000.iam.gserviceaccount.com"
