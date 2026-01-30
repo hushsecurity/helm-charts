@@ -454,6 +454,9 @@ eks.amazonaws.com/role-arn: {{ $irsa | quote }}
 {{- with .Values.containerRegistry.gcp.sa }}
 iam.gke.io/gcp-service-account: {{ . | quote }}
 {{- end }}
+{{- with .Values.containerRegistry.azure.client_id }}
+azure.workload.identity/client-id: {{ . | quote }}
+{{- end }}
 {{- end }}
 
 {{/*

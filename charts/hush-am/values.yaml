@@ -209,6 +209,14 @@ containerRegistry:
     # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#kubernetes-sa-to-iam
     sa: ""
 
+  # Azure configuration
+  azure:
+    # Azure Workload Identity Client ID to use for Service Account annotation
+    #
+    # For more information see:
+    # https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview
+    client_id: ""
+
 # Values for Access Manager
 accessManager:
   # Kind of workload to use for access manager
