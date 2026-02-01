@@ -407,6 +407,11 @@ spireAgent:
                 values:
                   - fargate
 
+  # Custom log level for Spire Agent
+  #
+  # Allowed values: DEBUG|INFO|WARN|ERROR
+  logLevel: ""
+
   # A list of tolerations.
   # For more information see
   # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
@@ -426,6 +431,11 @@ spireAgent:
 spireServer:
   # Listening port for Spire Server
   port: 8781
+
+  # Custom log level for Spire Server
+  #
+  # Allowed values: DEBUG|INFO|WARN|ERROR
+  logLevel: ""
 
 # Values for Admission Controller
 admissionController:

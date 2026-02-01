@@ -151,6 +151,10 @@ spec:
               value: {{ .Values.spireServer.port | quote }}
             - name: MUFASA_SPIRE_AGENT_SERVICE_ACCOUNT
               value: {{ include "hush-am.spireAgentFullName" . }}
+            {{- with (include "hush-am.spireServerLogLevel" .) }}
+            - name: MUFASA_SPIRE_SERVER_LOG_LEVEL
+              value: {{ . | quote }}
+            {{- end }}
         - name: access-manager
           image: {{ include "hush-am.accessManagerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}

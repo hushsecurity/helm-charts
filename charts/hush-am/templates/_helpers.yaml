@@ -672,3 +672,37 @@ Custom configurations' ConfigMap name
 {{- define "hush-am.configMapName" -}}
 {{- printf "%s-config" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
+
+{{/*
+Is valid spire log level?
+*/}}
+{{- define "hush-am.validateSpireLogLevel" -}}
+{{- $validLevels := list "DEBUG" "INFO" "WARN" "ERROR" -}}
+{{- if not (has .value $validLevels) -}}
+    {{- fail (printf "'%s' must be one of %v" .name $validLevels) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Spire Server custom log level
+*/}}
+{{- define "hush-am.spireServerLogLevel" -}}
+{{- $spireServerLogLevel := .Values.spireServer.logLevel -}}
+{{- if $spireServerLogLevel -}}
+  {{- $ctx := dict "name" "spireServer.logLevel" "value" $spireServerLogLevel -}}
+  {{- include "hush-am.validateSpireLogLevel" $ctx -}}
+  {{- printf "%s" $spireServerLogLevel -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Spire Agent custom log level
+*/}}
+{{- define "hush-am.spireAgentLogLevel" -}}
+{{- $spireAgentLogLevel := .Values.spireAgent.logLevel -}}
+{{- if $spireAgentLogLevel -}}
+  {{- $ctx := dict "name" "spireAgent.logLevel" "value" $spireAgentLogLevel -}}
+  {{- include "hush-am.validateSpireLogLevel" $ctx -}}
+  {{- printf "%s" $spireAgentLogLevel -}}
+{{- end -}}
+{{- end }}

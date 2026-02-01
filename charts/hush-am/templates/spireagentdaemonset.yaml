@@ -114,3 +114,7 @@ spec:
               value: {{ include "hush-am.kubeletCertFilePath" . }}
             - name: MUFASA_SPIRE_AGENT_SKIP_KUBELET_VERIFICATION
               value: {{ .Values.spireAgent.skipKubeletVerification | quote }}
+            {{- with (include "hush-am.spireAgentLogLevel" .) }}
+            - name: MUFASA_SPIRE_AGENT_LOG_LEVEL
+              value: {{ . | quote }}
+            {{- end }}
