@@ -215,7 +215,7 @@ containerRegistry:
     #
     # For more information see:
     # https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview
-    client_id: ""
+    clientId: ""
 
 # Values for Access Manager
 accessManager:

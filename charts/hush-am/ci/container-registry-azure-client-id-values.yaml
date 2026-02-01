@@ -5,4 +5,4 @@ hushDeployment:
 
 containerRegistry:
   azure:
-    client_id: "4b6a35d7-4032-4c88-a5f0-8393778aa80b"
+    clientId: "4b6a35d7-4032-4c88-a5f0-8393778aa80b"

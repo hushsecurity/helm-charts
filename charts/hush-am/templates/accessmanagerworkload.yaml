@@ -31,7 +31,7 @@ spec:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: access-manager
-        {{- if .Values.containerRegistry.azure.client_id }}
+        {{- if .Values.containerRegistry.azure.clientId }}
         azure.workload.identity/use: "true"
         {{- end }}
       {{ with .Values.accessManager.annotations -}}
