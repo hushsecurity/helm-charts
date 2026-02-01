@@ -656,3 +656,19 @@ Spire Agent Priority Class Name
   {{ include "hush-am.spireAgentFullName" . }}
 {{- end -}}
 {{- end }}
+
+{{/*
+Should we create a ConfigMap for custom configurations?
+*/}}
+{{- define "hush-am.shouldCreateConfigMap" -}}
+{{- if or .Values.accessManager.logConfig .Values.admissionController.logConfig -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Custom configurations' ConfigMap name
+*/}}
+{{- define "hush-am.configMapName" -}}
+{{- printf "%s-config" (include "hush-common.fullName" .) | trunc 63 }}
+{{- end }}

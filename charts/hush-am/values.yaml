@@ -336,6 +336,16 @@ accessManager:
       cpu: "10m"
       memory: "64Mi"
 
+  # Custom log configuration for Access Manager
+  #
+  # Example:
+  # logConfig:
+  #   default_level: info
+  #   default_export: true
+  #   default_export_level: warn
+  #   loggers: []
+  logConfig: {}
+
 # Values for Spire Agent DaemonSet
 spireAgent:
   # Host directory for Spire Agent socket
@@ -436,3 +446,13 @@ admissionController:
     requests:
       cpu: "10m"
       memory: "64Mi"
+
+  # Custom log configuration for Admission Controller
+  #
+  # Example:
+  # logConfig:
+  #   default_level: info
+  #   default_export: true
+  #   default_export_level: warn
+  #   loggers: []
+  logConfig: {}
