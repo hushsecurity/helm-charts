@@ -454,7 +454,7 @@ eks.amazonaws.com/role-arn: {{ $irsa | quote }}
 {{- with .Values.containerRegistry.gcp.sa }}
 iam.gke.io/gcp-service-account: {{ . | quote }}
 {{- end }}
-{{- with .Values.containerRegistry.azure.client_id }}
+{{- with .Values.containerRegistry.azure.clientId }}
 azure.workload.identity/client-id: {{ . | quote }}
 {{- end }}
 {{- end }}
@@ -608,7 +608,7 @@ Should access manager use host network?
 {{- define "hush-am.accessManagerHostNetwork" -}}
 {{- $awsEcrCfgMode := include "hush-am.admissionControllerAwcEcrCfgMode" . -}}
 {{- $noGcpSa := empty .Values.containerRegistry.gcp.sa -}}
-{{- $noAzureCid := empty .Values.containerRegistry.azure.client_id -}}
+{{- $noAzureCid := empty .Values.containerRegistry.azure.clientId -}}
 {{- printf "%t" (and (eq $awsEcrCfgMode "ec2role") $noGcpSa $noAzureCid) -}}
 {{- end }}
 
