@@ -1,0 +1,21 @@
+{{- if include "hush-am.shouldCreateConfigMap" . -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hush-am.configMapName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: config-map
+  namespace: {{ include "hush-common.namespace" . }}
+data:
+  {{ with .Values.accessManager.logConfig }}
+  access_manager_log_config: |
+    ---
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{ with .Values.admissionController.logConfig }}
+  admission_controller_log_config: |
+    ---
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

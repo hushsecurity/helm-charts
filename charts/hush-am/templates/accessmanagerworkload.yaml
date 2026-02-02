@@ -67,6 +67,11 @@ spec:
               mountPath: {{ include "hush-am.spireServerSocketDirMountPath" . }}
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
+            {{- if .Values.accessManager.logConfig }}
+            - name: access-manager-log-config
+              mountPath: /opt/mufasa
+              readOnly: true
+            {{- end }}
           command: ["/bin/bash", "-xc"]
           args:
             - |
@@ -146,6 +151,10 @@ spec:
               value: {{ .Values.spireServer.port | quote }}
             - name: MUFASA_SPIRE_AGENT_SERVICE_ACCOUNT
               value: {{ include "hush-am.spireAgentFullName" . }}
+            {{- with (include "hush-am.spireServerLogLevel" .) }}
+            - name: MUFASA_SPIRE_SERVER_LOG_LEVEL
+              value: {{ . | quote }}
+            {{- end }}
         - name: access-manager
           image: {{ include "hush-am.accessManagerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -161,6 +170,11 @@ spec:
               mountPath: {{ include "hush-am.spireAgentSocketDirMountPath" . }}
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
+            {{- if .Values.accessManager.logConfig }}
+            - name: access-manager-log-config
+              mountPath: /opt/mufasa
+              readOnly: true
+            {{- end }}
           env:
             {{- include "hush-am.accessManagerEnvs" . | nindent 12 }}
         - name: admission-controller
@@ -175,6 +189,11 @@ spec:
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
               readOnly: true
+            {{- if .Values.admissionController.logConfig }}
+            - name: admission-controller-log-config
+              mountPath: /opt/zazu
+              readOnly: true
+            {{- end }}
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             - name: MUFASA_INJECTOR_IMAGE
@@ -265,6 +284,22 @@ spec:
             type: DirectoryOrCreate
         - name: spire-server-log-dir
           emptyDir: {}
+        {{- if .Values.accessManager.logConfig }}
+        - name: access-manager-log-config
+          configMap:
+            name: {{ include "hush-am.configMapName" . }}
+            items:
+              - key: access_manager_log_config
+                path: log_config.yaml
+        {{- end }}
+        {{- if .Values.admissionController.logConfig }}
+        - name: admission-controller-log-config
+          configMap:
+            name: {{ include "hush-am.configMapName" . }}
+            items:
+              - key: admission_controller_log_config
+                path: log_config.yaml
+        {{- end }}
   {{- if eq $kind "statefulset" }}
   volumeClaimTemplates:
     - metadata:
