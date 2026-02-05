@@ -4,6 +4,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-sensor 0.24.0 - 2026-02-05
+
+### Added
+
+- add `app.kubernetes.io/component` labels to hush-sensor components
+
+### Changed
+
+- remove test files from released package
+- minimize Vermon's ClusterRole permissions
+
 ## hush-sensor 0.23.0 - 2025-11-12
 
 ### Added
