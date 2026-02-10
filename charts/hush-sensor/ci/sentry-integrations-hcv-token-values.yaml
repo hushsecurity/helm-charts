@@ -1,0 +1,18 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+sentry:
+  integrations:
+    hc_vault:
+      server: "https://vault.svc:8200"
+      vaultCACert:
+        secretKeyRef:
+          name: "vault-tls"
+          key: "ca.crt"
+      auth:
+        vault_token:
+          secretKeyRef:
+            name: "vault-token"
+            key: "value"

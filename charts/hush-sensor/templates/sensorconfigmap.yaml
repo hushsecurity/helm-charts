@@ -29,3 +29,6 @@ data:
     {{- with (include "hush-sensor.sentryK8SIntegrations" .) }}
     {{- . | nindent 6 -}}
     {{- end }}
+    {{- with (include "hush-sensor.sentryHcVaultIntegration" .) }}
+    {{- . | nindent 6 -}}
+    {{- end }}
