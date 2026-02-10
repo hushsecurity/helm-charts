@@ -4,6 +4,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-sensor [unreleased]
+
+### Added
+
+- add support for `sentry` `hc_vault` integration configuration.
+
 ## hush-sensor 0.24.0 - 2026-02-05
 
 ### Added

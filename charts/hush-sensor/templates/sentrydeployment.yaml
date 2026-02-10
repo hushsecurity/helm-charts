@@ -55,6 +55,12 @@ spec:
           hostPath:
             path: {{ .Values.hostDir }}
             type: DirectoryOrCreate
+        {{- with (include "hush-sensor.sentryHcVaultCACertVolume" .) }}
+          {{- . | nindent 8 }}
+        {{- end }}
+        {{- with (include "hush-sensor.sentryHcVaultJwtProjectedVolume" .) }}
+          {{- . | nindent 8 }}
+        {{- end }}
         {{- with and .Values.sentry .Values.sentry.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -73,6 +79,12 @@ spec:
               readOnly: true
             - name: host-dir
               mountPath: /var/lib/hush-security
+            {{- with (include "hush-sensor.sentryHcVaultCACertVolumeMount" .) }}
+              {{- . | nindent 12 }}
+            {{- end }}
+            {{- with (include "hush-sensor.sentryHcVaultJwtVolumeMount" .) }}
+              {{- . | nindent 12 }}
+            {{- end }}
             {{- with and .Values.sentry .Values.sentry.sentryExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -103,6 +115,13 @@ spec:
               value: "1"
             - name: PLUTO_CRAWL_K8S_ESO_SECRETSTORE
               value: "1"
+            {{- with (include "hush-sensor.sentryHcVaultTokenSecretRef" . | fromYaml) }}
+            - name: SENTRY_VAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
         - name: hush-sentry-vector
           image: {{ include "hush-sensor.sensorVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}

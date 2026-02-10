@@ -134,6 +134,177 @@ k8s:
 {{- end }}
 
 {{/*
+HC Vault JWT token mount path
+*/}}
+{{- define "hush-sensor.sentryHcVaultJwtMountPath" -}}
+/tmp/vault-sa
+{{- end }}
+
+{{/*
+HC Vault CACert mount path
+*/}}
+{{- define "hush-sensor.sentryHcVaultCACertMountPath" -}}
+/tmp/vault-cacert
+{{- end }}
+
+{{/*
+Check if Sentry HC Vault integration is enabled
+*/}}
+{{- define "hush-sensor.sentryHcVaultEnabled" -}}
+{{- if and .Values.sentry.integrations .Values.sentry.integrations.hc_vault .Values.sentry.integrations.hc_vault.server -}}
+true
+{{- end -}}
+{{- end }}
+
+
+{{/*
+Check if Sentry HC Vault JWT integration is enabled
+*/}}
+{{- define "hush-sensor.sentryHcvMountJwtToken" -}}
+{{- if and (include "hush-sensor.sentryHcVaultEnabled" .) .Values.sentry.integrations.hc_vault.auth -}}
+{{- if or .Values.sentry.integrations.hc_vault.auth.jwt.role .Values.sentry.integrations.hc_vault.auth.k8s.role -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Check if Sentry HC Vault Token auth is enabled
+*/}}
+{{- define "hush-sensor.sentryHcVaultTokenEnabled" -}}
+{{- if and (include "hush-sensor.sentryHcVaultEnabled" .) .Values.sentry.integrations.hc_vault.auth .Values.sentry.integrations.hc_vault.auth.vault_token .Values.sentry.integrations.hc_vault.auth.vault_token.secretKeyRef .Values.sentry.integrations.hc_vault.auth.vault_token.secretKeyRef.name .Values.sentry.integrations.hc_vault.auth.vault_token.secretKeyRef.key -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry HC Vault Token secret ref
+*/}}
+{{- define "hush-sensor.sentryHcVaultTokenSecretRef" -}}
+{{- if (include "hush-sensor.sentryHcVaultTokenEnabled" .) -}}
+    {{- dict
+        "name" .Values.sentry.integrations.hc_vault.auth.vault_token.secretKeyRef.name
+        "key" .Values.sentry.integrations.hc_vault.auth.vault_token.secretKeyRef.key
+        | toYaml
+    -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Validate that only one HC Vault auth method is configured.
+Fails if more than one of jwt, k8s, or token is defined.
+*/}}
+{{- define "hush-sensor.validateHcVaultAuthMethod" -}}
+{{- $hasJwt := and .Values.sentry.integrations.hc_vault.auth .Values.sentry.integrations.hc_vault.auth.jwt .Values.sentry.integrations.hc_vault.auth.jwt.role -}}
+{{- $hasK8s := and .Values.sentry.integrations.hc_vault.auth .Values.sentry.integrations.hc_vault.auth.k8s .Values.sentry.integrations.hc_vault.auth.k8s.role -}}
+{{- $hasToken := (include "hush-sensor.sentryHcVaultTokenEnabled" .) -}}
+{{- $count := 0 -}}
+{{- if $hasJwt }}{{- $count = add $count 1 -}}{{- end -}}
+{{- if $hasK8s }}{{- $count = add $count 1 -}}{{- end -}}
+{{- if $hasToken }}{{- $count = add $count 1 -}}{{- end -}}
+{{- if gt (int $count) 1 -}}
+    {{- fail "sentry.integrations.hc_vault.auth: only one auth method (jwt, k8s, or vault_token) can be configured at a time" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry HC Vault integration configuration
+*/}}
+{{- define "hush-sensor.sentryHcVaultIntegration" -}}
+{{- if (include "hush-sensor.sentryHcVaultEnabled" .) -}}
+  {{- include "hush-sensor.validateHcVaultAuthMethod" . -}}
+  {{- $hasJwt := and .Values.sentry.integrations.hc_vault.auth .Values.sentry.integrations.hc_vault.auth.jwt .Values.sentry.integrations.hc_vault.auth.jwt.role -}}
+  {{- $hasK8s := and .Values.sentry.integrations.hc_vault.auth .Values.sentry.integrations.hc_vault.auth.k8s .Values.sentry.integrations.hc_vault.auth.k8s.role -}}
+  {{- $hasToken := (include "hush-sensor.sentryHcVaultTokenEnabled" .) -}}
+  {{- $hasCACert := (include "hush-sensor.hasSentryHcVaultCACert" .) -}}
+hcv:
+  enabled: true
+  vault_addr: {{ .Values.sentry.integrations.hc_vault.server | quote }}
+    {{- if $hasCACert }}
+  vault_cacert: "{{ include "hush-sensor.sentryHcVaultCACertMountPath" . }}/{{ .Values.sentry.integrations.hc_vault.vaultCACert.secretKeyRef.key }}"
+    {{- end }}
+    {{- if or $hasJwt $hasK8s $hasToken }}
+  auth:
+    {{- if $hasJwt }}
+    jwt:
+      vault_role: {{ .Values.sentry.integrations.hc_vault.auth.jwt.role | quote }}
+      token_path: "{{ include "hush-sensor.sentryHcVaultJwtMountPath" . }}/token"
+    {{- end }}
+    {{- if $hasK8s }}
+    k8s:
+      vault_role: {{ .Values.sentry.integrations.hc_vault.auth.k8s.role | quote }}
+      token_path: "{{ include "hush-sensor.sentryHcVaultJwtMountPath" . }}/token"
+    {{- end }}
+    {{- if $hasToken }}
+    token:
+      token_env_name: "SENTRY_VAULT_TOKEN"
+    {{- end }}
+    {{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Check if Sentry HC Vault CA Cert is configured
+*/}}
+{{- define "hush-sensor.hasSentryHcVaultCACert" -}}
+{{- if and (include "hush-sensor.sentryHcVaultEnabled" .) .Values.sentry.integrations.hc_vault.vaultCACert .Values.sentry.integrations.hc_vault.vaultCACert.secretKeyRef .Values.sentry.integrations.hc_vault.vaultCACert.secretKeyRef.name .Values.sentry.integrations.hc_vault.vaultCACert.secretKeyRef.key -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry HC Vault CA Cert volume
+*/}}
+{{- define "hush-sensor.sentryHcVaultCACertVolume" -}}
+{{- if (include "hush-sensor.hasSentryHcVaultCACert" .) -}}
+- name: vault-ca
+  secret:
+    secretName: {{ .Values.sentry.integrations.hc_vault.vaultCACert.secretKeyRef.name }}
+    items:
+      - key: {{ .Values.sentry.integrations.hc_vault.vaultCACert.secretKeyRef.key }}
+        path: {{ .Values.sentry.integrations.hc_vault.vaultCACert.secretKeyRef.key }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry HC Vault CA Cert volume mount
+*/}}
+{{- define "hush-sensor.sentryHcVaultCACertVolumeMount" -}}
+{{- if (include "hush-sensor.hasSentryHcVaultCACert" .) -}}
+- name: vault-ca
+  mountPath: {{ include "hush-sensor.sentryHcVaultCACertMountPath" . }}
+  readOnly: true
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry deployment mount for hc vault integration with JWT Auth
+*/}}
+{{- define "hush-sensor.sentryHcVaultJwtVolumeMount" -}}
+{{- if (include "hush-sensor.sentryHcvMountJwtToken" .) -}}
+- name: k8s-vault-sa
+  mountPath: {{ include "hush-sensor.sentryHcVaultJwtMountPath" . }}
+  readOnly: true
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry deployment projected volume for hc vault integration with JWT Auth
+*/}}
+{{- define "hush-sensor.sentryHcVaultJwtProjectedVolume" -}}
+{{- if (include "hush-sensor.sentryHcvMountJwtToken" .) -}}
+- name: k8s-vault-sa
+  projected:
+    sources:
+      - serviceAccountToken:
+          path: token
+          expirationSeconds: 3600
+          audience: hush-security
+{{- end -}}
+{{- end }}
+
+
+{{/*
 Kubernetes version
 */}}
 {{- define "hush-sensor.kubeVersion" -}}
