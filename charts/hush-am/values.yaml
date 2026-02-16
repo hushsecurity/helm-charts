@@ -161,6 +161,7 @@ secretStore:
     #
     # For more information see:
     # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+    # DEPRECATED: use 'accessManager.workloadIdentity.aws.irsa' instead.
     irsa: ""
 
     # AWS access key (not recommended in production environments; used for testing)
@@ -199,6 +200,7 @@ containerRegistry:
     #
     # For more information see:
     # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+    # DEPRECATED: use 'accessManager.workloadIdentity.aws.irsa' instead.
     irsa: ""
 
   # GCP configuration
@@ -207,6 +209,7 @@ containerRegistry:
     #
     # For more information see:
     # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#kubernetes-sa-to-iam
+    # DEPRECATED: use 'accessManager.workloadIdentity.gcp.sa' instead.
     sa: ""
 
   # Azure configuration
@@ -215,6 +218,7 @@ containerRegistry:
     #
     # For more information see:
     # https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview
+    # DEPRECATED: use 'accessManager.workloadIdentity.azure.clientId' instead.
     clientId: ""
 
 # Values for Access Manager
@@ -345,6 +349,35 @@ accessManager:
   #   default_export_level: warn
   #   loggers: []
   logConfig: {}
+
+  # Workload Identity configuration for the access manager service account.
+  workloadIdentity:
+    # AWS configuration
+    aws:
+      # AWS IAM role ARN to configure with irsa annotations
+      # This value must be equal to 'secretStore.aws.irsa' if both are defined.
+      # This value must be equal to 'containerRegistry.aws.irsa' if both are defined.
+      #
+      # For more information see:
+      # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+      irsa: ""
+
+    # GCP configuration
+    gcp:
+      # GCP IAM Service Account to use for Workload Identity annotation
+      # This value must be equal to 'containerRegistry.gcp.sa' if both are defined.
+      #
+      # For more information see:
+      # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#kubernetes-sa-to-iam
+      sa: ""
+
+    # Azure configuration
+    azure:
+      # Azure Workload Identity Client ID to use for Service Account annotation
+      #
+      # For more information see:
+      # https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview
+      clientId: ""
 
 # Values for Spire Agent DaemonSet
 spireAgent:
