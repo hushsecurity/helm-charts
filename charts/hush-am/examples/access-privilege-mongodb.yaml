@@ -1,0 +1,19 @@
+apiVersion: am.hush.security/v1alpha1
+kind: AccessPrivilege
+metadata:
+  name: users-readwrite
+spec:
+  name: users-readwrite
+  type: mongodb
+  description: Read-write access to users collections
+  config:
+    grants:
+      - privileges:
+          - find
+          - insert
+          - update
+          - remove
+        resource_type: collection
+        resource_names:
+          - users
+          - profiles
