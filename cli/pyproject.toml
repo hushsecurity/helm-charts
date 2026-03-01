@@ -11,8 +11,8 @@ requests-toolbelt = "^1.0.0"
 optional = true
 
 [tool.poetry.group.ci.dependencies]
-pylint = "^4.0.4"
-ruff = "^0.14.14"
+pylint = "^4.0.5"
+ruff = "^0.15.4"
 
 [build-system]
 requires = ["poetry-core"]
