@@ -322,6 +322,17 @@ Secret store AWS region
 {{- end }}
 
 {{/*
+GCP Secret Manager project
+*/}}
+{{- define "hush-am.siloGcpProject" -}}
+{{- $project := and (and .Values.secretStore .Values.secretStore.gcp) .Values.secretStore.gcp.projectId -}}
+{{- if not $project -}}
+    {{- fail "'secretStore.gcp.projectId' must be defined for GCP secret store" -}}
+{{- end -}}
+{{ $project }}
+{{- end }}
+
+{{/*
 K8S Secrets Silo namespace to use
 */}}
 {{- define "hush-am.kubeSiloNamespace" -}}
@@ -390,6 +401,17 @@ Silo env vars
 - name: AWS_SESSION_TOKEN
   value: {{ .session_token | quote }}
         {{- end }}
+    {{- end }}
+{{- else if eq $siloKind "gcpsm" -}}
+- name: SILO_KIND
+  value: "gcpsm"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
+- name: SILO_GCP_SM_PROJECT
+  value: {{ include "hush-am.siloGcpProject" . | quote }}
+    {{- with (dig "gcp" "credentials_json" "" .Values.secretStore) }}
+- name: SILO_GCP_SM_CREDENTIALS_JSON
+  value: {{ . | quote }}
     {{- end }}
 {{- else if eq $siloKind "kubesecrets" -}}
 - name: SILO_KIND
