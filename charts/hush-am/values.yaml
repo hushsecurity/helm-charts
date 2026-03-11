@@ -148,6 +148,7 @@ secretStore:
   # The secret store kind
   # Allowed values are:
   # - awssm: AWS Secrets Manager
+  # - gcpsm: GCP Secret Manager
   # - kubesecrets: K8S Secrets
   kind: "kubesecrets"
 
@@ -175,6 +176,17 @@ secretStore:
 
     # AWS region name, e.g. "us-east-1"
     region: ""
+
+  # GCP secret store configuration
+  gcp:
+    # GCP project ID
+    projectId: ""
+
+    # GCP service account key JSON (not recommended in production environments; used for testing)
+    #
+    # For more information see:
+    # https://cloud.google.com/iam/docs/keys-create-delete
+    credentials_json: ""
 
   # Kubernetes secret store configuration
   k8s:
