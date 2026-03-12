@@ -322,6 +322,17 @@ Secret store AWS region
 {{- end }}
 
 {{/*
+GCP Secret Manager project
+*/}}
+{{- define "hush-am.siloGcpProject" -}}
+{{- $project := and (and .Values.secretStore .Values.secretStore.gcp) .Values.secretStore.gcp.projectId -}}
+{{- if not $project -}}
+    {{- fail "'secretStore.gcp.projectId' must be defined for GCP secret store" -}}
+{{- end -}}
+{{ $project }}
+{{- end }}
+
+{{/*
 K8S Secrets Silo namespace to use
 */}}
 {{- define "hush-am.kubeSiloNamespace" -}}
@@ -391,6 +402,17 @@ Silo env vars
   value: {{ .session_token | quote }}
         {{- end }}
     {{- end }}
+{{- else if eq $siloKind "gcpsm" -}}
+- name: SILO_KIND
+  value: "gcpsm"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
+- name: SILO_GCP_PROJECT
+  value: {{ include "hush-am.siloGcpProject" . | quote }}
+    {{- with (dig "gcp" "credentials_json" "" .Values.secretStore) }}
+- name: SILO_GCP_CREDENTIALS_JSON
+  value: {{ . | quote }}
+    {{- end }}
 {{- else if eq $siloKind "kubesecrets" -}}
 - name: SILO_KIND
   value: "kubesecrets"
@@ -450,11 +472,12 @@ Annotations for access manager
       {{- end -}}
   {{- end -}}
 {{- end -}}
+{{- $wiGcpSa := .Values.accessManager.workloadIdentity.gcp.sa -}}
 {{- $irsa := or $wiIrsa .Values.secretStore.aws.irsa .Values.containerRegistry.aws.irsa -}}
 {{- if $irsa -}}
 eks.amazonaws.com/role-arn: {{ $irsa | quote }}
 {{- end }}
-{{- with or .Values.accessManager.workloadIdentity.gcp.sa .Values.containerRegistry.gcp.sa }}
+{{- with or $wiGcpSa .Values.containerRegistry.gcp.sa }}
 iam.gke.io/gcp-service-account: {{ . | quote }}
 {{- end }}
 {{- with or .Values.accessManager.workloadIdentity.azure.clientId .Values.containerRegistry.azure.clientId }}
