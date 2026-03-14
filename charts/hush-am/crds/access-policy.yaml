@@ -1,0 +1,161 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: accesspolicies.am.hush.security
+spec:
+  group: am.hush.security
+  names:
+    kind: AccessPolicy
+    listKind: AccessPolicyList
+    plural: accesspolicies
+    singular: accesspolicy
+    shortNames:
+      - apl
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+        - name: Enabled
+          type: boolean
+          jsonPath: .spec.enabled
+        - name: Status
+          type: string
+          jsonPath: .status.syncState
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - name
+                - accessCredentialRef
+                - attestationCriteria
+                - deploymentIds
+                - deliveryConfig
+              properties:
+                name:
+                  type: string
+                  description: Display name sent to the API (decoupled from metadata.name).
+                description:
+                  type: string
+                  description: Human-readable description of this policy.
+                enabled:
+                  type: boolean
+                  description: Whether this policy is active.
+                  default: true
+                accessCredentialRef:
+                  type: object
+                  description: >
+                    Reference to a AccessCredential. Provide either 'name'
+                    to reference a CR in the same namespace, or 'id' to
+                    reference a credential managed outside Kubernetes.
+                    Provide exactly one of them.
+                  oneOf:
+                    - required: [name]
+                    - required: [id]
+                  properties:
+                    name:
+                      type: string
+                      description: Name of a AccessCredential CR in the same namespace.
+                    id:
+                      type: string
+                      description: ID of a credential managed outside Kubernetes.
+                accessPrivilegeRefs:
+                  type: array
+                  description: References to AccessPrivilege resources in the same namespace.
+                  items:
+                    type: object
+                    description: >
+                      Reference to a AccessPrivilege. Provide either 'name'
+                      to reference a CR in the same namespace, or 'id' to
+                      reference a privilege managed outside Kubernetes.
+                      Provide exactly one of them.
+                    oneOf:
+                      - required: [name]
+                      - required: [id]
+                    properties:
+                      name:
+                        type: string
+                        description: Name of a AccessPrivilege CR in the same namespace.
+                      id:
+                        type: string
+                        description: ID of a privilege managed outside Kubernetes.
+                attestationCriteria:
+                  type: array
+                  description: >
+                    Kubernetes identity criteria that workloads must match to
+                    receive this policy's credentials.
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - value
+                    properties:
+                      type:
+                        type: string
+                        description: The Kubernetes identity dimension to match.
+                        enum:
+                          - "k8s:ns"
+                          - "k8s:sa"
+                          - "k8s:pod-label"
+                          - "k8s:pod-name"
+                          - "k8s:container-name"
+                      key:
+                        type: string
+                        description: >
+                          Label key. Required when type is "k8s:pod-label",
+                          ignored otherwise.
+                      value:
+                        type: string
+                        description: >
+                          The value to match (namespace name, service account
+                          name, label value, pod name, or container name).
+                deploymentIds:
+                  type: array
+                  description: List of deployment IDs this policy targets.
+                  minItems: 1
+                  items:
+                    type: string
+                deliveryConfig:
+                  type: object
+                  description: >
+                    Defines how credential fields are delivered to the workload.
+                  required:
+                    - type
+                    - config
+                  properties:
+                    type:
+                      type: string
+                      description: Delivery mechanism type.
+                    config:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                      description: Type-specific delivery configuration.
+            status:
+              type: object
+              properties:
+                syncState:
+                  type: string
+                  description: Current sync state of the controller.
+                message:
+                  type: string
+                  description: Human-readable message from the controller.
+                policyId:
+                  type: string
+                  description: The ID assigned by the Hush platform.
+                lastSyncedAt:
+                  type: string
+                  format: date-time
+                  description: Timestamp of the last successful sync.
+                observedGeneration:
+                  type: integer
+                  format: int64
+                  description: The spec generation last reconciled by the controller.

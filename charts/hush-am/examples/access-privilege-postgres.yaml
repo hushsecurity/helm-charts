@@ -1,0 +1,15 @@
+apiVersion: am.hush.security/v1alpha1
+kind: AccessPrivilege
+metadata:
+  name: postgres-demo-cr
+spec:
+  name: postgres-demo-cr
+  type: postgres
+  description: Read-only access to all tables in default schema
+  config:
+    grants:
+      - privileges:
+          - SELECT
+        object_type: TABLE
+        object_names: ["public"]
+        all_in_schema: true

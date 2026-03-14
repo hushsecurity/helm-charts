@@ -1,0 +1,29 @@
+apiVersion: am.hush.security/v1alpha1
+kind: AccessPolicy
+metadata:
+  name: orders-api-cache-access
+spec:
+  name: orders-api-cache-access
+  description: Grant orders-api read access to Redis cache
+  enabled: true
+  accessCredentialRef:
+    id: acr-us1234567890
+  accessPrivilegeRefs:
+    - id: apr-us1234567890
+  attestationCriteria:
+    - type: "k8s:ns"
+      value: orders
+    - type: "k8s:sa"
+      value: orders-api
+    - type: "k8s:pod-label"
+      key: app
+      value: orders-api
+  deploymentIds:
+    - dep-us1234567890
+  deliveryConfig:
+    type: env
+    config:
+      items:
+        - name: REDIS_URL
+          key: "redis://${username}:${password}@${host}:${port}/${database}"
+          type: template

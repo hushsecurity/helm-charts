@@ -1,0 +1,78 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: accessprivileges.am.hush.security
+spec:
+  group: am.hush.security
+  names:
+    kind: AccessPrivilege
+    listKind: AccessPrivilegeList
+    plural: accessprivileges
+    singular: accessprivilege
+    shortNames:
+      - apr
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+        - name: Type
+          type: string
+          jsonPath: .spec.type
+        - name: Status
+          type: string
+          jsonPath: .status.syncState
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - name
+                - type
+                - config
+              properties:
+                name:
+                  type: string
+                  description: Display name sent to the API (decoupled from metadata.name).
+                type:
+                  type: string
+                  description: >
+                    The privilege type. Each type requires different fields
+                    under 'config'.
+                description:
+                  type: string
+                  description: Human-readable description of this privilege.
+                config:
+                  type: object
+                  description: >
+                    Type-specific privilege configuration. The controller
+                    validates that required fields are present; semantic
+                    validation is performed by the API service.
+                  x-kubernetes-preserve-unknown-fields: true
+            status:
+              type: object
+              properties:
+                syncState:
+                  type: string
+                  description: Current sync state of the controller.
+                message:
+                  type: string
+                  description: Human-readable message from the controller.
+                privilegeId:
+                  type: string
+                  description: The ID assigned by the Hush platform.
+                lastSyncedAt:
+                  type: string
+                  format: date-time
+                  description: Timestamp of the last successful sync.
+                observedGeneration:
+                  type: integer
+                  format: int64
+                  description: The spec generation last reconciled by the controller.

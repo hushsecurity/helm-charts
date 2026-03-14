@@ -1,0 +1,32 @@
+apiVersion: am.hush.security/v1alpha1
+kind: AccessPolicy
+metadata:
+  name: postgres-demo-cr
+spec:
+  name: postgres-demo-cr
+  description: Grant popo read-only access to postgres DB
+  enabled: true
+  accessCredentialRef:
+    name: demo-postgres-cr
+  accessPrivilegeRefs:
+    - name: postgres-demo-cr
+  attestationCriteria:
+    - type: "k8s:ns"
+      value: popo
+    - type: "k8s:sa"
+      value: popo
+  deploymentIds:
+    - dep-euMGQjS5nohabiqIza
+  deliveryConfig:
+    type: env
+    config:
+      items:
+        - name: DATABASE_URL
+          key: "postgresql://${username}:${password}@${host}:${port}/${db_name}"
+          type: template
+        - name: DB_HOST
+          key: host
+          type: key
+        - name: DB_PASSWORD
+          key: password
+          type: key

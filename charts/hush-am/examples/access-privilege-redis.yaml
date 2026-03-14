@@ -1,0 +1,18 @@
+apiVersion: am.hush.security/v1alpha1
+kind: AccessPrivilege
+metadata:
+  name: cache-read
+spec:
+  name: cache-read
+  type: redis
+  description: Read-only access to cache keys
+  config:
+    grants:
+      - type: category
+        action: include
+        name: read
+      - type: category
+        action: exclude
+        name: dangerous
+    keys:
+      - "cache:*"
