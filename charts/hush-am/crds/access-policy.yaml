@@ -17,6 +17,12 @@ spec:
       served: true
       storage: true
       additionalPrinterColumns:
+        - name: Credential
+          type: string
+          jsonPath: .status.credentialRef
+        - name: Privileges
+          type: string
+          jsonPath: .status.privilegeRefs
         - name: Enabled
           type: boolean
           jsonPath: .spec.enabled
@@ -159,3 +165,9 @@ spec:
                   type: integer
                   format: int64
                   description: The spec generation last reconciled by the controller.
+                credentialRef:
+                  type: string
+                  description: Name or ID of the referenced credential.
+                privilegeRefs:
+                  type: string
+                  description: Comma-separated list of privilege names or IDs.
