@@ -1,0 +1,27 @@
+{{- if .Values.apiController.enabled -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "hush-am.apiControllerFullName" . }}
+  namespace: {{ include "hush-common.namespace" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-controller-role
+rules:
+- apiGroups: ["am.hush.security"]
+  resources:
+    - accesscredentials
+    - accesspolicies
+    - accessprivileges
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: ["am.hush.security"]
+  resources:
+    - accesscredentials/status
+    - accesspolicies/status
+    - accessprivileges/status
+  verbs: ["get", "update", "patch"]
+- apiGroups: [""]
+  resources:
+    - secrets
+  verbs: ["get", "list", "watch"]
+{{- end }}

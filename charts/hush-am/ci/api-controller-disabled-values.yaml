@@ -1,0 +1,8 @@
+---
+apiController:
+  enabled: false
+
+secretStore:
+  kind: "awssm"
+  aws:
+    region: "eu-central-1"

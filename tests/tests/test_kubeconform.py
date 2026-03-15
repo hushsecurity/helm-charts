@@ -130,6 +130,10 @@ def values_tmp_file(chart: str, values: dict):
         aws_cr.setdefault(
             "irsa", "arn:aws:iam::000000000000:role/access-manager-iam-role"
         )
+        apiController = values.setdefault("apiController", {})
+        apiKey = apiController.setdefault("apiKey", {})
+        apiKey.setdefault("id", "dummy-api-key-id")
+        apiKey.setdefault("secret", "dummy-api-key-secret")
     with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as tmp_file:
         dump(values, tmp_file, Dumper=Dumper)
         tmp_file.flush()

@@ -41,6 +41,13 @@ spire-bundle
 {{- end }}
 
 {{/*
+Create a default fully qualified app name for API Controller.
+*/}}
+{{- define "hush-am.apiControllerFullName" -}}
+{{- printf "%s-api-controller" (include "hush-common.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
 Image tag to use
 */}}
 {{- define "hush-am.imageTag" -}}
@@ -106,6 +113,18 @@ Image path for Admission Controller container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.admissionControllerRepository
+    "tag" (include "hush-am.imageTag" .)
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Image path for API Controller container.
+*/}}
+{{- define "hush-am.apiControllerImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.apiControllerRepository
     "tag" (include "hush-am.imageTag" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
@@ -730,4 +749,44 @@ Spire Agent custom log level
   {{- include "hush-am.validateSpireLogLevel" $ctx -}}
   {{- printf "%s" $spireAgentLogLevel -}}
 {{- end -}}
+{{- end }}
+
+{{/*
+Which secret to use for API controller API key?
+*/}}
+{{- define "hush-am.apiControllerApiKeySecretRef" -}}
+{{- if and .Values.apiController.apiKey.id .Values.apiController.apiKey.secret -}}
+    {{- dict
+        "name" (printf "%s-api-key" (include "hush-am.apiControllerFullName" .))
+        "idKey" "api-key-id"
+        "secretKey" "api-key-secret"
+        | toYaml
+    -}}
+{{- else if and .Values.apiController.apiKey.secretKeyRef.name .Values.apiController.apiKey.secretKeyRef.idKey .Values.apiController.apiKey.secretKeyRef.secretKey -}}
+    {{- dict
+        "name" .Values.apiController.apiKey.secretKeyRef.name
+        "idKey" .Values.apiController.apiKey.secretKeyRef.idKey
+        "secretKey" .Values.apiController.apiKey.secretKeyRef.secretKey
+        | toYaml
+    -}}
+{{- end }}
+{{- end }}
+
+{{/*
+API Controller envs
+*/}}
+{{- define "hush-am.apiControllerEnvs" -}}
+{{ include "hush-am.mandatoryEnvs" . }}
+{{- with (include "hush-am.apiControllerApiKeySecretRef" . | fromYaml) }}
+- name: HUSH_API_KEY_ID
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .idKey }}
+- name: HUSH_API_KEY_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .secretKey }}
+{{- end }}
 {{- end }}
