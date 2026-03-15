@@ -43,7 +43,6 @@ spec:
                 - name
                 - accessCredentialRef
                 - attestationCriteria
-                - deploymentIds
                 - deliveryConfig
               properties:
                 name:
@@ -124,12 +123,6 @@ spec:
                         description: >
                           The value to match (namespace name, service account
                           name, label value, pod name, or container name).
-                deploymentIds:
-                  type: array
-                  description: List of deployment IDs this policy targets.
-                  minItems: 1
-                  items:
-                    type: string
                 deliveryConfig:
                   type: object
                   description: >

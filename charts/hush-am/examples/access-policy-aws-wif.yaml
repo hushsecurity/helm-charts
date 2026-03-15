@@ -15,8 +15,6 @@ spec:
       value: data-pipeline
     - type: "k8s:sa"
       value: data-pipeline-worker
-  deploymentIds:
-    - dep-us1234567890
   deliveryConfig:
     type: aws_wif
     config:

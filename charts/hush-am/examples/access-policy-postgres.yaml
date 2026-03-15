@@ -15,8 +15,6 @@ spec:
       value: popo
     - type: "k8s:sa"
       value: popo
-  deploymentIds:
-    - dep-euMGQjS5nohabiqIza
   deliveryConfig:
     type: env
     config:
