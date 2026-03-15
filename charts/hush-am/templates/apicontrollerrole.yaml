@@ -24,4 +24,8 @@ rules:
   resources:
     - secrets
   verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources:
+    - events
+  verbs: ["create", "patch"]
 {{- end }}
