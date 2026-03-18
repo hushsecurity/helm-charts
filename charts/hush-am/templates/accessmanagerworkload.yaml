@@ -117,7 +117,7 @@ spec:
         - name: spire-server
           image: {{ include "hush-am.spireServerImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with and .Values.accessManager .Values.accessManager.spireServerResources }}
+          {{- with or .Values.spireServer.resources .Values.accessManager.spireServerResources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           livenessProbe:

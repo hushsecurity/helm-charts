@@ -338,6 +338,7 @@ accessManager:
       memory: "64Mi"
 
   # Default resource requests/limits for spire-server
+  # DEPRECATED: use 'spireServer.resources' instead.
   spireServerResources:
     limits:
       cpu: "330m"
@@ -484,6 +485,15 @@ spireServer:
   #
   # Allowed values: DEBUG|INFO|WARN|ERROR
   logLevel: ""
+
+  # Default resource requests/limits for spire-server
+  resources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
 
 # Values for Admission Controller
 admissionController:
