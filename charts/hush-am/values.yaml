@@ -331,29 +331,29 @@ accessManager:
   # Default resource requests/limits for access manager
   resources:
     limits:
-      cpu: "330m"
-      memory: "256Mi"
+      cpu: "400m"
+      memory: "512Mi"
     requests:
-      cpu: "10m"
-      memory: "64Mi"
+      cpu: "100m"
+      memory: "128Mi"
 
   # Default resource requests/limits for spire-server
   # DEPRECATED: use 'spireServer.resources' instead.
   spireServerResources:
     limits:
-      cpu: "330m"
-      memory: "256Mi"
+      cpu: "400m"
+      memory: "512Mi"
     requests:
-      cpu: "10m"
-      memory: "64Mi"
+      cpu: "100m"
+      memory: "128Mi"
 
   # Default resource requests/limits for manager-vector
   vectorResources:
     limits:
-      cpu: "330m"
+      cpu: "300m"
       memory: "256Mi"
     requests:
-      cpu: "10m"
+      cpu: "30m"
       memory: "64Mi"
 
   # Custom log configuration for Access Manager
@@ -470,11 +470,11 @@ spireAgent:
   # Default resource requests/limits for spire-agent
   resources:
     limits:
-      cpu: "330m"
-      memory: "256Mi"
+      cpu: "350m"
+      memory: "384Mi"
     requests:
-      cpu: "10m"
-      memory: "64Mi"
+      cpu: "50m"
+      memory: "128Mi"
 
 # Values for Spire Server
 spireServer:
@@ -489,11 +489,11 @@ spireServer:
   # Default resource requests/limits for spire-server
   resources:
     limits:
-      cpu: "330m"
-      memory: "256Mi"
+      cpu: "400m"
+      memory: "512Mi"
     requests:
-      cpu: "10m"
-      memory: "64Mi"
+      cpu: "100m"
+      memory: "128Mi"
 
 # Values for Admission Controller
 admissionController:
@@ -509,11 +509,11 @@ admissionController:
   # Default resource requests/limits for Admission Controller
   resources:
     limits:
-      cpu: "330m"
-      memory: "256Mi"
+      cpu: "300m"
+      memory: "384Mi"
     requests:
-      cpu: "10m"
-      memory: "64Mi"
+      cpu: "50m"
+      memory: "128Mi"
 
   # Custom log configuration for Admission Controller
   #
@@ -563,14 +563,14 @@ apiController:
       cpu: "330m"
       memory: "256Mi"
     requests:
-      cpu: "10m"
+      cpu: "30m"
       memory: "64Mi"
 
   # Resource requests/limits for the vector sidecar
   vectorResources:
     limits:
-      cpu: "330m"
+      cpu: "200m"
       memory: "256Mi"
     requests:
-      cpu: "10m"
+      cpu: "20m"
       memory: "64Mi"
