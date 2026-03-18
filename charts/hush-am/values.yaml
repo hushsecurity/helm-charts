@@ -333,9 +333,11 @@ accessManager:
     limits:
       cpu: "400m"
       memory: "512Mi"
+      ephemeral-storage: "1Gi"
     requests:
       cpu: "100m"
       memory: "128Mi"
+      ephemeral-storage: "128Mi"
 
   # Default resource requests/limits for spire-server
   # DEPRECATED: use 'spireServer.resources' instead.
@@ -343,18 +345,22 @@ accessManager:
     limits:
       cpu: "400m"
       memory: "512Mi"
+      ephemeral-storage: "1Gi"
     requests:
       cpu: "100m"
       memory: "128Mi"
+      ephemeral-storage: "128Mi"
 
   # Default resource requests/limits for manager-vector
   vectorResources:
     limits:
       cpu: "300m"
       memory: "256Mi"
+      ephemeral-storage: "512Mi"
     requests:
       cpu: "30m"
       memory: "64Mi"
+      ephemeral-storage: "128Mi"
 
   # Custom log configuration for Access Manager
   #
@@ -472,9 +478,11 @@ spireAgent:
     limits:
       cpu: "350m"
       memory: "384Mi"
+      ephemeral-storage: "1Gi"
     requests:
       cpu: "50m"
       memory: "128Mi"
+      ephemeral-storage: "128Mi"
 
 # Values for Spire Server
 spireServer:
@@ -491,9 +499,11 @@ spireServer:
     limits:
       cpu: "400m"
       memory: "512Mi"
+      ephemeral-storage: "1Gi"
     requests:
       cpu: "100m"
       memory: "128Mi"
+      ephemeral-storage: "128Mi"
 
 # Values for Admission Controller
 admissionController:
@@ -511,9 +521,11 @@ admissionController:
     limits:
       cpu: "300m"
       memory: "384Mi"
+      ephemeral-storage: "1Gi"
     requests:
       cpu: "50m"
       memory: "128Mi"
+      ephemeral-storage: "128Mi"
 
   # Custom log configuration for Admission Controller
   #
@@ -562,15 +574,19 @@ apiController:
     limits:
       cpu: "330m"
       memory: "256Mi"
+      ephemeral-storage: "512Mi"
     requests:
       cpu: "30m"
       memory: "64Mi"
+      ephemeral-storage: "128Mi"
 
   # Resource requests/limits for the vector sidecar
   vectorResources:
     limits:
       cpu: "200m"
       memory: "256Mi"
+      ephemeral-storage: "512Mi"
     requests:
       cpu: "20m"
       memory: "64Mi"
+      ephemeral-storage: "128Mi"
