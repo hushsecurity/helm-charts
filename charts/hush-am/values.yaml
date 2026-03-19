@@ -329,6 +329,8 @@ accessManager:
     volumeName: ""
 
   # Default resource requests/limits for access manager
+  #
+  # Adjusted to cover most cases. Change based on your needs.
   resources:
     limits:
       cpu: "400m"
@@ -352,6 +354,8 @@ accessManager:
       ephemeral-storage: "128Mi"
 
   # Default resource requests/limits for manager-vector
+  #
+  # Adjusted to cover most cases. Change based on your needs.
   vectorResources:
     limits:
       cpu: "300m"
@@ -474,6 +478,8 @@ spireAgent:
     - operator: "Exists"
 
   # Default resource requests/limits for spire-agent
+  #
+  # Adjusted to cover most cases. Change based on your needs.
   resources:
     limits:
       cpu: "350m"
@@ -495,6 +501,8 @@ spireServer:
   logLevel: ""
 
   # Default resource requests/limits for spire-server
+  #
+  # Adjusted to cover most cases. Change based on your needs.
   resources:
     limits:
       cpu: "400m"
@@ -517,6 +525,8 @@ admissionController:
   verboseInjector: false
 
   # Default resource requests/limits for Admission Controller
+  #
+  # Adjusted to cover most cases. Change based on your needs.
   resources:
     limits:
       cpu: "300m"
@@ -570,6 +580,8 @@ apiController:
       secretKey: ""
 
   # Resource requests/limits for the API controller container
+  #
+  # Adjusted to cover most cases. Change based on your needs.
   resources:
     limits:
       cpu: "330m"
@@ -581,6 +593,8 @@ apiController:
       ephemeral-storage: "128Mi"
 
   # Resource requests/limits for the vector sidecar
+  #
+  # Adjusted to cover most cases. Change based on your needs.
   vectorResources:
     limits:
       cpu: "200m"
