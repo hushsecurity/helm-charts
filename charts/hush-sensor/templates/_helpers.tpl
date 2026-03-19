@@ -305,6 +305,84 @@ Sentry deployment projected volume for hc vault integration with JWT Auth
 
 
 {{/*
+Check if Sentry Azure KV integration is enabled.
+Enabled when tenant_id or workloadIdentity.clientId is set.
+*/}}
+{{- define "hush-sensor.sentryAzureKvEnabled" -}}
+{{- if and .Values.sentry.integrations .Values.sentry.integrations.azure_kv -}}
+  {{- $akv := .Values.sentry.integrations.azure_kv -}}
+  {{- if or $akv.tenant_id (and $akv.workloadIdentity $akv.workloadIdentity.clientId) -}}
+true
+  {{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Check if Sentry Azure KV Service Principal auth is enabled.
+True when all SP fields are populated: client_id + clientSecret.secretKeyRef.{name,key}.
+*/}}
+{{- define "hush-sensor.sentryAzureKvSPEnabled" -}}
+{{- if and (include "hush-sensor.sentryAzureKvEnabled" .) .Values.sentry.integrations.azure_kv.auth .Values.sentry.integrations.azure_kv.auth.service_principal .Values.sentry.integrations.azure_kv.auth.service_principal.client_id .Values.sentry.integrations.azure_kv.auth.service_principal.clientSecret .Values.sentry.integrations.azure_kv.auth.service_principal.clientSecret.secretKeyRef .Values.sentry.integrations.azure_kv.auth.service_principal.clientSecret.secretKeyRef.name .Values.sentry.integrations.azure_kv.auth.service_principal.clientSecret.secretKeyRef.key -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry Azure KV Client Secret secret ref
+*/}}
+{{- define "hush-sensor.sentryAzureKvClientSecretSecretRef" -}}
+{{- if (include "hush-sensor.sentryAzureKvSPEnabled" .) -}}
+    {{- dict
+        "name" .Values.sentry.integrations.azure_kv.auth.service_principal.clientSecret.secretKeyRef.name
+        "key" .Values.sentry.integrations.azure_kv.auth.service_principal.clientSecret.secretKeyRef.key
+        | toYaml
+    -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Validate that only one Azure KV auth method is configured.
+Fails if both service_principal and workloadIdentity are configured simultaneously.
+*/}}
+{{- define "hush-sensor.validateAzureKvAuthMethod" -}}
+{{- $hasSP := (include "hush-sensor.sentryAzureKvSPEnabled" .) -}}
+{{- $hasWI := and .Values.sentry.integrations.azure_kv.workloadIdentity .Values.sentry.integrations.azure_kv.workloadIdentity.clientId -}}
+{{- if and $hasSP $hasWI -}}
+    {{- fail "sentry.integrations.azure_kv: only one auth method (service_principal or workloadIdentity) can be configured at a time" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry Azure KV integration configuration.
+Produces the azure_kv: block matching the Go config struct.
+When using Workload Identity (no SP), the auth block is omitted — Go falls back to defaultAuth.
+*/}}
+{{- define "hush-sensor.sentryAzureKvIntegration" -}}
+{{- if (include "hush-sensor.sentryAzureKvEnabled" .) -}}
+  {{- include "hush-sensor.validateAzureKvAuthMethod" . -}}
+  {{- $akv := .Values.sentry.integrations.azure_kv -}}
+  {{- $hasSP := (include "hush-sensor.sentryAzureKvSPEnabled" .) -}}
+azure_kv:
+  enabled: true
+  {{- if $akv.tenant_id }}
+  tenant_id: {{ $akv.tenant_id | quote }}
+  {{- end }}
+  {{- if and $akv.subscription_ids (gt (len $akv.subscription_ids) 0) }}
+  subscription_ids:
+    {{- range $akv.subscription_ids }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+  {{- if $hasSP }}
+  auth:
+    service_principal:
+      client_id: {{ $akv.auth.service_principal.client_id | quote }}
+      client_secret_env: "AZURE_CLIENT_SECRET"
+  {{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Kubernetes version
 */}}
 {{- define "hush-sensor.kubeVersion" -}}
@@ -701,6 +779,17 @@ Sentry service account annotations with AWS IAM role handling
     {{- end -}}
   {{- else -}}
     {{- $_ := set $annotations $roleArnKey .Values.sentry.integrations.aws.irsa -}}
+  {{- end -}}
+{{- end -}}
+{{- $wiClientIdKey := "azure.workload.identity/client-id" -}}
+{{- if and .Values.sentry.integrations .Values.sentry.integrations.azure_kv .Values.sentry.integrations.azure_kv.workloadIdentity .Values.sentry.integrations.azure_kv.workloadIdentity.clientId -}}
+  {{- if hasKey $annotations $wiClientIdKey -}}
+    {{- $existingId := get $annotations $wiClientIdKey -}}
+    {{- if ne $existingId .Values.sentry.integrations.azure_kv.workloadIdentity.clientId -}}
+      {{- fail (printf "Error: inconsistent sentry service account annotation for %s. Expected %s" $wiClientIdKey .Values.sentry.integrations.azure_kv.workloadIdentity.clientId) -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $_ := set $annotations $wiClientIdKey .Values.sentry.integrations.azure_kv.workloadIdentity.clientId -}}
   {{- end -}}
 {{- end -}}
 {{- if $annotations -}}

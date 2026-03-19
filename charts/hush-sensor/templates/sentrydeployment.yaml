@@ -17,6 +17,9 @@ spec:
     metadata:
       labels: {{- include "hush-sensor.labels" . | nindent 8 }}
         app.kubernetes.io/component: sentry
+      {{- if and .Values.sentry.integrations .Values.sentry.integrations.azure_kv .Values.sentry.integrations.azure_kv.workloadIdentity .Values.sentry.integrations.azure_kv.workloadIdentity.clientId }}
+        azure.workload.identity/use: "true"
+      {{- end }}
       {{ with .Values.sentry.annotations -}}
       annotations: {{- . | nindent 8 }}
       {{- end }}
@@ -117,6 +120,13 @@ spec:
               value: "1"
             {{- with (include "hush-sensor.sentryHcVaultTokenSecretRef" . | fromYaml) }}
             - name: SENTRY_VAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- with (include "hush-sensor.sentryAzureKvClientSecretSecretRef" . | fromYaml) }}
+            - name: AZURE_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}

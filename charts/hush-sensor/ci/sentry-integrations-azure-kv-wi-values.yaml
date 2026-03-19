@@ -1,0 +1,11 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+sentry:
+  integrations:
+    azure_kv:
+      tenant_id: "11111111-2222-3333-4444-555555555555"
+      workloadIdentity:
+        clientId: "66666666-7777-8888-9999-000000000000"
