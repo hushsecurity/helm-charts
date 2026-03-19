@@ -4,6 +4,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-sensor [unreleased]
+
+### Added
+
+- add support for `azure` integration configuration in `sentry`.
+
 ## hush-sensor 0.26.0 - 2026-04-05
 
 ### Added
