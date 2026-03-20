@@ -101,7 +101,7 @@ Image path for Spire Agent container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.spireAgentRepository
-    "tag" (include "hush-am.imageTag" .)
+    "tag" "v0.4.0"
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
