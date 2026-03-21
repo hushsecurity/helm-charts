@@ -555,30 +555,6 @@ apiController:
   # Number of replicas
   replicas: 1
 
-  # API key credentials for Hush API authentication.
-  #
-  # Either provide inline values (id + secret) or reference an existing Secret
-  # via secretKeyRef.
-  apiKey:
-    # Inline API key ID
-    id: ""
-
-    # Inline API key secret
-    secret: ""
-
-    # Reference to an existing Secret containing API key credentials.
-    #
-    # The secret must be defined in the same namespace where the chart is installed.
-    secretKeyRef:
-      # Secret name
-      name: ""
-
-      # Key within the Secret that holds the API key ID
-      idKey: ""
-
-      # Key within the Secret that holds the API key secret
-      secretKey: ""
-
   # Resource requests/limits for the API controller container
   #
   # Adjusted to cover most cases. Change based on your needs.
