@@ -421,6 +421,23 @@ Silo env vars
   value: {{ .session_token | quote }}
         {{- end }}
     {{- end }}
+{{- else if eq $siloKind "awsssm" -}}
+- name: SILO_KIND
+  value: "awsssm"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
+- name: SILO_AWS_SSM_REGION
+  value: {{ include "hush-am.siloAwsRegion" . | quote }}
+    {{- with (include "hush-am.siloAwsAccessToken" . | fromYaml) }}
+- name: AWS_SECRET_ACCESS_KEY
+  value: {{ .secret_access_key | quote }}
+- name: AWS_ACCESS_KEY_ID
+  value: {{ .access_key_id | quote }}
+        {{- if .session_token }}
+- name: AWS_SESSION_TOKEN
+  value: {{ .session_token | quote }}
+        {{- end }}
+    {{- end }}
 {{- else if eq $siloKind "gcpsm" -}}
 - name: SILO_KIND
   value: "gcpsm"
