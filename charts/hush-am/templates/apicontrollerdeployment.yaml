@@ -34,6 +34,9 @@ spec:
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
           env:
             {{- include "hush-am.apiControllerEnvs" . | nindent 12 }}
         - name: vector
@@ -45,6 +48,9 @@ spec:
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             {{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
@@ -70,4 +76,9 @@ spec:
         - name: vector-socket-dir
           emptyDir:
             sizeLimit: 1Mi
+        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
 {{- end }}
