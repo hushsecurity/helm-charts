@@ -520,7 +520,7 @@ admissionController:
   mutatingWebhookTimeout: 30
 
   # Listening port for Admission Controller webhook
-  port: 8443
+  port: 12443
 
   # Enable hushinjector verbose mode
   verboseInjector: false
