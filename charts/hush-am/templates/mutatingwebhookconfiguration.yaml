@@ -25,3 +25,9 @@ webhooks:
         apiVersions: ["v1"]
         operations: ["CREATE"]
         resources: ["pods"]
+    {{- with (include "hush-am.mutatingWebhookNamespaceSelector" .) }}
+    namespaceSelector: {{- . | nindent 6 }}
+    {{- end }}
+    {{- with (include "hush-am.mutatingWebhookObjectSelector" .) }}
+    objectSelector: {{- . | nindent 6 }}
+    {{- end }}

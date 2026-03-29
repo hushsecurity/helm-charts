@@ -1,0 +1,14 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+admissionController:
+  objectSelector:
+    type: "custom"
+    custom:
+      matchExpressions:
+        - key: hush.security/inject
+          operator: NotIn
+          values:
+            - "false"
