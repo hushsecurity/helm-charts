@@ -300,6 +300,32 @@ accessManager:
   # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
   tolerations: []
 
+  # Topology spread constraints configuration.
+  #
+  # For more information see
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints:
+    # Constraints type.
+    #
+    # Allowed values:
+    # - "none"        - no topology spread constraints
+    # - "zones"       - spread across zones
+    # - "zones_nodes" - spread across zones and nodes
+    # - "custom"      - use custom 'topologySpreadConstraints.custom' value
+    type: "none"
+
+    # Policy when topology spread constraint is not satisfiable.
+    # Used with builtin types ("zones", "zones_nodes").
+    #
+    # Allowed values:
+    # - "ScheduleAnyway" - schedule anyway, minimizing skew
+    # - "DoNotSchedule"  - do not schedule the pod
+    whenUnsatisfiable: "ScheduleAnyway"
+
+    # Custom topology spread constraints.
+    # Only used when 'type' is "custom".
+    custom: []
+
   # Data volume claim configuration.
   # This is ignored when 'manager.kind' is 'deployment'.
   dataVolumeClaim:
