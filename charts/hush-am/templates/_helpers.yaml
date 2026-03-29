@@ -664,6 +664,50 @@ Access Manager affinity rules
 {{- end }}
 
 {{/*
+Access Manager topology spread constraints
+*/}}
+{{- define "hush-am.accessManagerTopologySpreadConstraints" -}}
+{{- $type := .Values.accessManager.topologySpreadConstraints.type -}}
+{{- $validTypes := list "none" "zones" "zones_nodes" "custom" -}}
+{{- if not (has $type $validTypes) -}}
+  {{- fail (printf "'accessManager.topologySpreadConstraints.type' must be one of %v" $validTypes) -}}
+{{- end -}}
+{{- $validWhenUnsatisfiable := list "ScheduleAnyway" "DoNotSchedule" -}}
+{{- if not (has .Values.accessManager.topologySpreadConstraints.whenUnsatisfiable $validWhenUnsatisfiable) -}}
+  {{- fail (printf "'accessManager.topologySpreadConstraints.whenUnsatisfiable' must be one of %v" $validWhenUnsatisfiable) -}}
+{{- end -}}
+{{- if eq $type "zones" -}}
+{{ include "hush-am.topologySpreadZones" . }}
+{{- else if eq $type "zones_nodes" -}}
+{{ include "hush-am.topologySpreadZones" . }}
+{{ include "hush-am.topologySpreadNodes" . }}
+{{- else if eq $type "custom" -}}
+{{- if not .Values.accessManager.topologySpreadConstraints.custom -}}
+  {{- fail "'accessManager.topologySpreadConstraints.custom' must not be empty when type is \"custom\"" -}}
+{{- end -}}
+{{- .Values.accessManager.topologySpreadConstraints.custom | toYaml -}}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-am.topologySpreadZones" -}}
+- maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: {{ .Values.accessManager.topologySpreadConstraints.whenUnsatisfiable }}
+  labelSelector:
+    matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: access-manager
+{{- end }}
+
+{{- define "hush-am.topologySpreadNodes" -}}
+- maxSkew: 1
+  topologyKey: kubernetes.io/hostname
+  whenUnsatisfiable: {{ .Values.accessManager.topologySpreadConstraints.whenUnsatisfiable }}
+  labelSelector:
+    matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: access-manager
+{{- end }}
+
+{{/*
 Should access manager use host network?
 */}}
 {{- define "hush-am.accessManagerHostNetwork" -}}
