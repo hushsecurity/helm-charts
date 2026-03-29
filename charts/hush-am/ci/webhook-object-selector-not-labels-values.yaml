@@ -1,0 +1,10 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+admissionController:
+  objectSelector:
+    type: "not_labels"
+    labels:
+      hush.security/skip: ""
