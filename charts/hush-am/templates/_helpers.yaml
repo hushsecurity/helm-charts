@@ -331,10 +331,17 @@ Mutating webhook namespaceSelector
 {{- if not .Values.admissionController.namespaceSelector.names -}}
   {{- fail "'admissionController.namespaceSelector.names' must not be empty when type is \"names\" or \"not_names\"" -}}
 {{- end -}}
+{{- $names := .Values.admissionController.namespaceSelector.names -}}
+{{- if eq $type "not_names" -}}
+  {{- $ns := include "hush-common.namespace" . -}}
+  {{- if not (has $ns $names) -}}
+    {{- $names = append $names $ns -}}
+  {{- end -}}
+{{- end -}}
 matchExpressions:
   - key: kubernetes.io/metadata.name
     operator: {{ if eq $type "names" }}In{{ else }}NotIn{{ end }}
-    values: {{- .Values.admissionController.namespaceSelector.names | toYaml | nindent 6 }}
+    values: {{- $names | toYaml | nindent 6 }}
 {{- else if eq $type "custom" -}}
 {{- if not .Values.admissionController.namespaceSelector.custom -}}
   {{- fail "'admissionController.namespaceSelector.custom' must not be empty when type is \"custom\"" -}}
