@@ -557,11 +557,14 @@ admissionController:
     # - "names"     - match namespaces by name (In operator)
     # - "not_names" - match namespaces not in the list (NotIn operator)
     # - "custom"    - use a full custom labelSelector
-    type: "none"
+    type: "not_names"
 
     # List of namespace names.
     # Used when type is "names" or "not_names".
-    names: []
+    names:
+      - kube-system
+      - kube-public
+      - kube-node-lease
 
     # Custom labelSelector object.
     # Used when type is "custom".
