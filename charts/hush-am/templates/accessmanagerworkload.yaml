@@ -180,6 +180,13 @@ spec:
                 - /mufasa
                 - healthcheck
             {{- toYaml .Values.accessManager.livenessProbe | nindent 12 }}
+          startupProbe:
+            exec:
+              command:
+                - /mufasa
+                - healthcheck
+                - --shallow
+            {{- toYaml .Values.accessManager.startupProbe | nindent 12 }}
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector

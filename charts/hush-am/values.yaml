@@ -276,6 +276,12 @@ accessManager:
     failureThreshold: 3
     initialDelaySeconds: 300
 
+  # Startup probe parameters for access-manager.
+  # Changes must be coordinated with Hush support team.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 30
+
   # Priority value for dedicated priority class
   priority: 1000000000
 
