@@ -128,16 +128,13 @@ spec:
               command:
                 - /opt/spire/bin/spire-server
                 - healthcheck
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
+            {{- toYaml .Values.spireServer.livenessProbe | nindent 12 }}
           startupProbe:
             exec:
               command:
                 - /opt/spire/bin/spire-server
                 - healthcheck
-            failureThreshold: 12
-            periodSeconds: 10
+            {{- toYaml .Values.spireServer.startupProbe | nindent 12 }}
           volumeMounts:
             - name: spire-server-socket-dir
               mountPath: {{ include "hush-am.spireServerSocketDirMountPath" . }}
@@ -170,20 +167,13 @@ spec:
                 - /mufasa
                 - healthcheck
                 - --shallow
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
-            successThreshold: 1
-            initialDelaySeconds: 5
+            {{- toYaml .Values.accessManager.readinessProbe | nindent 12 }}
           livenessProbe:
             exec:
               command:
                 - /mufasa
                 - healthcheck
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
-            initialDelaySeconds: 300
+            {{- toYaml .Values.accessManager.livenessProbe | nindent 12 }}
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
