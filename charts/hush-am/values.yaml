@@ -259,6 +259,29 @@ accessManager:
   # Number of manager replicas
   replicas: 2
 
+  # Readiness probe parameters for access-manager.
+  # Changes must be coordinated with Hush support team.
+  readinessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+    successThreshold: 1
+    initialDelaySeconds: 5
+
+  # Liveness probe parameters for access-manager.
+  # Changes must be coordinated with Hush support team.
+  livenessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 4
+    initialDelaySeconds: 300
+
+  # Startup probe parameters for access-manager.
+  # Changes must be coordinated with Hush support team.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 30
+
   # Priority value for dedicated priority class
   priority: 1000000000
 
@@ -449,6 +472,26 @@ spireAgent:
   # minikube = kubelet.crt
   kubeletCertFile: "kubelet-server-current.pem"
 
+  # Readiness probe parameters for spire-agent.
+  # Changes must be coordinated with Hush support team.
+  readinessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+
+  # Liveness probe parameters for spire-agent.
+  # Changes must be coordinated with Hush support team.
+  livenessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 4
+
+  # Startup probe parameters for spire-agent.
+  # Changes must be coordinated with Hush support team.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 30
+
   # Additional annotations.
   # For more information see
   # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
@@ -540,6 +583,26 @@ spireServer:
       memory: "128Mi"
       ephemeral-storage: "128Mi"
 
+  # Readiness probe parameters for spire-server.
+  # Changes must be coordinated with Hush support team.
+  readinessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+
+  # Liveness probe parameters for spire-server.
+  # Changes must be coordinated with Hush support team.
+  livenessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 4
+
+  # Startup probe parameters for spire-server.
+  # Changes must be coordinated with Hush support team.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 30
+
 # Values for Admission Controller
 admissionController:
   # Mutating Webhook timeout in seconds
@@ -563,6 +626,27 @@ admissionController:
       cpu: "50m"
       memory: "128Mi"
       ephemeral-storage: "128Mi"
+
+  # Readiness probe parameters for admission-controller.
+  # Changes must be coordinated with Hush support team.
+  readinessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 1
+    successThreshold: 1
+
+  # Liveness probe parameters for admission-controller.
+  # Changes must be coordinated with Hush support team.
+  livenessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # Startup probe parameters for admission-controller.
+  # Changes must be coordinated with Hush support team.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 30
 
   # Custom log configuration for Admission Controller
   #
