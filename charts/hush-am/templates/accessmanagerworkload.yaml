@@ -123,6 +123,12 @@ spec:
           {{- with or .Values.spireServer.resources .Values.accessManager.spireServerResources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
+          readinessProbe:
+            exec:
+              command:
+                - /opt/spire/bin/spire-server
+                - healthcheck
+            {{- toYaml .Values.spireServer.readinessProbe | nindent 12 }}
           livenessProbe:
             exec:
               command:
