@@ -627,6 +627,27 @@ admissionController:
       memory: "128Mi"
       ephemeral-storage: "128Mi"
 
+  # Readiness probe parameters for admission-controller.
+  # Changes must be coordinated with Hush support team.
+  readinessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 1
+    successThreshold: 1
+
+  # Liveness probe parameters for admission-controller.
+  # Changes must be coordinated with Hush support team.
+  livenessProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # Startup probe parameters for admission-controller.
+  # Changes must be coordinated with Hush support team.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 30
+
   # Custom log configuration for Admission Controller
   #
   # Example:

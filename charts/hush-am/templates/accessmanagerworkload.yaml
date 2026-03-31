@@ -209,6 +209,24 @@ spec:
           {{- with and .Values.admissionController .Values.admissionController.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.admissionController.port }}
+              scheme: HTTPS
+            {{- toYaml .Values.admissionController.readinessProbe | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.admissionController.port }}
+              scheme: HTTPS
+            {{- toYaml .Values.admissionController.livenessProbe | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.admissionController.port }}
+              scheme: HTTPS
+            {{- toYaml .Values.admissionController.startupProbe | nindent 12 }}
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
