@@ -1,0 +1,15 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+admissionController:
+  namespaceSelector:
+    type: "names"
+    names:
+      - default
+      - production
+  objectSelector:
+    type: "labels"
+    labels:
+      app.kubernetes.io/name: my-app

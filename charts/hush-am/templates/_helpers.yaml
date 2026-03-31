@@ -319,6 +319,69 @@ Mutating webhook FQDN
 {{- end }}
 
 {{/*
+Mutating webhook namespaceSelector
+*/}}
+{{- define "hush-am.mutatingWebhookNamespaceSelector" -}}
+{{- $type := .Values.admissionController.namespaceSelector.type -}}
+{{- $validTypes := list "none" "names" "not_names" "custom" -}}
+{{- if not (has $type $validTypes) -}}
+  {{- fail (printf "'admissionController.namespaceSelector.type' must be one of %v" $validTypes) -}}
+{{- end -}}
+{{- if or (eq $type "names") (eq $type "not_names") -}}
+{{- if not .Values.admissionController.namespaceSelector.names -}}
+  {{- fail "'admissionController.namespaceSelector.names' must not be empty when type is \"names\" or \"not_names\"" -}}
+{{- end -}}
+{{- $names := .Values.admissionController.namespaceSelector.names -}}
+{{- if eq $type "not_names" -}}
+  {{- $ns := include "hush-common.namespace" . -}}
+  {{- if not (has $ns $names) -}}
+    {{- $names = append $names $ns -}}
+  {{- end -}}
+{{- end -}}
+matchExpressions:
+  - key: kubernetes.io/metadata.name
+    operator: {{ if eq $type "names" }}In{{ else }}NotIn{{ end }}
+    values: {{- $names | toYaml | nindent 6 }}
+{{- else if eq $type "custom" -}}
+{{- if not .Values.admissionController.namespaceSelector.custom -}}
+  {{- fail "'admissionController.namespaceSelector.custom' must not be empty when type is \"custom\"" -}}
+{{- end -}}
+{{- .Values.admissionController.namespaceSelector.custom | toYaml -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Mutating webhook objectSelector
+*/}}
+{{- define "hush-am.mutatingWebhookObjectSelector" -}}
+{{- $type := .Values.admissionController.objectSelector.type -}}
+{{- $validTypes := list "none" "labels" "not_labels" "custom" -}}
+{{- if not (has $type $validTypes) -}}
+  {{- fail (printf "'admissionController.objectSelector.type' must be one of %v" $validTypes) -}}
+{{- end -}}
+{{- if eq $type "labels" -}}
+{{- if not .Values.admissionController.objectSelector.labels -}}
+  {{- fail "'admissionController.objectSelector.labels' must not be empty when type is \"labels\"" -}}
+{{- end -}}
+matchLabels: {{- .Values.admissionController.objectSelector.labels | toYaml | nindent 2 }}
+{{- else if eq $type "not_labels" -}}
+{{- if not .Values.admissionController.objectSelector.labels -}}
+  {{- fail "'admissionController.objectSelector.labels' must not be empty when type is \"not_labels\"" -}}
+{{- end -}}
+matchExpressions:
+{{- range $key, $_ := .Values.admissionController.objectSelector.labels }}
+  - key: {{ $key }}
+    operator: DoesNotExist
+{{- end }}
+{{- else if eq $type "custom" -}}
+{{- if not .Values.admissionController.objectSelector.custom -}}
+  {{- fail "'admissionController.objectSelector.custom' must not be empty when type is \"custom\"" -}}
+{{- end -}}
+{{- .Values.admissionController.objectSelector.custom | toYaml -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Silo namespace prefix
 */}}
 {{- define "hush-am.siloNamespacePrefix" -}}

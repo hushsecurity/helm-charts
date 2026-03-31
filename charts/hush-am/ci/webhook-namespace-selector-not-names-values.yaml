@@ -1,0 +1,11 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+admissionController:
+  namespaceSelector:
+    type: "not_names"
+    names:
+      - kube-system
+      - kube-public

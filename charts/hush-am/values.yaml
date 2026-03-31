@@ -608,6 +608,67 @@ admissionController:
   # Mutating Webhook timeout in seconds
   mutatingWebhookTimeout: 30
 
+  # Mutating webhook namespace selector configuration.
+  #
+  # For more information see
+  # https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-namespaceselector
+  namespaceSelector:
+    # Selector type.
+    #
+    # Allowed values:
+    # - "none"      - no namespaceSelector (webhook applies to all namespaces)
+    # - "names"     - match namespaces by name (In operator)
+    # - "not_names" - match namespaces not in the list (NotIn operator)
+    # - "custom"    - use a full custom labelSelector
+    type: "not_names"
+
+    # List of namespace names.
+    # Used when type is "names" or "not_names".
+    names:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+
+    # Custom labelSelector object.
+    # Used when type is "custom".
+    #
+    # Example:
+    # custom:
+    #   matchLabels:
+    #     environment: production
+    custom: {}
+
+  # Mutating webhook object selector configuration.
+  #
+  # For more information see
+  # https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-objectselector
+  objectSelector:
+    # Selector type.
+    #
+    # Allowed values:
+    # - "none"       - no objectSelector (webhook applies to all objects)
+    # - "labels"     - match objects by label key=value pairs (matchLabels)
+    # - "not_labels" - match objects without the specified label keys (DoesNotExist)
+    # - "custom"     - use a full custom labelSelector
+    type: "none"
+
+    # Label key=value pairs.
+    # Used when type is "labels" (rendered as matchLabels).
+    # Used when type is "not_labels" (rendered as matchExpressions DoesNotExist, only keys used).
+    labels: {}
+
+    # Custom labelSelector object.
+    # Used when type is "custom".
+    #
+    # Example:
+    # custom:
+    #   matchExpressions:
+    #     - key: hush.security/inject
+    #       operator: NotIn
+    #       values:
+    #         - "false"
+    custom: {}
+
   # Listening port for Admission Controller webhook
   port: 12443
 
