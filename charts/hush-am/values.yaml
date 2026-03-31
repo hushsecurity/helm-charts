@@ -262,18 +262,18 @@ accessManager:
   # Readiness probe parameters for access-manager.
   # Changes must be coordinated with Hush support team.
   readinessProbe:
-    periodSeconds: 30
+    periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 3
+    failureThreshold: 2
     successThreshold: 1
     initialDelaySeconds: 5
 
   # Liveness probe parameters for access-manager.
   # Changes must be coordinated with Hush support team.
   livenessProbe:
-    periodSeconds: 30
+    periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 3
+    failureThreshold: 4
     initialDelaySeconds: 300
 
   # Startup probe parameters for access-manager.
@@ -475,22 +475,22 @@ spireAgent:
   # Readiness probe parameters for spire-agent.
   # Changes must be coordinated with Hush support team.
   readinessProbe:
-    periodSeconds: 30
+    periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 3
+    failureThreshold: 2
 
   # Liveness probe parameters for spire-agent.
   # Changes must be coordinated with Hush support team.
   livenessProbe:
-    periodSeconds: 30
+    periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 3
+    failureThreshold: 4
 
   # Startup probe parameters for spire-agent.
   # Changes must be coordinated with Hush support team.
   startupProbe:
     periodSeconds: 10
-    failureThreshold: 12
+    failureThreshold: 30
 
   # Additional annotations.
   # For more information see
@@ -586,22 +586,22 @@ spireServer:
   # Readiness probe parameters for spire-server.
   # Changes must be coordinated with Hush support team.
   readinessProbe:
-    periodSeconds: 30
+    periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 3
+    failureThreshold: 2
 
   # Liveness probe parameters for spire-server.
   # Changes must be coordinated with Hush support team.
   livenessProbe:
-    periodSeconds: 30
+    periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 3
+    failureThreshold: 4
 
   # Startup probe parameters for spire-server.
   # Changes must be coordinated with Hush support team.
   startupProbe:
     periodSeconds: 10
-    failureThreshold: 12
+    failureThreshold: 30
 
 # Values for Admission Controller
 admissionController:
