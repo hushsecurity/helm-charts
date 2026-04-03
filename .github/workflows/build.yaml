@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install poetry
-        uses: Gr1N/setup-poetry@v9
+        uses: snok/install-poetry@v1
       - name: Install kube tools
         uses: yokawasa/action-setup-kube-tools@v0.13.4
         with:
