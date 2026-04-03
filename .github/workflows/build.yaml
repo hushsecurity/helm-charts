@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check Linear issue link
         if: github.event_name == 'pull_request'
-        uses: gsactions/commit-message-checker@v2
+        uses: hushsecurity/commit-message-checker@main
         with:
           pattern: "^HUSH-[1-9][0-9]* "
           error: Linear issue link check failed
