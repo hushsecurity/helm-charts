@@ -55,6 +55,11 @@ spec:
           hostPath:
             path: {{ .Values.hostDir }}
             type: DirectoryOrCreate
+        - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: {{ include "hush-sensor.k8sSaTokenFileName" . }}
         {{- with and .Values.vermon .Values.vermon.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -73,6 +78,9 @@ spec:
               readOnly: true
             - name: host-dir
               mountPath: /var/lib/hush-security
+            - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
             {{- with and .Values.vermon .Values.vermon.vermonExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -85,6 +93,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: HUSH_K8S_SA_TOKEN_PATH
+              value: {{ include "hush-sensor.k8sSaTokenPath" . | quote }}
             - name: CHANNEL_DIGESTS_PERIOD
               value: {{ .Values.vermon.updateFrequency }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
@@ -117,7 +127,12 @@ spec:
             - name: host-dir
               mountPath: /var/lib/hush-security
               readOnly: true
+            - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
           env:
+            - name: HUSH_K8S_SA_TOKEN_PATH
+              value: {{ include "hush-sensor.k8sSaTokenPath" . | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:

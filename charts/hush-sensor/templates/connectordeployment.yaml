@@ -41,6 +41,12 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.connector.terminationGracePeriodSeconds }}
       serviceAccountName: {{ include "hush-sensor.connectorFullName" . }}
+      volumes:
+        - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: {{ include "hush-sensor.k8sSaTokenFileName" . }}
       containers:
         - name: hush-connector-client
           image: {{ include "hush-sensor.connectorClientImagePath" . }}
@@ -48,10 +54,16 @@ spec:
           {{- with and .Values.connector .Values.connector.clientResources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with and .Values.connector .Values.connector.clientExtraVolumeMounts }}
-          volumeMounts: {{- toYaml . | nindent 12 }}
-          {{- end }}
+          volumeMounts:
+            - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
+            {{- with and .Values.connector .Values.connector.clientExtraVolumeMounts -}}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
           env:
+            - name: HUSH_K8S_SA_TOKEN_PATH
+              value: {{ include "hush-sensor.k8sSaTokenPath" . | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
@@ -78,10 +90,16 @@ spec:
           {{- with and .Values.connector .Values.connector.forwarderResources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with and .Values.connector .Values.connector.forwarderExtraVolumeMounts }}
-          volumeMounts: {{- toYaml . | nindent 12 }}
-          {{- end }}
+          volumeMounts:
+            - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
+            {{- with and .Values.connector .Values.connector.forwarderExtraVolumeMounts -}}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
           env:
+            - name: HUSH_K8S_SA_TOKEN_PATH
+              value: {{ include "hush-sensor.k8sSaTokenPath" . | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
