@@ -771,3 +771,31 @@ Verify connector minimum supported version.
 -}}
 {{- include "hush-sensor.verifyMinimumSupportedVersion" $ctx -}}
 {{- end -}}
+
+{{/*
+K8S secrets projection volume name
+*/}}
+{{- define "hush-sensor.k8sSecretsProjectionVolumeName" -}}
+k8s-secrets-projection
+{{- end }}
+
+{{/*
+K8S SA token mount path
+*/}}
+{{- define "hush-sensor.k8sSecretsProjectionVolumePath" -}}
+/var/run/secrets/hush.k8s.projection
+{{- end }}
+
+{{/*
+K8S SA token file name
+*/}}
+{{- define "hush-sensor.k8sSaTokenFileName" -}}
+sa-token
+{{- end }}
+
+{{/*
+K8S SA token path
+*/}}
+{{- define "hush-sensor.k8sSaTokenPath" -}}
+{{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}/{{ include "hush-sensor.k8sSaTokenFileName" . }}
+{{- end }}
