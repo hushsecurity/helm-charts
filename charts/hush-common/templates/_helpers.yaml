@@ -206,3 +206,31 @@ PullSecret effective list
         {{- end }}
     {{- end }}
 {{- end }}
+
+{{/*
+K8S secrets projection volume name
+*/}}
+{{- define "hush-common.k8sSecretsProjectionVolumeName" -}}
+k8s-secrets-projection
+{{- end }}
+
+{{/*
+K8S SA token mount path
+*/}}
+{{- define "hush-common.k8sSecretsProjectionVolumePath" -}}
+/var/run/secrets/hush.k8s.projection
+{{- end }}
+
+{{/*
+K8S SA token file name
+*/}}
+{{- define "hush-common.k8sSaTokenFileName" -}}
+sa-token
+{{- end }}
+
+{{/*
+K8S SA token path
+*/}}
+{{- define "hush-common.k8sSaTokenPath" -}}
+{{ include "hush-common.k8sSecretsProjectionVolumePath" . }}/{{ include "hush-common.k8sSaTokenFileName" . }}
+{{- end }}
