@@ -4,6 +4,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-sensor 0.26.0 - 2026-04-05
+
+### Added
+
+- mount K8S Service Account tokens into all containers in preparation for
+  authenticating to Hush API with them
+
 ## hush-sensor 0.25.0 - 2026-02-22
 
 ### Added
