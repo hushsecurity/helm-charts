@@ -364,6 +364,49 @@ sentry:
           # vault role with token_policies required by crawler
           role: ""
 
+    azure:
+      # Azure tenant ID. Required
+      tenant_id: ""
+
+      # Management Group ID.
+      # Optional. If set, only subscriptions under management_group_id will
+      # be scanned.
+      management_group_id: ""
+
+      # List of Azure subscription IDs to crawl.
+      # If set, only listed subscriptions will be scanned.
+      # If empty, subscriptions are auto-discovered with management_group_id
+      # or tenant_id.
+      # Only one of management_group_id and subscription_ids can be set.
+      # subscription_ids:
+      #   - "<subscription-id>"
+      subscription_ids: []
+
+      auth:
+        # Service principal authentication.
+        # Requires tenant_id to be set above.
+        service_principal:
+
+          # Azure AD application (client) ID
+          client_id: ""
+
+          # Reference to a pre-created K8s Secret containing the client secret.
+          # The secret value will be injected as env var AZURE_CLIENT_SECRET.
+          clientSecret:
+            secretKeyRef:
+              # Secret name
+              name: ""
+
+              # Key within the secret
+              key: ""
+
+        # Azure Workload Identity client ID for default credential auth.
+        # When set, the sentry service account is annotated with
+        # azure.workload.identity/client-id and the pod is labeled accordingly.
+        # Do NOT set both this and service_principal auth.
+        workload_identity:
+          client_id: ""
+
 vermon:
   # Hush Security Vermon keeps hush sensor channel images up to date.
   # Hush Sensor containers must be deployed with image pull policy "Always"
