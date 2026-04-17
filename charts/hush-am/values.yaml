@@ -28,6 +28,11 @@ clusterDomain: cluster.local
 
 # Hush deployment configuration
 hushDeployment:
+  # Authentication mode for Hush API token exchange.
+  # Allowed values:
+  # - credentials - use deployment password (default)
+  authMode: "credentials"
+
   # The deployment token as received from API/UI.
   token: ""
 

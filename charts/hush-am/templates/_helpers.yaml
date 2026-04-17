@@ -646,6 +646,8 @@ Mandatory envs
 {{- end }}
 - name: DEPLOYMENT_KIND
   value: k8s
+- name: HUSH_AUTH_MODE
+  value: {{ .Values.hushDeployment.authMode | quote }}
 - name: MUFASA_K8S_NAMESPACE
   valueFrom:
     fieldRef:
