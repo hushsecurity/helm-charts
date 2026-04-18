@@ -1,0 +1,9 @@
+---
+hushDeployment:
+  authMode: "oidc"
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+
+secretStore:
+  kind: "awssm"
+  aws:
+    region: "eu-central-1"
