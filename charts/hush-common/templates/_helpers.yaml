@@ -234,3 +234,27 @@ K8S SA token path
 {{- define "hush-common.k8sSaTokenPath" -}}
 {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}/{{ include "hush-common.k8sSaTokenFileName" . }}
 {{- end }}
+
+{{/*
+Validate auth mode value.
+*/}}
+{{- define "hush-common.validateAuthMode" -}}
+{{- $mode := .Values.hushDeployment.authMode -}}
+{{- if $mode -}}
+  {{- $validModes := list "credentials" "oidc" -}}
+  {{- if not (has $mode $validModes) -}}
+    {{- fail (printf "'hushDeployment.authMode' must be one of %v, got %q" $validModes $mode) -}}
+  {{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Is the auth mode set to credentials (or unset, for backward compatibility)?
+*/}}
+{{- define "hush-common.isCredentialsAuthMode" -}}
+{{- include "hush-common.validateAuthMode" . -}}
+{{- $mode := .Values.hushDeployment.authMode -}}
+{{- if or (not $mode) (eq $mode "credentials") -}}
+true
+{{- end -}}
+{{- end }}
