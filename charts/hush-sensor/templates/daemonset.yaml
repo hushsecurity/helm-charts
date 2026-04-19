@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "hush-sensor.fullName" . }}
-  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
-  namespace: {{ include "hush-sensor.namespace" . }}
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  namespace: {{ include "hush-common.namespace" . }}
 
 spec:
   selector:
-    matchLabels: {{- include "hush-sensor.selectorLabels" . | nindent 6 }}
+    matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
   {{- with .Values.daemonSet.updateStrategy }}
   updateStrategy: {{- toYaml . | nindent 4 }}
   {{- end }}
 
   template:
     metadata:
-      labels: {{- include "hush-sensor.labels" . | nindent 8 }}
+      labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: sensor
       {{ with (include "hush-sensor.daemonSetAnnotations" .) -}}
       annotations: {{- . | nindent 8 }}
@@ -37,11 +37,11 @@ spec:
       hostPID: true
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
-      {{- with (include "hush-sensor.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.daemonSet.terminationGracePeriodSeconds }}
-      serviceAccountName: {{ include "hush-sensor.fullName" . }}
+      serviceAccountName: {{ include "hush-common.fullName" . }}
       volumes:
         - name: cri
           hostPath:
@@ -64,11 +64,11 @@ spec:
           hostPath:
             path: {{ .Values.hostDir }}
             type: DirectoryOrCreate
-        - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
+        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
           projected:
             sources:
               - serviceAccountToken:
-                  path: {{ include "hush-sensor.k8sSaTokenFileName" . }}
+                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
         {{- with and .Values.daemonSet .Values.daemonSet.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -101,8 +101,8 @@ spec:
               readOnly: true
             - name: host-dir
               mountPath: /var/lib/hush-security
-            - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
               readOnly: true
             {{- with and .Values.daemonSet .Values.daemonSet.sensorExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
@@ -113,7 +113,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: HUSH_K8S_SA_TOKEN_PATH
-              value: {{ include "hush-sensor.k8sSaTokenPath" . | quote }}
+              value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
@@ -156,12 +156,12 @@ spec:
             - name: host-dir
               mountPath: /var/lib/hush-security
               readOnly: true
-            - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
               readOnly: true
           env:
             - name: HUSH_K8S_SA_TOKEN_PATH
-              value: {{ include "hush-sensor.k8sSaTokenPath" . | quote }}
+              value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
@@ -200,7 +200,7 @@ spec:
             - name: HELM_RELEASE
               value: {{ .Release.Name }}
             - name: HELM_NAMESPACE
-              value: {{ include "hush-sensor.namespace" . }}
+              value: {{ include "hush-common.namespace" . }}
             - name: HELM_CHART_VERSION
               value: {{ .Chart.Version | quote }}
 {{- end -}}

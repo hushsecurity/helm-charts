@@ -2,13 +2,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "hush-sensor.sensorConfigMapName" . }}
-  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
-  namespace: {{ include "hush-sensor.namespace" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  namespace: {{ include "hush-common.namespace" . }}
 data:
   sensor_config: |
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
     report_tls: {{ .Values.sensorConfigMap.report_tls }}
-    self_k8s_namespace: {{ include "hush-sensor.namespace" . | quote }}
+    self_k8s_namespace: {{ include "hush-common.namespace" . | quote }}
     {{- with (and .Values.daemonSet .Values.daemonSet.disableJavaProbing) }}
     disable_java_probing: true
     {{- end }}
@@ -21,7 +21,7 @@ data:
   event_reporting_console: {{ .Values.eventReportingConsole | quote }}
   sentry_config: |
     trace_pods_default: {{ .Values.sensorConfigMap.trace_pods_default }}
-    self_k8s_namespace: {{ include "hush-sensor.namespace" . | quote }}
+    self_k8s_namespace: {{ include "hush-common.namespace" . | quote }}
     integrations:
     {{- with (include "hush-sensor.sentryAwsIntegrations" .) }}
     {{- . | nindent 6 -}}

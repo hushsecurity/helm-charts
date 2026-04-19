@@ -1,100 +1,29 @@
 {{/*
-Expand the name of the chart.
-*/}}
-{{- define "hush-sensor.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Build chart full name
-*/}}
-{{- define "hush-sensor.buildChartFullName" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name }}
-    {{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-    {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
-
-{{/*
-Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this
-(by the DNS naming spec). If release name contains chart name it will be used as a
-full name.
-*/}}
-{{- define "hush-sensor.fullName" -}}
-{{- if .Values.fullnameOverride }}
-    {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-    {{- include "hush-sensor.buildChartFullName" . }}
-{{- end }}
-{{- end }}
-
-{{/*
 Create a default fully qualified app name for Sentry.
 */}}
 {{- define "hush-sensor.sentryFullName" -}}
-{{- printf "%s-sentry" (include "hush-sensor.fullName" .) | trunc 63 }}
+{{- printf "%s-sentry" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name for Vermon.
 */}}
 {{- define "hush-sensor.vermonFullName" -}}
-{{- printf "%s-vermon" (include "hush-sensor.fullName" .) | trunc 63 }}
+{{- printf "%s-vermon" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name for Connector.
 */}}
 {{- define "hush-sensor.connectorFullName" -}}
-{{- printf "%s-connector" (include "hush-sensor.fullName" .) | trunc 63 }}
-{{- end }}
-
-{{/*
-Create chart name and version as used by the chart label.
-*/}}
-{{- define "hush-sensor.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version
-    | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Calculate the namespace to use.
-*/}}
-{{- define "hush-sensor.namespace" -}}
-{{- default .Release.Namespace .Values.namespaceOverride }}
+{{- printf "%s-connector" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
 Sensor config map name
 */}}
 {{- define "hush-sensor.sensorConfigMapName" -}}
-{{- printf "%s-%s" (include "hush-sensor.buildChartFullName" .) "sensorconfigmap" }}
-{{- end }}
-
-{{/*
-Common labels
-*/}}
-{{- define "hush-sensor.labels" -}}
-helm.sh/chart: {{ include "hush-sensor.chart" . }}
-{{ include "hush-sensor.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- with .Values.commonLabels -}}
-    {{- toYaml . | nindent 0 }}
-{{- end }}
-{{- end }}
-
-{{/*
-Selector labels
-*/}}
-{{- define "hush-sensor.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "hush-sensor.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{- printf "%s-%s" (include "hush-common.buildChartFullName" .) "sensorconfigmap" }}
 {{- end }}
 
 {{/*
@@ -455,75 +384,6 @@ Verify hushDeployment.password was defined
 {{- end }}
 
 {{/*
-Deployment K8S Secret name
-*/}}
-{{- define "hush-sensor.deploymentKubeSecretName" -}}
-{{- printf "%s-deploymentsecret" (include "hush-sensor.fullName" .) }}
-{{- end }}
-
-{{/*
-Get image registry
-*/}}
-{{- define "hush-sensor.imageRegistry" -}}
-{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
-{{- $registry := and .Values.image .Values.image.registry -}}
-{{- default $registry (get $token "registry") -}}
-{{- end }}
-
-{{/*
-Get image.pullSecret.username
-*/}}
-{{- define "hush-sensor.kubeImagePullSecretUsername" -}}
-{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
-{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
-{{- $username := and $hasPullSecret .Values.image.pullSecret.username -}}
-{{- default $username (get $token "username") -}}
-{{- end }}
-
-{{/*
-Get image.pullSecret.password
-*/}}
-{{- define "hush-sensor.kubeImagePullSecretPassword" -}}
-{{- $token := (include "hush-sensor.parsePullToken" . | fromYaml) -}}
-{{- $hasPullSecret := (and .Values.image .Values.image.pullSecret) -}}
-{{- $password := and $hasPullSecret .Values.image.pullSecret.password -}}
-{{- default $password (get $token "password") -}}
-{{- end }}
-
-{{/*
-Parse Hush image.pullToken
-*/}}
-{{- define "hush-sensor.parsePullToken" -}}
-{{- $pullToken := and .Values.image .Values.image.pullToken -}}
-{{- if $pullToken -}}
-    {{- $ctx := dict "name" "image.pullToken" "value" $pullToken -}}
-    {{- $token := (include "hush-sensor.b64decode" $ctx) -}}
-    {{- $version := splitn ":" 2 $token -}}
-    {{- if ne $version._0 "p1" -}}
-        {{- fail (printf "image.pullToken version '%s' isn't supported" $version._0) -}}
-    {{- end -}}
-    {{- $registry := splitn ":" 2 $version._1 -}}
-    {{- if not $registry._0 -}}
-        {{- fail "invalid image.pullToken: registry is empty" -}}
-    {{- end -}}
-    {{- $username := splitn ":" 2 $registry._1 -}}
-    {{- if not $username._0 -}}
-        {{- fail "invalid image.pullToken: username is empty" -}}
-    {{- end -}}
-    {{- $password := splitn ":" 2 $username._1 -}}
-    {{- if not $password._0 -}}
-        {{- fail "invalid image.pullToken: password is empty" -}}
-    {{- end -}}
-    {{- dict
-        "registry" $registry._0
-        "username" $username._0
-        "password" $password._0
-        | toYaml
-    -}}
-{{- end -}}
-{{- end }}
-
-{{/*
 Should we create the daemon set?
 */}}
 {{- define "hush-sensor.shouldCreateDaemonSet" -}}
@@ -531,53 +391,6 @@ Should we create the daemon set?
 {{- if and .Values.daemonSet (or .Values.daemonSet.enabled $argIsMissing) -}}
 true
 {{- end }}
-{{- end }}
-
-{{/*
-Should we create the K8S image pull secret?
-*/}}
-{{- define "hush-sensor.shouldCreateKubeImagePullSecret" -}}
-{{- $username := (include "hush-sensor.kubeImagePullSecretUsername" .) -}}
-{{- $password := (include "hush-sensor.kubeImagePullSecretPassword" .) -}}
-{{- if and $username $password -}}
-true
-{{- end }}
-{{- end }}
-
-{{/*
-K8S image pull secret name
-*/}}
-{{- define "hush-sensor.kubeImagePullSecretName" -}}
-{{- $defaultPullSecretName :=
-    (printf "%s-%s" (include "hush-sensor.fullName" .) "imagepullsecret") }}
-{{- default $defaultPullSecretName .Values.image.pullSecret.name }}
-{{- end }}
-
-{{/*
-The data to put in K8S image pull Secret
-*/}}
-{{- define "hush-sensor.kubeImagePullSecretData" -}}
-{{- $msg := "couldn't find image registry definition. 'image.registry' or 'image.pullToken' must be defined." -}}
-{{- $registry := required $msg (include "hush-sensor.imageRegistry" .) -}}
-{{- $username := (include "hush-sensor.kubeImagePullSecretUsername" .) -}}
-{{- $password := (include "hush-sensor.kubeImagePullSecretPassword" .) -}}
-{{- $userPass := printf "%s:%s" $username $password -}}
-{{- $value := printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}"
-    $registry ($userPass | b64enc) -}}
-{{- $value | b64enc }}
-{{- end }}
-
-{{/*
-PullSecret effective list
-*/}}
-{{- define "hush-sensor.kubeImagePullSecretEffectiveList" -}}
-    {{- if and .Values.image .Values.image.pullSecretList -}}
-        {{- .Values.image.pullSecretList | toYaml }}
-    {{- else -}}
-        {{- if (include "hush-sensor.shouldCreateKubeImagePullSecret" .) -}}
-- name: {{ include "hush-sensor.kubeImagePullSecretName" . | quote }}
-        {{- end }}
-    {{- end }}
 {{- end }}
 
 {{/*
@@ -621,7 +434,7 @@ Effective deployment token secret ref
 {{- define "hush-sensor.effectiveDeploymentTokenKubeSecretRef" -}}
 {{- if (include "hush-sensor.shouldCreateDeploymentTokenKubeSecret" .) -}}
     {{- dict
-        "name" (include "hush-sensor.deploymentKubeSecretName" .)
+        "name" (include "hush-common.deploymentKubeSecretName" .)
         "key" "deployment-token"
         | toYaml
     -}}
@@ -640,7 +453,7 @@ Effective deployment password secret ref
 {{- define "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" -}}
 {{- if (include "hush-sensor.shouldCreateDeploymentKubeSecret" .) -}}
     {{- dict
-        "name" (include "hush-sensor.deploymentKubeSecretName" .)
+        "name" (include "hush-common.deploymentKubeSecretName" .)
         "key" "deployment-password"
         | toYaml
     -}}
@@ -654,27 +467,16 @@ Effective deployment password secret ref
 {{- end }}
 
 {{/*
-Build image path from components
-*/}}
-{{- define "hush-sensor.buildImagePath" -}}
-{{- if .registry -}}
-    {{- printf "%s/%s:%s" .registry .repository .tag -}}
-{{- else }}
-    {{- printf "%s:%s" .repository .tag -}}
-{{- end }}
-{{- end }}
-
-{{/*
 Sensor image path
 */}}
 {{- define "hush-sensor.sensorImagePath" -}}
 {{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
-    "registry" (include "hush-sensor.imageRegistry" .)
+    "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.sensorRepository
     "tag" .Values.image.sensorTag
 -}}
-{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
@@ -683,11 +485,11 @@ Vector image path
 {{- define "hush-sensor.sensorVectorImagePath" -}}
 {{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
-    "registry" (include "hush-sensor.imageRegistry" .)
+    "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.sensorVectorRepository
     "tag" .Values.image.sensorTag
 -}}
-{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
@@ -696,11 +498,11 @@ Sentry image path
 {{- define "hush-sensor.sentryImagePath" -}}
 {{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
-    "registry" (include "hush-sensor.imageRegistry" .)
+    "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.sentryRepository
     "tag" .Values.image.sensorTag
 -}}
-{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
@@ -709,11 +511,11 @@ Connector Client image path
 {{- define "hush-sensor.connectorClientImagePath" -}}
 {{- include "hush-sensor.verifyConnectorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
-    "registry" (include "hush-sensor.imageRegistry" .)
+    "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.connectorClientRepository
     "tag" .Values.image.connectorTag
 -}}
-{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
@@ -722,11 +524,11 @@ Connector Forwarder image path
 {{- define "hush-sensor.connectorForwarderImagePath" -}}
 {{- include "hush-sensor.verifyConnectorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
-    "registry" (include "hush-sensor.imageRegistry" .)
+    "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.connectorForwarderRepository
     "tag" .Values.image.connectorTag
 -}}
-{{- include "hush-sensor.buildImagePath" $ctx -}}
+{{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
@@ -735,22 +537,11 @@ Vermon image path
 {{- define "hush-sensor.vermonImagePath" -}}
 {{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
-    "registry" (include "hush-sensor.imageRegistry" .)
+    "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.vermonRepository
     "tag" .Values.image.sensorTag
 -}}
-{{- include "hush-sensor.buildImagePath" $ctx -}}
-{{- end }}
-
-{{/*
-b64dec with error check
-*/}}
-{{- define "hush-sensor.b64decode" -}}
-{{- $decoded := b64dec .value -}}
-{{- if contains "illegal base64" $decoded -}}
-    {{- fail (printf "failed to base64 decode %s: %s" .name $decoded) -}}
-{{- end -}}
-{{- printf "%s" $decoded -}}
+{{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
@@ -887,31 +678,3 @@ Verify connector minimum supported version.
 -}}
 {{- include "hush-sensor.verifyMinimumSupportedVersion" $ctx -}}
 {{- end -}}
-
-{{/*
-K8S secrets projection volume name
-*/}}
-{{- define "hush-sensor.k8sSecretsProjectionVolumeName" -}}
-k8s-secrets-projection
-{{- end }}
-
-{{/*
-K8S SA token mount path
-*/}}
-{{- define "hush-sensor.k8sSecretsProjectionVolumePath" -}}
-/var/run/secrets/hush.k8s.projection
-{{- end }}
-
-{{/*
-K8S SA token file name
-*/}}
-{{- define "hush-sensor.k8sSaTokenFileName" -}}
-sa-token
-{{- end }}
-
-{{/*
-K8S SA token path
-*/}}
-{{- define "hush-sensor.k8sSaTokenPath" -}}
-{{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}/{{ include "hush-sensor.k8sSaTokenFileName" . }}
-{{- end }}

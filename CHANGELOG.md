@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 
 - add support for `azure` integration configuration in `sentry`.
 
+### Changed
+
+- use `hush-common` library chart for shared code with `hush-am`
+
 ## hush-sensor 0.26.0 - 2026-04-05
 
 ### Added
