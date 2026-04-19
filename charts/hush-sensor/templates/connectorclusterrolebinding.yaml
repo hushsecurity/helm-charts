@@ -3,11 +3,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ include "hush-sensor.connectorFullName" . }}
-  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: {{ include "hush-sensor.connectorFullName" . }}
-    namespace: {{ include "hush-sensor.namespace" . }}
+    namespace: {{ include "hush-common.namespace" . }}
 roleRef:
   kind: ClusterRole
   name: {{ include "hush-sensor.connectorFullName" . }}

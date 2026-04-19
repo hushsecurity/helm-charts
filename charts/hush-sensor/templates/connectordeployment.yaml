@@ -3,19 +3,19 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "hush-sensor.connectorFullName" . }}
-  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
-  namespace: {{ include "hush-sensor.namespace" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  namespace: {{ include "hush-common.namespace" . }}
 
 spec:
   selector:
-    matchLabels: {{- include "hush-sensor.selectorLabels" . | nindent 6 }}
+    matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
   {{- with .Values.connector.strategy }}
   strategy: {{- toYaml . | nindent 4 }}
   {{- end }}
 
   template:
     metadata:
-      labels: {{- include "hush-sensor.labels" . | nindent 8 }}
+      labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: connector
       {{ with .Values.connector.annotations -}}
       annotations: {{- . | nindent 8 }}
@@ -36,17 +36,17 @@ spec:
       {{- end }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      {{- with (include "hush-sensor.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.connector.terminationGracePeriodSeconds }}
       serviceAccountName: {{ include "hush-sensor.connectorFullName" . }}
       volumes:
-        - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
+        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
           projected:
             sources:
               - serviceAccountToken:
-                  path: {{ include "hush-sensor.k8sSaTokenFileName" . }}
+                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
       containers:
         - name: hush-connector-client
           image: {{ include "hush-sensor.connectorClientImagePath" . }}
@@ -55,15 +55,15 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
               readOnly: true
             {{- with and .Values.connector .Values.connector.clientExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
           env:
             - name: HUSH_K8S_SA_TOKEN_PATH
-              value: {{ include "hush-sensor.k8sSaTokenPath" . | quote }}
+              value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
@@ -91,15 +91,15 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: {{ include "hush-sensor.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-sensor.k8sSecretsProjectionVolumePath" . }}
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
               readOnly: true
             {{- with and .Values.connector .Values.connector.forwarderExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
           env:
             - name: HUSH_K8S_SA_TOKEN_PATH
-              value: {{ include "hush-sensor.k8sSaTokenPath" . | quote }}
+              value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:

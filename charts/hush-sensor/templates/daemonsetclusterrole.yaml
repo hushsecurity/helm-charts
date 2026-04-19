@@ -2,8 +2,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "hush-sensor.fullName" . }}
-  labels: {{- include "hush-sensor.labels" . | nindent 4 }}
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources: ["namespaces"]
