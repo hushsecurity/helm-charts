@@ -14,6 +14,13 @@ All notable changes to this project will be documented in this file.
 
 - use `hush-common` library chart for shared code with `hush-am`
 
+### Fixed
+
+- when `hushDeployment.token` is inline and `hushDeployment.secretKeyRef.{name,key}`
+  are set for an external password, `DEPLOYMENT_PASSWORD` now correctly resolves to
+  the external secret instead of pointing at a missing key in the auto-created
+  Secret.
+
 ## hush-sensor 0.26.0 - 2026-04-05
 
 ### Added
