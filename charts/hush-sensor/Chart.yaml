@@ -2,7 +2,7 @@ apiVersion: v2
 name: hush-sensor
 description: A Helm chart for Hush Security sensor.
 type: application
-version: 0.26.0
+version: 0.27.0
 home: https://hush.security
 dependencies:
   - name: hush-common
