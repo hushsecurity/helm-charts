@@ -49,6 +49,16 @@ spec:
             - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
               mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
               readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            {{- toYaml .Values.apiController.livenessProbe | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            {{- toYaml .Values.apiController.readinessProbe | nindent 12 }}
           env:
             {{- include "hush-am.apiControllerEnvs" . | nindent 12 }}
         - name: vector

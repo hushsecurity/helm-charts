@@ -797,3 +797,20 @@ apiController:
       cpu: "20m"
       memory: "64Mi"
       ephemeral-storage: "128Mi"
+
+  # Readiness probe parameters for api-controller.
+  # Changes must be coordinated with Hush support team.
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+    successThreshold: 1
+
+  # Liveness probe parameters for api-controller.
+  # Changes must be coordinated with Hush support team.
+  livenessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    timeoutSeconds: 1
+    failureThreshold: 3
