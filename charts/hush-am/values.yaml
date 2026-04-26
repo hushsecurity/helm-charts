@@ -28,6 +28,12 @@ clusterDomain: cluster.local
 
 # Hush deployment configuration
 hushDeployment:
+  # Authentication mode for Hush API token exchange.
+  # Allowed values:
+  # - password - use deployment password (default)
+  # - oidc - use K8S SA token (oidc_provider must be configured in deployment)
+  authMode: "password"
+
   # The deployment token as received from API/UI.
   token: ""
 

@@ -612,24 +612,26 @@ Which secret to use for deployment token?
 Which secret to use for deployment password?
 */}}
 {{- define "hush-am.effectiveDeploymentPasswordKubeSecretRef" -}}
-{{- if .Values.hushDeployment.password -}}
+{{- if include "hush-common.isPasswordAuthMode" . -}}
+  {{- if .Values.hushDeployment.password -}}
     {{- dict
         "name" (include "hush-common.deploymentKubeSecretName" .)
         "key" "deployment-password"
         | toYaml
     -}}
-{{- else if and .Values.hushDeployment.secretKeyRef.name .Values.hushDeployment.secretKeyRef.key -}}
+  {{- else if and .Values.hushDeployment.secretKeyRef.name .Values.hushDeployment.secretKeyRef.key -}}
     {{- dict
         "name" .Values.hushDeployment.secretKeyRef.name
         "key" .Values.hushDeployment.secretKeyRef.key
         | toYaml
     -}}
-{{- else -}}
+  {{- else -}}
     {{- dict
         "name" .Values.hushDeployment.sensorDeploymentSecretName
         "key" "deployment-password"
         | toYaml
     -}}
+  {{- end }}
 {{- end }}
 {{- end }}
 
@@ -646,6 +648,8 @@ Mandatory envs
 {{- end }}
 - name: DEPLOYMENT_KIND
   value: k8s
+- name: HUSH_AUTH_MODE
+  value: {{ .Values.hushDeployment.authMode | quote }}
 - name: MUFASA_K8S_NAMESPACE
   valueFrom:
     fieldRef:
