@@ -291,6 +291,20 @@ Acr DB file path
 {{- end }}
 
 {{/*
+API Controller data directory path
+*/}}
+{{- define "hush-am.apiControllerDataDirPath" -}}
+{{- printf "%s/hush/api-controller" (include "hush-am.dataVolumeMountPath" .) -}}
+{{- end }}
+
+{{/*
+Metadata DB file path (api-controller)
+*/}}
+{{- define "hush-am.metadataDbFilePath" -}}
+{{- printf "%s/metadatadb.sqlite3" (include "hush-am.apiControllerDataDirPath" .) -}}
+{{- end }}
+
+{{/*
 Kubelet certificate directory mount path
 */}}
 {{- define "hush-am.kubeletCertDirMountPath" -}}
@@ -893,4 +907,6 @@ API Controller envs
       name: {{ .name }}
       key: {{ .key }}
 {{- end }}
+- name: MUFASA_METADATA_DB_PATH
+  value: {{ include "hush-am.metadataDbFilePath" . }}
 {{- end }}
