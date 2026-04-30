@@ -76,3 +76,11 @@ spec:
                   type: integer
                   format: int64
                   description: The spec generation last reconciled by the controller.
+                modifiedAt:
+                  type: integer
+                  format: int64
+                  description: >
+                    Epoch milliseconds of the underlying entity's last
+                    modification in Hush UAM as observed by the
+                    controller. Compared against the metadata table to
+                    decide whether to re-reconcile.
