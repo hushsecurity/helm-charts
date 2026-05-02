@@ -29,6 +29,15 @@ spec:
         - name: Status
           type: string
           jsonPath: .status.syncState
+        - name: UAM Status
+          type: string
+          jsonPath: .status.uamStatus
+        - name: Status Code
+          type: string
+          jsonPath: .status.statusCode
+        - name: Status Detail
+          type: string
+          jsonPath: .status.statusDetail
       subresources:
         status: {}
       schema:
@@ -164,3 +173,12 @@ spec:
                 privilegeRefs:
                   type: string
                   description: Comma-separated list of privilege names or IDs.
+                uamStatus:
+                  type: string
+                  description: Status reported by Hush UAM (e.g. syncing, ok, warning, error, disabled).
+                statusCode:
+                  type: string
+                  description: Status code reported by Hush UAM.
+                statusDetail:
+                  type: string
+                  description: Detailed status description reported by Hush UAM.

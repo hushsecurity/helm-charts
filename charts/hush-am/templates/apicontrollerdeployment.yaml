@@ -24,6 +24,16 @@ spec:
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "hush-am.apiControllerFullName" . }}
+      initContainers:
+        - name: api-controller-init
+          image: {{ include "hush-am.apiControllerImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: data-volume
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - mkdir -p {{ include "hush-am.apiControllerDataDirPath" . }}
       containers:
         - name: api-controller
           image: {{ include "hush-am.apiControllerImagePath" . }}
@@ -32,6 +42,8 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
+            - name: data-volume
+              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             - name: vector-socket-dir
               mountPath: /tmp/vector
             - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
@@ -73,6 +85,8 @@ spec:
             - name: HELM_CHART_VERSION
               value: {{ .Chart.Version | quote }}
       volumes:
+        - name: data-volume
+          emptyDir: {}
         - name: vector-socket-dir
           emptyDir:
             sizeLimit: 1Mi
