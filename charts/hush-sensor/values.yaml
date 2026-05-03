@@ -559,3 +559,12 @@ connector:
     requests:
       cpu: "40m"
       memory: "32Mi"
+
+  # Default resource requests/limits for connector-vector
+  vectorResources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
