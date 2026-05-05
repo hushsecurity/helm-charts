@@ -62,8 +62,10 @@ spec:
                   description: Human-readable description of this policy.
                 enabled:
                   type: boolean
-                  description: Whether this policy is active.
-                  default: true
+                  description: >
+                    Whether this policy is active. If omitted, the
+                    api-controller leaves the value managed in Hush UAM
+                    untouched (defaults to true on initial create).
                 accessCredentialRef:
                   type: object
                   description: >
