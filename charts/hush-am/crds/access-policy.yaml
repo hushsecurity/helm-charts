@@ -23,9 +23,6 @@ spec:
         - name: Privileges
           type: string
           jsonPath: .status.privilegeRefs
-        - name: Enabled
-          type: boolean
-          jsonPath: .spec.enabled
         - name: Status
           type: string
           jsonPath: .status.syncState
