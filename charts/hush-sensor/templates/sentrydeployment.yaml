@@ -128,6 +128,8 @@ spec:
               value: "1"
             - name: PLUTO_CRAWL_K8S_ESO_SECRETSTORE
               value: "1"
+            - name: PLUTO_CRAWL_K8S_INFISICAL
+              value: "1"
             {{- with (include "hush-sensor.sentryHcVaultTokenSecretRef" . | fromYaml) }}
             - name: SENTRY_VAULT_TOKEN
               valueFrom:

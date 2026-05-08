@@ -20,4 +20,7 @@ rules:
   - apiGroups: ["external-secrets.io"]
     resources: ["externalsecrets", "secretstores", "clustersecretstores"]
     verbs: ["get", "list"]
+  - apiGroups: ["secrets.infisical.com"]
+    resources: ["infisicalsecrets"]
+    verbs: ["get", "list"]
 {{- end -}}
