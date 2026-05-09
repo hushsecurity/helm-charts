@@ -4,6 +4,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-sensor [unreleased]
+
+### Added
+
+- add support for `k8s infisical operator` integration RBAC in `sentry`
+
+
 ## hush-sensor 0.27.0 - 2026-04-19
 
 ### Added
