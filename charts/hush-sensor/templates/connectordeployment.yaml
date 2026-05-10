@@ -45,6 +45,9 @@ spec:
         - name: vector-socket
           emptyDir:
             sizeLimit: 1Mi
+        - name: tokengen-state
+          emptyDir:
+            sizeLimit: 1Mi
         - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
           projected:
             sources:
@@ -60,6 +63,8 @@ spec:
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector
+            - name: tokengen-state
+              mountPath: /var/run/tokengen
             - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
               mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
               readOnly: true
