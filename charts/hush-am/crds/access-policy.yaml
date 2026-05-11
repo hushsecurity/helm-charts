@@ -66,13 +66,15 @@ spec:
                 accessCredentialRef:
                   type: object
                   description: >
-                    Reference to a AccessCredential. Provide either 'name'
-                    to reference a CR in the same namespace, or 'id' to
-                    reference a credential managed outside Kubernetes.
-                    Provide exactly one of them.
+                    Reference to a AccessCredential. Provide exactly one of
+                    'name' (a CR in the same namespace), 'id' (a credential
+                    managed outside Kubernetes), or 'remoteName' together with
+                    'type' (the api-controller resolves the pair to an id via
+                    Hush UAM).
                   oneOf:
                     - required: [name]
                     - required: [id]
+                    - required: [remoteName, type]
                   properties:
                     name:
                       type: string
@@ -80,19 +82,32 @@ spec:
                     id:
                       type: string
                       description: ID of a credential managed outside Kubernetes.
+                    remoteName:
+                      type: string
+                      description: >
+                        Name of a credential managed outside Kubernetes,
+                        resolved via Hush UAM within the deployment's scope.
+                        Must be paired with 'type'.
+                    type:
+                      type: string
+                      description: >
+                        Credential type (e.g. plaintext, kv, postgres),
+                        required when 'remoteName' is used to disambiguate.
                 accessPrivilegeRefs:
                   type: array
                   description: References to AccessPrivilege resources in the same namespace.
                   items:
                     type: object
                     description: >
-                      Reference to a AccessPrivilege. Provide either 'name'
-                      to reference a CR in the same namespace, or 'id' to
-                      reference a privilege managed outside Kubernetes.
-                      Provide exactly one of them.
+                      Reference to a AccessPrivilege. Provide exactly one of
+                      'name' (a CR in the same namespace), 'id' (a privilege
+                      managed outside Kubernetes), or 'remoteName' together
+                      with 'type' (the api-controller resolves the pair to an
+                      id via Hush UAM).
                     oneOf:
                       - required: [name]
                       - required: [id]
+                      - required: [remoteName, type]
                     properties:
                       name:
                         type: string
@@ -100,6 +115,17 @@ spec:
                       id:
                         type: string
                         description: ID of a privilege managed outside Kubernetes.
+                      remoteName:
+                        type: string
+                        description: >
+                          Name of a privilege managed outside Kubernetes,
+                          resolved via Hush UAM within the deployment's scope.
+                          Must be paired with 'type'.
+                      type:
+                        type: string
+                        description: >
+                          Privilege type (e.g. postgres, openai, gcp_sa),
+                          required when 'remoteName' is used to disambiguate.
                 attestationCriteria:
                   type: array
                   description: >
