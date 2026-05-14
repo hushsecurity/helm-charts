@@ -1,0 +1,115 @@
+{{- if .Values.diagnostics.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hush-am.diagFullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: diag
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  # A single diag pod runs the checks from inside the
+  # process. Exactly one replica must run cluster-wide.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "hush-common.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: diag
+  template:
+    metadata:
+      labels: {{- include "hush-common.labels" . | nindent 8 }}
+        app.kubernetes.io/component: diag
+    spec:
+      {{- with (include "hush-am.kubeImagePullSecretEffectiveList" .) }}
+      imagePullSecrets: {{- . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "hush-am.accessManagerFullName" . }}
+      {{- with .Values.accessManager.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.accessManager.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.accessManager.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: vector
+          image: {{ include "hush-am.accessManagerVectorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.diagnostics.vectorResources | nindent 12 }}
+          volumeMounts:
+            - name: vector-socket-dir
+              mountPath: /tmp/vector
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
+          env:
+            {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
+            {{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            - name: REPORT_SUBSYSTEM_NAME
+              value: "access-manager-diag"
+            - name: REPORT_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: HELM_RELEASE
+              value: {{ .Release.Name }}
+            - name: HELM_NAMESPACE
+              value: {{ include "hush-common.namespace" . }}
+            - name: HELM_CHART_VERSION
+              value: {{ .Chart.Version | quote }}
+        - name: diag
+          image: {{ include "hush-am.diagImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.diagnostics.resources | nindent 12 }}
+          volumeMounts:
+            - name: vector-socket-dir
+              mountPath: /tmp/vector
+            - name: spire-agent-socket-dir
+              mountPath: {{ include "hush-am.spireAgentSocketDirMountPath" . }}
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
+            {{- if .Values.diagnostics.logConfig }}
+            - name: diag-log-config
+              mountPath: /opt/diag
+              readOnly: true
+            {{- end }}
+          env:
+            {{- include "hush-am.diagEnvs" . | nindent 12 }}
+            - name: HUSH_AM_DIAG_PORT_ADDRESS
+              value: {{ include "hush-am.accessManagerRestAddress" . | quote }}
+            - name: HUSH_AM_DIAG_APP_LABEL
+              value: {{ include "hush-common.name" . | quote }}
+      volumes:
+        - name: vector-socket-dir
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: spire-agent-socket-dir
+          hostPath:
+            path: {{ .Values.spireAgent.hostDir }}
+            type: DirectoryOrCreate
+        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
+        {{- if .Values.diagnostics.logConfig }}
+        - name: diag-log-config
+          configMap:
+            name: {{ include "hush-am.configMapName" . }}
+            items:
+              - key: diag_log_config
+                path: log_config.yaml
+        {{- end }}
+{{- end }}

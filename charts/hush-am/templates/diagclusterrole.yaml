@@ -1,0 +1,21 @@
+{{- if .Values.diagnostics.enabled -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "hush-am.diagFullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: diag-cluster-role
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs:
+      - list
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+{{- end }}

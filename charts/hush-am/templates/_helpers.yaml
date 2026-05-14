@@ -48,6 +48,13 @@ Create a default fully qualified app name for API Controller.
 {{- end }}
 
 {{/*
+Create a default fully qualified app name for Diag.
+*/}}
+{{- define "hush-am.diagFullName" -}}
+{{- printf "%s-diag" (include "hush-common.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
 Image tag to use
 */}}
 {{- define "hush-am.imageTag" -}}
@@ -140,6 +147,18 @@ Image path for Injector container.
 {{- else -}}
   {{ $base }}
 {{- end -}}
+{{- end }}
+
+{{/*
+Image path for Diagnostics container.
+*/}}
+{{- define "hush-am.diagImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.diagRepository
+    "tag" (include "hush-am.imageTag" .)
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
@@ -718,6 +737,41 @@ Access Manager envs
 {{- end }}
 
 {{/*
+Diag envs
+*/}}
+{{- define "hush-am.diagEnvs" -}}
+{{ include "hush-am.mandatoryEnvs" . }}
+{{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+- name: DEPLOYMENT_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+{{ include "hush-am.siloEnvs" . }}
+- name: MUFASA_POLICY_DB_PATH
+  value: {{ include "hush-am.policyDbFilePath" . }}
+- name: MUFASA_KEY_DB_PATH
+  value: {{ include "hush-am.keyDbFilePath" . }}
+- name: MUFASA_ACR_DB_PATH
+  value: {{ include "hush-am.acrDbFilePath" . }}
+- name: MUFASA_SPIRESERVER_UDS_PATH
+  value: {{ include "hush-am.spireServerSocketPath" . }}
+- name: SIMBA_BIND_ADDRESS
+  value: {{ include "hush-am.accessManagerRestBindAddress" . | quote }}
+- name: SIMBA_SPIRE_AGENT_SOCKET_PATH
+  value: {{ include "hush-am.spireAgentSocketPath" . }}
+- name: SIMBA_X509_CTX_WAIT_DURATION
+  value: "-1s"
+- name: SIMBA_X509_CTX_WAIT_STEP
+  value: "10s"
+- name: MUFASA_K8S_SERVICE_ACCOUNT
+  value: {{ include "hush-am.accessManagerFullName" . }}
+- name: MUFASA_K8S_AGENT_SERVICE_ACCOUNT
+  value: {{ include "hush-am.spireAgentFullName" . }}
+{{- end }}
+
+{{/*
 Access Manager Kind
 */}}
 {{- define "hush-am.accessManagerKind" -}}
@@ -857,7 +911,7 @@ Spire Agent Priority Class Name
 Should we create a ConfigMap for custom configurations?
 */}}
 {{- define "hush-am.shouldCreateConfigMap" -}}
-{{- if or .Values.accessManager.logConfig .Values.admissionController.logConfig -}}
+{{- if or .Values.accessManager.logConfig .Values.admissionController.logConfig .Values.diagnostics.logConfig -}}
 true
 {{- end -}}
 {{- end }}
