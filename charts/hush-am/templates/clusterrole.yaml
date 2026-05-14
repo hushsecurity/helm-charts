@@ -13,13 +13,7 @@ rules:
       - nodes/proxy
     verbs:
       - get
-  - apiGroups: [""]
-    resources:
-      - pods
-    verbs:
-      - get
       - list
-      - watch
   - apiGroups: [""]
     resources:
       - secrets
@@ -30,3 +24,9 @@ rules:
     {{- else }}
     verbs: ["*"]
     {{- end }}
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - list
