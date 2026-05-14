@@ -113,6 +113,9 @@ image:
   # Image repository for Access Management Injector container
   injectorRepository: am-injector
 
+  # Image repository for Diagnostics container
+  diagRepository: am-diag
+
   # A list of pre-created image pull secrets of the form:
   #
   # pullSecretList:
@@ -819,3 +822,58 @@ apiController:
     periodSeconds: 15
     timeoutSeconds: 1
     failureThreshold: 3
+
+# Diagnostics configuration.
+#
+# When enabled, a single long-running Deployment runs periodic health
+# checks to verify the local install is healthy. Results are reported to
+# the management plane via the reporting pipeline.
+diagnostics:
+  # Whether the diagnostics Deployment is created.
+  # When enabled, periodic health checks verify that the access manager,
+  # its agents, and the reporting pipeline are functioning correctly.
+  enabled: true
+
+  # Cadence between diagnostic runs once all checks pass.
+  interval: "12h"
+
+  # Cadence between diagnostic runs while one or more checks fail. The
+  # daemon retries at this (shorter) interval until all checks pass, then
+  # returns to the normal interval.
+  retryInterval: "5m"
+
+  # Per-check timeout passed to the diagnostics binary.
+  perCheckTimeout: "30s"
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+      ephemeral-storage: "128Mi"
+    limits:
+      cpu: 200m
+      memory: 128Mi
+      ephemeral-storage: "512Mi"
+
+  # Resource requests/limits for the vector sidecar
+  #
+  # Adjusted to cover most cases. Change based on your needs.
+  vectorResources:
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+      ephemeral-storage: "512Mi"
+    requests:
+      cpu: "20m"
+      memory: "64Mi"
+      ephemeral-storage: "128Mi"
+
+  # Custom log configuration for the diag container.
+  #
+  # Example:
+  # logConfig:
+  #   default_level: info
+  #   default_export: true
+  #   default_export_level: warn
+  #   loggers: []
+  logConfig: {}

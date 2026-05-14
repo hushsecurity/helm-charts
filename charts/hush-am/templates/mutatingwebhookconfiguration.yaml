@@ -31,3 +31,27 @@ webhooks:
     {{- with (include "hush-am.mutatingWebhookObjectSelector" .) }}
     objectSelector: {{- . | nindent 6 }}
     {{- end }}
+  {{- if .Values.diagnostics.enabled }}
+  - name: healthcheck.{{ include "hush-am.mutatingWebhookFqdn" . }}
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    reinvocationPolicy: Never
+    failurePolicy: Ignore
+    timeoutSeconds: 5
+    clientConfig:
+      service:
+        namespace: {{ include "hush-common.namespace" . }}
+        name: {{ include "hush-am.accessManagerFullName" . }}
+        path: /
+        port: {{ .Values.admissionController.port }}
+      caBundle: {{ (include "hush-am.admissionControllerRootCert" .) | b64enc }}
+    rules:
+      - apiGroups: ["coordination.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["UPDATE"]
+        resources: ["leases"]
+        scope: "Namespaced"
+    objectSelector:
+      matchLabels:
+        hush.security/diag-healthcheck: "true"
+  {{- end }}

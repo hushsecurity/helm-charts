@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- add a `diagnostics` Deployment that runs `diag` in daemon mode, performing
+  periodic health checks from inside the cluster. Controlled by
+  `diagnostics.enabled` (default `true`).
+- add a healthcheck webhook entry to the MutatingWebhookConfiguration,
+  gated on `diagnostics.enabled`.
+
 ### Changed
 
 - add `namespaces:get` permission to api-controller's ClusterRole to allow it

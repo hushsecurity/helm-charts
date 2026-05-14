@@ -1,0 +1,12 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+diagnostics:
+  enabled: true
+  logConfig:
+    default_level: debug
+    default_export: true
+    default_export_level: info
+    loggers: []
