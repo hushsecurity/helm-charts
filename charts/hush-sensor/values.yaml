@@ -28,6 +28,12 @@ eventReportingConsole: "heartbeat"
 
 # Hush deployment configuration
 hushDeployment:
+  # Authentication mode for Hush API token exchange.
+  # Allowed values:
+  # - password - use deployment password (default)
+  # - oidc - use K8S SA token (oidc_provider must be configured in deployment)
+  authMode: "password"
+
   # The deployment token as received from API/UI.
   #
   # When 'hushDeployment.secretKeyRef.{name,tokenKey}' are defined this value is ignored.
@@ -36,8 +42,8 @@ hushDeployment:
 
   # The deployment password as received from API/UI.
   #
+  # Only required when 'hushDeployment.authMode' is "password".
   # When 'hushDeployment.secretKeyRef.{name,key}' are defined this value is ignored.
-  # Otherwise this value is required.
   password: ""
 
   # A reference to an existing Secret with deployment password and token.
@@ -51,6 +57,7 @@ hushDeployment:
     # Secret name
     name: ""
     # Password secret key
+    # Only used when 'hushDeployment.authMode' is "password".
     key: ""
     # Token secret key
     tokenKey: ""
@@ -559,3 +566,12 @@ connector:
     requests:
       cpu: "40m"
       memory: "32Mi"
+
+  # Default resource requests/limits for connector-vector
+  vectorResources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"

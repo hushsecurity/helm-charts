@@ -4,12 +4,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-sensor [unreleased]
+
+### Added
+
+- authenticate to Hush API using short-lived access tokens
+- add `hushDeployment.authMode` value to choose the way access-token is onbtained:
+  - `password` (default) - use `DEPLOYMENT_PASSWORD` to obtain an access-token
+  - `oidc` - use OIDC JWT to obtain an access-token (requires OIDC configuration in
+    deployment)
+
+### Changed
+
+- add a `vector` sidecar to the `connector` pod
+
 ## hush-sensor 0.28.0 - 2026-05-12
 
 ### Added
 
 - add support for `k8s infisical operator` integration RBAC in `sentry`
-
 
 ## hush-sensor 0.27.0 - 2026-04-19
 

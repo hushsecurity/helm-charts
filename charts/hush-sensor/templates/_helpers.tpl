@@ -409,11 +409,13 @@ true
 Should we create the deployment password K8S Secret?
 */}}
 {{- define "hush-sensor.shouldCreateDeploymentPasswordKubeSecret" -}}
+{{- if include "hush-common.isPasswordAuthMode" . -}}
 {{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
 {{- $name := and $keyRef $keyRef.name -}}
 {{- $key := and $keyRef $keyRef.key -}}
 {{- if not (and $name $key) -}}
 true
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -451,18 +453,20 @@ Effective deployment token secret ref
 Effective deployment password secret ref
 */}}
 {{- define "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" -}}
-{{- if (include "hush-sensor.shouldCreateDeploymentPasswordKubeSecret" .) -}}
-    {{- dict
-        "name" (include "hush-common.deploymentKubeSecretName" .)
-        "key" "deployment-password"
-        | toYaml
-    -}}
-{{- else -}}
-    {{- dict
-        "name" .Values.hushDeployment.secretKeyRef.name
-        "key" .Values.hushDeployment.secretKeyRef.key
-        | toYaml
-    -}}
+{{- if include "hush-common.isPasswordAuthMode" . -}}
+  {{- if (include "hush-sensor.shouldCreateDeploymentPasswordKubeSecret" .) -}}
+      {{- dict
+          "name" (include "hush-common.deploymentKubeSecretName" .)
+          "key" "deployment-password"
+          | toYaml
+      -}}
+  {{- else -}}
+      {{- dict
+          "name" .Values.hushDeployment.secretKeyRef.name
+          "key" .Values.hushDeployment.secretKeyRef.key
+          | toYaml
+      -}}
+  {{- end }}
 {{- end }}
 {{- end }}
 

@@ -42,6 +42,12 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.connector.terminationGracePeriodSeconds }}
       serviceAccountName: {{ include "hush-sensor.connectorFullName" . }}
       volumes:
+        - name: vector-socket
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: tokengen-state
+          emptyDir:
+            sizeLimit: 1Mi
         - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
           projected:
             sources:
@@ -55,6 +61,10 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+            - name: tokengen-state
+              mountPath: /var/run/tokengen
             - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
               mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
               readOnly: true
@@ -64,6 +74,8 @@ spec:
           env:
             - name: HUSH_K8S_SA_TOKEN_PATH
               value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
+            - name: HUSH_AUTH_MODE
+              value: {{ .Values.hushDeployment.authMode | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
@@ -100,6 +112,8 @@ spec:
           env:
             - name: HUSH_K8S_SA_TOKEN_PATH
               value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
+            - name: HUSH_AUTH_MODE
+              value: {{ .Values.hushDeployment.authMode | quote }}
             {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
@@ -120,4 +134,50 @@ spec:
             - name: FORWARDER_TIMEOUT
               value: {{ . | quote }}
             {{- end }}
+        - name: hush-connector-vector
+          image: {{ include "hush-sensor.sensorVectorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with and .Values.connector .Values.connector.vectorResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
+              readOnly: true
+          env:
+            - name: HUSH_K8S_SA_TOKEN_PATH
+              value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
+            - name: HUSH_AUTH_MODE
+              value: {{ .Values.hushDeployment.authMode | quote }}
+            {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- with (include "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            - name: DEPLOYMENT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            - name: DEPLOYMENT_KIND
+              value: k8s
+            {{- if .Values.eventReportingConsole }}
+            - name: EVENT_REPORTING_CONSOLE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hush-sensor.sensorConfigMapName" . }}
+                  key: event_reporting_console
+            {{- end }}
+            - name: HELM_RELEASE
+              value: {{ .Release.Name }}
+            - name: HELM_NAMESPACE
+              value: {{ include "hush-common.namespace" . }}
+            - name: HELM_CHART_VERSION
+              value: {{ .Chart.Version | quote }}
 {{- end -}}
