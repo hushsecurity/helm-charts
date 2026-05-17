@@ -1,0 +1,40 @@
+{{- if .Values.diagnostics.enabled -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "hush-am.diagClusterRoleFullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: diag-cluster-role
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - statefulsets
+      - daemonsets
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "hush-am.diagClusterRoleFullName" . }}-binding
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: diag-cluster-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "hush-am.accessManagerFullName" . }}
+    namespace: {{ include "hush-common.namespace" . }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "hush-am.diagClusterRoleFullName" . }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

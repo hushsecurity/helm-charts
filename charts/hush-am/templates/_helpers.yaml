@@ -27,6 +27,13 @@ Create a default name for the common ClusterRole.
 {{- end }}
 
 {{/*
+Create a default fully qualified name for Diag ClusterRole.
+*/}}
+{{- define "hush-am.diagClusterRoleFullName" -}}
+{{- printf "%s-diag" (include "hush-common.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
 Create a default name for the spire server ClusterRole.
 */}}
 {{- define "hush-am.spireServerClusterRoleFullName" -}}
@@ -45,6 +52,13 @@ Create a default fully qualified app name for API Controller.
 */}}
 {{- define "hush-am.apiControllerFullName" -}}
 {{- printf "%s-api-controller" (include "hush-common.fullName" .) | trunc 63 }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name for Diag.
+*/}}
+{{- define "hush-am.diagFullName" -}}
+{{- printf "%s-diag" (include "hush-common.fullName" .) | trunc 63 }}
 {{- end }}
 
 {{/*
@@ -101,7 +115,7 @@ Image path for Spire Agent container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.spireAgentRepository
-    "tag" "v0.4.0"
+    "tag" (.Values.image.spireAgentTag | default "v0.4.0")
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -140,6 +154,18 @@ Image path for Injector container.
 {{- else -}}
   {{ $base }}
 {{- end -}}
+{{- end }}
+
+{{/*
+Image path for Diagnostics container.
+*/}}
+{{- define "hush-am.diagImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.diagRepository
+    "tag" (include "hush-am.imageTag" .)
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
 
 {{/*
@@ -849,7 +875,7 @@ Spire Agent Priority Class Name
 Should we create a ConfigMap for custom configurations?
 */}}
 {{- define "hush-am.shouldCreateConfigMap" -}}
-{{- if or .Values.accessManager.logConfig .Values.admissionController.logConfig -}}
+{{- if or .Values.accessManager.logConfig .Values.admissionController.logConfig .Values.diagnostics.logConfig -}}
 true
 {{- end -}}
 {{- end }}

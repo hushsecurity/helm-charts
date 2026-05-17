@@ -1,0 +1,126 @@
+{{- if .Values.diagnostics.enabled -}}
+{{- $name := include "hush-am.diagFullName" . -}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $name }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: diag
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  schedule: {{ .Values.diagnostics.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: {{ .Values.diagnostics.activeDeadlineSeconds }}
+      template:
+        metadata:
+          labels: {{- include "hush-common.labels" . | nindent 12 }}
+            app.kubernetes.io/component: diag
+        spec:
+          restartPolicy: Never
+          {{- with (include "hush-am.kubeImagePullSecretEffectiveList" .) }}
+          imagePullSecrets: {{- . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "hush-am.accessManagerFullName" . }}
+          # Native sidecar (k8s 1.29+): an initContainer with
+          # restartPolicy: Always runs alongside main containers and is
+          # SIGTERM'd when they exit, so the Job can complete cleanly.
+          initContainers:
+            - name: vector
+              image: {{ include "hush-am.accessManagerVectorImagePath" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              restartPolicy: Always
+              volumeMounts:
+                - name: vector-socket-dir
+                  mountPath: /tmp/vector
+                - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+                  mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
+                  readOnly: true
+              env:
+                {{- include "hush-am.mandatoryEnvs" . | nindent 16 }}
+                {{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+                - name: DEPLOYMENT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .name }}
+                      key: {{ .key }}
+                {{- end }}
+                - name: REPORT_SUBSYSTEM_NAME
+                  value: "mufasa-diag"
+                - name: REPORT_NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.nodeName
+                {{- with .Values.eventReportingConsole }}
+                - name: EVENT_REPORTING_CONSOLE
+                  value: {{ . | quote }}
+                {{- end }}
+                - name: HELM_RELEASE
+                  value: {{ .Release.Name }}
+                - name: HELM_NAMESPACE
+                  value: {{ include "hush-common.namespace" . }}
+                - name: HELM_CHART_VERSION
+                  value: {{ .Chart.Version | quote }}
+          containers:
+            - name: diag
+              image: {{ include "hush-am.diagImagePath" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  sleep $((RANDOM % {{ .Values.diagnostics.jitterSeconds }}))
+                  exec /diag --report --json --timeout={{ .Values.diagnostics.perCheckTimeout }}
+              resources:
+                {{- toYaml .Values.diagnostics.resources | nindent 16 }}
+              volumeMounts:
+                - name: vector-socket-dir
+                  mountPath: /tmp/vector
+                - name: spire-agent-socket-dir
+                  mountPath: {{ include "hush-am.spireAgentSocketDirMountPath" . }}
+                - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+                  mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
+                  readOnly: true
+                {{- if .Values.diagnostics.logConfig }}
+                - name: diag-log-config
+                  mountPath: /opt/mufasa
+                  readOnly: true
+                {{- end }}
+              env:
+                {{- include "hush-am.accessManagerEnvs" . | nindent 16 }}
+                - name: MUFASA_DIAG_PORT_ADDRESS
+                  value: {{ include "hush-am.accessManagerRestAddress" . | quote }}
+                - name: MUFASA_DIAG_APP_LABEL
+                  value: {{ include "hush-common.name" . | quote }}
+                {{- with .Values.spire }}{{- with .trustDomain }}
+                - name: MUFASA_SPIRE_TRUST_DOMAIN
+                  value: {{ . | quote }}
+                {{- end }}{{- end }}
+          volumes:
+            - name: vector-socket-dir
+              emptyDir:
+                sizeLimit: 1Mi
+            - name: spire-agent-socket-dir
+              hostPath:
+                path: {{ .Values.spireAgent.hostDir }}
+                type: DirectoryOrCreate
+            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      path: {{ include "hush-common.k8sSaTokenFileName" . }}
+            {{- if .Values.diagnostics.logConfig }}
+            - name: diag-log-config
+              configMap:
+                name: {{ include "hush-am.configMapName" . }}
+                items:
+                  - key: diag_log_config
+                    path: log_config.yaml
+            {{- end }}
+{{- end }}

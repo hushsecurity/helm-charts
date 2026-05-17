@@ -18,4 +18,9 @@ data:
     ---
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{ with .Values.diagnostics.logConfig }}
+  diag_log_config: |
+    ---
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}

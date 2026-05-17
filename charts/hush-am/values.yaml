@@ -87,6 +87,11 @@ image:
   # When not defined the runtime version of admission controller is used.
   injectorTag: ""
 
+  # Custom tag for Spire Agent image.
+  #
+  # When not defined the chart's bundled default version is used.
+  spireAgentTag: ""
+
   # Image repository for Access Manager container
   accessManagerRepository: am-access-manager
 
@@ -107,6 +112,9 @@ image:
 
   # Image repository for Access Management Injector container
   injectorRepository: am-injector
+
+  # Image repository for Diagnostics container
+  diagRepository: am-diag
 
   # A list of pre-created image pull secrets of the form:
   #
@@ -758,3 +766,54 @@ apiController:
       cpu: "20m"
       memory: "64Mi"
       ephemeral-storage: "128Mi"
+
+# Diagnostics CronJob configuration.
+#
+# When enabled, a CronJob runs the `diag` binary periodically to verify the
+# local install is healthy (spire connectivity, silo read/write/delete
+# round-trip, simba port reachability, container registry reachability via a
+# sample user pod). Results are reported to midgard via the same vector pipe
+# used for heartbeats.
+diagnostics:
+  # Whether the diagnostics CronJob is created.
+  enabled: true
+
+  # Cron schedule for diagnostics jobs. Default: every 12 hours at midnight/noon.
+  schedule: "0 */12 * * *"
+
+  # Max random sleep before the diag run starts (seconds). Each pod picks a
+  # random value in [0, jitterSeconds) so load is spread across deployments.
+  # Default: 1800 = up to 30 minutes of jitter.
+  jitterSeconds: 1800
+
+  # How long to wait (seconds) after helm install/upgrade before the
+  # post-install hook Job runs diag. Gives pods time to become ready.
+  # Default: 120 = 2 minutes.
+  postInstallDelaySeconds: 120
+
+  # Set to false to skip the post-install/post-upgrade diag hook Job entirely.
+  # Useful when helm is run in CI and you don't want to block on the hook.
+  postInstallHook: true
+
+  # Per-check timeout passed to `mufasa diag --timeout`.
+  perCheckTimeout: "30s"
+
+  # activeDeadlineSeconds for each Job spawned by the CronJob.
+  # Must be larger than perCheckTimeout * 4 (one per check).
+  activeDeadlineSeconds: 600
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+  # Custom log configuration for the diag container.
+  #
+  # Example:
+  # logConfig:
+  #   level: debug
+  #   format: json
+  logConfig: {}
