@@ -11,7 +11,8 @@ new printer columns, etc.), the CRDs must be applied manually before the
 upgrade.
 
 ```shell
-kubectl apply -f charts/hush-am/crds/
+helm pull oci://ghcr.io/hushsecurity/helm-charts/hush-am --untar
+kubectl apply -f hush-am/crds/
 helm upgrade hush-am ...
 ```
 
