@@ -187,6 +187,45 @@ secretStore:
     # AWS region name, e.g. "us-east-1"
     region: ""
 
+    # Optional customer-managed KMS key used to encrypt the secret values.
+    #
+    # Accepts a KMS key ID, key ARN, alias name, or alias ARN. When empty,
+    # AWS uses the default account-managed key: aws/secretsmanager for
+    # 'awssm', aws/ssm for 'awsssm'.
+    #
+    # Behaviour and required KMS permissions depend on 'secretStore.kind'.
+    # In both cases the permissions must be granted to the principal used
+    # by the secret store (e.g. the IRSA role configured under
+    # 'accessManager.workloadIdentity.aws.irsa').
+    #
+    # awssm (AWS Secrets Manager):
+    #   - The KMS key is applied on CreateSecret only. Existing secrets
+    #     keep the KMS key they were created with.
+    #   - Secrets Manager uses envelope encryption: it asks KMS for a data
+    #     key under this CMK on CreateSecret / PutSecretValue, and calls
+    #     Decrypt on GetSecretValue to unwrap that data key.
+    #   - Required KMS actions on the key:
+    #       kms:GenerateDataKey  -- CreateSecret / PutSecretValue
+    #       kms:Decrypt          -- GetSecretValue (unwrap the data key)
+    #
+    # awsssm (AWS SSM Parameter Store):
+    #   - The KMS key is applied on every PutParameter, including
+    #     overwrites of existing parameters.
+    #   - Parameter Store uses different KMS operations depending on the
+    #     parameter tier: kms:Encrypt for standard SecureString parameters
+    #     (up to 4 KB) and kms:GenerateDataKey for advanced SecureString
+    #     parameters (up to 8 KB, via envelope encryption with the AWS
+    #     Encryption SDK). The secret store uses Intelligent-Tiering, so an
+    #     individual parameter can land in either tier and the role must
+    #     allow both.
+    #   - Required KMS actions on the key:
+    #       kms:Encrypt          -- PutParameter for standard SecureString
+    #       kms:GenerateDataKey  -- PutParameter for advanced SecureString
+    #       kms:Decrypt          -- GetParameter / GetParameters /
+    #                               GetParametersByPath with
+    #                               WithDecryption=true
+    kmsKeyId: ""
+
   # GCP secret store configuration
   gcp:
     # GCP project ID

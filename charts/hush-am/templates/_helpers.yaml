@@ -488,6 +488,10 @@ Silo env vars
   value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
 - name: SILO_AWS_SM_REGION
   value: {{ include "hush-am.siloAwsRegion" . | quote }}
+    {{- with (dig "aws" "kmsKeyId" "" .Values.secretStore) }}
+- name: SILO_AWS_SM_KMS_KEY_ID
+  value: {{ . | quote }}
+    {{- end }}
     {{- with (include "hush-am.siloAwsAccessToken" . | fromYaml) }}
 - name: AWS_SECRET_ACCESS_KEY
   value: {{ .secret_access_key | quote }}
@@ -505,6 +509,10 @@ Silo env vars
   value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
 - name: SILO_AWS_SSM_REGION
   value: {{ include "hush-am.siloAwsRegion" . | quote }}
+    {{- with (dig "aws" "kmsKeyId" "" .Values.secretStore) }}
+- name: SILO_AWS_SSM_KMS_KEY_ID
+  value: {{ . | quote }}
+    {{- end }}
     {{- with (include "hush-am.siloAwsAccessToken" . | fromYaml) }}
 - name: AWS_SECRET_ACCESS_KEY
   value: {{ .secret_access_key | quote }}
