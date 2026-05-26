@@ -7,6 +7,10 @@ Hush Security Ltd. helm charts.
 - [hush-am](./charts/hush-am/README.md) - Hush Access Manager (includes CRD upgrade notes).
 - hush-sensor - Hush Sensor.
 
+## Changelog
+
+- [hush-sensor](./charts/hush-sensor/CHANGELOG.md)
+
 ## Download
 
 Hush helm charts are stored in OCI repository `ghcr.io` under
