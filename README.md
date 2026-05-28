@@ -9,6 +9,7 @@ Hush Security Ltd. helm charts.
 
 ## Changelog
 
+- [hush-am](./charts/hush-am/CHANGELOG.md)
 - [hush-sensor](./charts/hush-sensor/CHANGELOG.md)
 
 ## Download
