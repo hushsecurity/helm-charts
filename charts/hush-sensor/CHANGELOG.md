@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - authenticate to Hush API using short-lived access tokens
-- add `hushDeployment.authMode` value to choose the way access-token is onbtained:
+- add `hushDeployment.authMode` value to choose the way access-token is obtained:
   - `password` (default) - use `DEPLOYMENT_PASSWORD` to obtain an access-token
   - `oidc` - use OIDC JWT to obtain an access-token (requires OIDC configuration in
     deployment)
