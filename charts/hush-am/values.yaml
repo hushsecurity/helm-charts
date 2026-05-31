@@ -87,6 +87,11 @@ image:
   # When not defined the runtime version of admission controller is used.
   injectorTag: ""
 
+  # Custom tag for Spire Agent image.
+  #
+  # When not defined the chart's default Spire Agent version is used.
+  spireAgentTag: ""
+
   # Image repository for Access Manager container
   accessManagerRepository: am-access-manager
 
