@@ -40,4 +40,8 @@ rules:
   resources:
     - customresourcedefinitions
   verbs: ["get"]
+- apiGroups: [""]
+  resources:
+    - namespaces
+  verbs: ["get"]
 {{- end }}
