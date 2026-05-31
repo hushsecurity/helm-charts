@@ -4,6 +4,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- add `namespaces:get` permission to api-controller's ClusterRole to allow it
+  query `kube-system` namespace UID as cluster identifier
+
 ## hush-am 0.17.0 - 2026-05-25
 
 ### Added
