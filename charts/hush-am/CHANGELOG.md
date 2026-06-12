@@ -4,6 +4,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- spire-agent pods no longer restart on every chart upgrade, but only when
+  their actual configuration changes. As part of this, spire-agent pods no
+  longer carry the `helm.sh/chart` and `app.kubernetes.io/version` labels
+  (the spire-agent DaemonSet object still does).
+
 ## hush-am 0.18.1 - 2026-06-12
 
 ### Changed
