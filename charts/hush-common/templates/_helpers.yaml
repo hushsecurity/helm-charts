@@ -70,6 +70,20 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Pod template labels: stable across chart releases.
+Excludes helm.sh/chart and app.kubernetes.io/version, which change on
+every release and would needlessly restart pods of workloads whose spec
+did not otherwise change.
+*/}}
+{{- define "hush-common.podLabels" -}}
+{{ include "hush-common.selectorLabels" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.commonLabels -}}
+    {{- toYaml . | nindent 0 }}
+{{- end }}
+{{- end }}
+
+{{/*
 b64dec with error check
 */}}
 {{- define "hush-common.b64decode" -}}
