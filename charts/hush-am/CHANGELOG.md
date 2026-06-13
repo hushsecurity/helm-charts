@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- bump the default spire-agent image to `v0.14.0`. The first upgrade after this
+  restarts spire-agent pods once to roll out the new image.
 - spire-agent pods no longer restart on every chart upgrade, but only when
   their actual configuration changes. As part of this, spire-agent pods no
   longer carry the `helm.sh/chart` and `app.kubernetes.io/version` labels
