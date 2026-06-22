@@ -22,6 +22,8 @@ spec:
       {{- end }}
 
     spec:
+      securityContext:
+        runAsUser: 0
       {{- with .Values.connector.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}

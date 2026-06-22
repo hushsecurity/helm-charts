@@ -17,6 +17,13 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - add a `vector` sidecar to the `connector` pod
+- store `sentry` and `vermon` identity (UUID) in a pod-local `emptyDir` instead of
+  a host directory, so they can write it on SELinux-enforcing nodes (e.g.
+  OpenShift/CRI-O). Their identity is no longer persisted across pod restarts.
+- run the `sentry`, `vermon` and `connector` pods as root (`runAsUser: 0`) so the
+  `vector` sidecar can render its configuration under `/etc/vector` on OpenShift,
+  where pods would otherwise be assigned an arbitrary non-root UID. On OpenShift
+  these pods require the `anyuid` (or `privileged`) SCC.
 
 ## hush-sensor 0.28.0 - 2026-05-12
 

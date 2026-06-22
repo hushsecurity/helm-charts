@@ -22,6 +22,8 @@ spec:
       {{- end }}
 
     spec:
+      securityContext:
+        runAsUser: 0
       {{- with .Values.vermon.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
@@ -52,9 +54,8 @@ spec:
               - key: sensor_config
                 path: config.yaml
         - name: host-dir
-          hostPath:
-            path: {{ .Values.hostDir }}
-            type: DirectoryOrCreate
+          emptyDir:
+            sizeLimit: 1Mi
         - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
           projected:
             sources:

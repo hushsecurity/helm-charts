@@ -25,6 +25,8 @@ spec:
       {{- end }}
 
     spec:
+      securityContext:
+        runAsUser: 0
       {{- with .Values.sentry.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
@@ -55,9 +57,8 @@ spec:
               - key: sentry_config
                 path: config.yaml
         - name: host-dir
-          hostPath:
-            path: {{ .Values.hostDir }}
-            type: DirectoryOrCreate
+          emptyDir:
+            sizeLimit: 1Mi
         {{- with (include "hush-sensor.sentryHcVaultCACertVolume" .) }}
           {{- . | nindent 8 }}
         {{- end }}
