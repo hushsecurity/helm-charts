@@ -4,6 +4,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- store `sentry` and `vermon` identity (UUID) in a pod-local `emptyDir` instead of
+  a host directory, so they can write it on SELinux-enforcing nodes (e.g.
+  OpenShift/CRI-O). Their identity is no longer persisted across pod restarts.
+
+
 ## hush-sensor 0.29.0 - 2026-06-04
 
 ### Added
