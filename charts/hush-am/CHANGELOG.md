@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `admissionController.spireAgentWaitDuration` / `spireAgentWaitStep` to control
+  how long an injected workload waits for the node's SPIRE agent before starting.
+  Unset by default (the injector's built-in 30s timeout, after which the workload
+  starts without its injected secrets if the agent is not ready). Set
+  `spireAgentWaitDuration` to `"-1s"` to wait indefinitely (recommended where
+  nodes scale up, e.g. Karpenter) or to a bounded duration like `"300s"`.
+
 ### Changed
 
 - bump the default spire-agent image to `v0.14.0`. The first upgrade after this

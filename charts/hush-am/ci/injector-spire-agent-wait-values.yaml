@@ -1,0 +1,8 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+admissionController:
+  spireAgentWaitDuration: "-1s"
+  spireAgentWaitStep: "10s"

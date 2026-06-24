@@ -728,6 +728,15 @@ admissionController:
   # Enable hushinjector verbose mode
   verboseInjector: false
 
+  # How long an injected workload waits for the node's SPIRE agent socket before
+  # giving up, and the interval between connection attempts. Left empty by
+  # default, which uses the injector's built-in 30s timeout -- after which, on a
+  # node whose SPIRE agent is not yet ready, the workload starts without its
+  # injected secrets. Set spireAgentWaitDuration to "-1s" to wait indefinitely,
+  # or to a bounded duration (e.g. "300s").
+  spireAgentWaitDuration: ""
+  spireAgentWaitStep: ""
+
   # Default resource requests/limits for Admission Controller
   #
   # Adjusted to cover most cases. Change based on your needs.
