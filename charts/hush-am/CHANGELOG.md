@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file.
   starts without its injected secrets if the agent is not ready). Set
   `spireAgentWaitDuration` to `"-1s"` to wait indefinitely (recommended where
   nodes scale up, e.g. Karpenter) or to a bounded duration like `"300s"`.
+- `admissionController.injectorFailureStrategy` to choose what happens when the
+  injector cannot fetch a workload's secrets: unset keeps the default
+  (`continue` -- the workload starts without its injected secrets); `"abort"`
+  fails the workload so it never starts without them.
 
 ### Changed
 
