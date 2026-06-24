@@ -297,6 +297,10 @@ spec:
             - name: ZAZU_SPIRE_AGENT_WAIT_STEP
               value: {{ . | quote }}
             {{- end }}
+            {{- with (include "hush-am.admissionControllerInjectorFailureStrategy" .) }}
+            - name: ZAZU_INJECTOR_FAILURE_STRATEGY
+              value: {{ . | quote }}
+            {{- end }}
         - name: vector
           image: {{ include "hush-am.accessManagerVectorImagePath" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}

@@ -737,6 +737,13 @@ admissionController:
   spireAgentWaitDuration: ""
   spireAgentWaitStep: ""
 
+  # Failure strategy when the injector cannot fetch a workload's secrets (e.g.
+  # the SPIRE agent is unreachable). Empty uses the injector's built-in default
+  # ("continue": start the workload without its injected secrets). Set to
+  # "abort" to fail the workload instead, so it never starts without its
+  # secrets. Allowed values: "abort", "continue".
+  injectorFailureStrategy: ""
+
   # Default resource requests/limits for Admission Controller
   #
   # Adjusted to cover most cases. Change based on your needs.

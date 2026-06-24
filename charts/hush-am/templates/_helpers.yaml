@@ -934,6 +934,19 @@ Is valid spire log level?
 {{- end }}
 
 {{/*
+Admission controller injector failure strategy (validated; empty when unset)
+*/}}
+{{- define "hush-am.admissionControllerInjectorFailureStrategy" -}}
+{{- with .Values.admissionController.injectorFailureStrategy -}}
+{{- $valid := list "abort" "continue" -}}
+{{- if not (has . $valid) -}}
+{{- fail (printf "'admissionController.injectorFailureStrategy' must be one of %v" $valid) -}}
+{{- end -}}
+{{- . -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Spire Server custom log level
 */}}
 {{- define "hush-am.spireServerLogLevel" -}}
