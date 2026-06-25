@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-am 0.19.0 - 2026-06-25
 
 ### Added
 
@@ -22,6 +22,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- bump `appVersion` from `v0.14.0` to `v0.15.0`, which ships the injector
+  image that reads the new `injectorSpireAgentWaitDuration` /
+  `injectorSpireAgentWaitStep` knobs, so the wait knob now functions.
 - bump the default spire-agent image to `v0.14.0`. The first upgrade after this
   restarts spire-agent pods once to roll out the new image.
 - spire-agent pods no longer restart on every chart upgrade, but only when
