@@ -8,12 +8,13 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- `admissionController.spireAgentWaitDuration` / `spireAgentWaitStep` to control
-  how long an injected workload waits for the node's SPIRE agent before starting.
-  Unset by default (the injector's built-in 30s timeout, after which the workload
-  starts without its injected secrets if the agent is not ready). Set
-  `spireAgentWaitDuration` to `"-1s"` to wait indefinitely (recommended where
-  nodes scale up, e.g. Karpenter) or to a bounded duration like `"300s"`.
+- `admissionController.injectorSpireAgentWaitDuration` /
+  `injectorSpireAgentWaitStep` to control how long an injected workload waits
+  for the node's SPIRE agent before starting. Unset by default (the injector's
+  built-in 30s timeout, after which the workload starts without its injected
+  secrets if the agent is not ready). Set `injectorSpireAgentWaitDuration` to
+  `"-1s"` to wait indefinitely (recommended where nodes scale up, e.g.
+  Karpenter) or to a bounded duration like `"300s"`.
 - `admissionController.injectorFailureStrategy` to choose what happens when the
   injector cannot fetch a workload's secrets: unset keeps the default
   (`continue` -- the workload starts without its injected secrets); `"abort"`

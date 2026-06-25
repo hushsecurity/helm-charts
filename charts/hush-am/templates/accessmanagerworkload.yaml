@@ -289,11 +289,11 @@ spec:
               value: {{ include "hush-am.admissionControllerBindAddress" . | quote }}
             - name: ZAZU_AWS_ECR_CFG_MODE
               value: {{ include "hush-am.admissionControllerAwcEcrCfgMode" . | quote }}
-            {{- with .Values.admissionController.spireAgentWaitDuration }}
+            {{- with .Values.admissionController.injectorSpireAgentWaitDuration }}
             - name: ZAZU_SPIRE_AGENT_WAIT_DURATION
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.admissionController.spireAgentWaitStep }}
+            {{- with .Values.admissionController.injectorSpireAgentWaitStep }}
             - name: ZAZU_SPIRE_AGENT_WAIT_STEP
               value: {{ . | quote }}
             {{- end }}

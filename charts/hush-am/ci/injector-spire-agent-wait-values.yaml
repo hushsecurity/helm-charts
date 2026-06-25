@@ -4,5 +4,5 @@ hushDeployment:
   password: "koko.password"
 
 admissionController:
-  spireAgentWaitDuration: "-1s"
-  spireAgentWaitStep: "10s"
+  injectorSpireAgentWaitDuration: "-1s"
+  injectorSpireAgentWaitStep: "10s"
