@@ -732,10 +732,10 @@ admissionController:
   # giving up, and the interval between connection attempts. Left empty by
   # default, which uses the injector's built-in 30s timeout -- after which, on a
   # node whose SPIRE agent is not yet ready, the workload starts without its
-  # injected secrets. Set spireAgentWaitDuration to "-1s" to wait indefinitely,
+  # injected secrets. Set injectorSpireAgentWaitDuration to "-1s" to wait indefinitely,
   # or to a bounded duration (e.g. "300s").
-  spireAgentWaitDuration: ""
-  spireAgentWaitStep: ""
+  injectorSpireAgentWaitDuration: ""
+  injectorSpireAgentWaitStep: ""
 
   # Failure strategy when the injector cannot fetch a workload's secrets (e.g.
   # the SPIRE agent is unreachable). Empty uses the injector's built-in default
