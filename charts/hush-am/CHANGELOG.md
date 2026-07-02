@@ -4,6 +4,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-am 0.19.1 - 2026-07-05
+
+### Changed
+
+- bump `appVersion` from `v0.15.0` to `v0.16.0`. No chart-template changes.
+
 ## hush-am 0.19.0 - 2026-06-25
 
 ### Added
