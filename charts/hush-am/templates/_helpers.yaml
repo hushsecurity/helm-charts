@@ -310,6 +310,13 @@ Acr DB file path
 {{- end }}
 
 {{/*
+Secret Store DB file path
+*/}}
+{{- define "hush-am.secretStoreDbFilePath" -}}
+{{- printf "%s/secretstoredb.sqlite3" (include "hush-am.accessManagerDataDirPath" .) -}}
+{{- end }}
+
+{{/*
 API Controller data directory path
 */}}
 {{- define "hush-am.apiControllerDataDirPath" -}}
@@ -718,6 +725,8 @@ Access Manager envs
   value: {{ include "hush-am.keyDbFilePath" . }}
 - name: MUFASA_ACR_DB_PATH
   value: {{ include "hush-am.acrDbFilePath" . }}
+- name: MUFASA_SECRET_STORE_DB_PATH
+  value: {{ include "hush-am.secretStoreDbFilePath" . }}
 - name: MUFASA_SPIRESERVER_UDS_PATH
   value: {{ include "hush-am.spireServerSocketPath" . }}
 - name: SIMBA_BIND_ADDRESS
