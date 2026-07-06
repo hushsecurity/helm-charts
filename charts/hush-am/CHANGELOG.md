@@ -4,6 +4,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- add a PodDisruptionBudget for the access manager so that voluntary node
+  disruptions (drain, autoscaler consolidation) evict at most one
+  access-manager pod at a time. Created only when `accessManager.replicas`
+  is greater than 1. Disable with
+  `accessManager.podDisruptionBudget.enabled: false`.
+
 ## hush-am 0.19.1 - 2026-07-05
 
 ### Changed
