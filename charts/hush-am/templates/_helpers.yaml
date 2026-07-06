@@ -787,7 +787,7 @@ Access Manager Kind
 {{- $kind := and .Values.accessManager .Values.accessManager.kind -}}
 {{- $validKinds := list "deployment" "statefulset" -}}
 {{- if not (has $kind $validKinds) -}}
-    {{- fail (printf "'manager.kind' must be one of %v" $validKinds) -}}
+    {{- fail (printf "'accessManager.kind' must be one of %v" $validKinds) -}}
 {{- end -}}
 {{- $kind -}}
 {{- end }}
