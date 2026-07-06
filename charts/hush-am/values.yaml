@@ -403,7 +403,7 @@ accessManager:
     custom: []
 
   # Data volume claim configuration.
-  # This is ignored when 'manager.kind' is 'deployment'.
+  # This is ignored when 'accessManager.kind' is 'deployment'.
   dataVolumeClaim:
     # Size of the volume claim
     size: 8Gi

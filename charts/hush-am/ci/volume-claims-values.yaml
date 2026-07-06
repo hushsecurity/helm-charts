@@ -8,8 +8,9 @@ secretStore:
   aws:
     region: "eu-central-1"
 
-manager:
-  volume:
+accessManager:
+  kind: statefulset
+  dataVolumeClaim:
     size: 17Gi
     storageClassName: "standard"
     selector:

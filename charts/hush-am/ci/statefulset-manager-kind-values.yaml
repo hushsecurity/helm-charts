@@ -8,5 +8,5 @@ secretStore:
   aws:
     region: "eu-central-1"
 
-manager:
+accessManager:
   kind: statefulset
