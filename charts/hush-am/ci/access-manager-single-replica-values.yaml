@@ -1,0 +1,8 @@
+---
+accessManager:
+  replicas: 1
+
+secretStore:
+  kind: "awssm"
+  aws:
+    region: "eu-central-1"

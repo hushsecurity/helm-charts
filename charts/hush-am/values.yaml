@@ -312,6 +312,13 @@ accessManager:
   # Number of manager replicas
   replicas: 2
 
+  # Pod disruption budget for the access manager.
+  #
+  # When enabled, and 'replicas' is greater than 1, limits voluntary
+  # disruptions (e.g. node drain) to one access-manager pod at a time.
+  podDisruptionBudget:
+    enabled: true
+
   # Readiness probe parameters for access-manager.
   # Changes must be coordinated with Hush support team.
   readinessProbe:

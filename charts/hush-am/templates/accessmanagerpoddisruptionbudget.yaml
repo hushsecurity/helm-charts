@@ -1,0 +1,16 @@
+{{- if and .Values.accessManager.podDisruptionBudget.enabled (gt (int .Values.accessManager.replicas) 1) -}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "hush-am.accessManagerFullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: access-manager-pod-disruption-budget
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: access-manager
+{{- end }}

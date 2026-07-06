@@ -1,0 +1,9 @@
+---
+accessManager:
+  podDisruptionBudget:
+    enabled: false
+
+secretStore:
+  kind: "awssm"
+  aws:
+    region: "eu-central-1"
