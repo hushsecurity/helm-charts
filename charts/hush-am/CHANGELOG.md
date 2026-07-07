@@ -4,6 +4,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- the access manager no longer gets cluster-wide write access to Secrets. When
+  the k8s secret store uses a namespace other than its own, write access is
+  granted only in that namespace (a namespaced RoleBinding). Cluster-wide
+  access to Secrets is now read-only, as needed for reading image-pull secrets.
+
 ## hush-am 0.20.0 - 2026-07-06
 
 ### Added
