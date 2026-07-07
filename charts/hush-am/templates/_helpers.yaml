@@ -477,6 +477,19 @@ true
 {{- end }}
 
 {{/*
+Namespaces (space-separated) needing a scoped RoleBinding for k8s secret
+writes: the k8s Silo namespace when it is not the install namespace. The
+install namespace is already covered by the access-manager Role.
+*/}}
+{{- define "hush-am.secretWriteNamespaces" -}}
+{{- $namespaces := list -}}
+{{- if not (include "hush-am.kubeSiloUsesSelfNamespace" .) -}}
+  {{- $namespaces = append $namespaces (include "hush-am.kubeSiloNamespace" .) -}}
+{{- end -}}
+{{- $namespaces | join " " -}}
+{{- end }}
+
+{{/*
 Parse AWS Access Token parameters
 */}}
 {{- define "hush-am.awsAccessToken" -}}
