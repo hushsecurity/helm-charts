@@ -478,14 +478,16 @@ true
 
 {{/*
 Namespaces (space-separated) needing a scoped RoleBinding for k8s secret
-writes: the k8s Silo namespace when it is not the install namespace. The
-install namespace is already covered by the access-manager Role.
+writes: the configured additional namespaces plus the k8s Silo namespace
+when it is not the install namespace. The install namespace is already
+covered by the access-manager Role, so it is dropped.
 */}}
 {{- define "hush-am.secretWriteNamespaces" -}}
-{{- $namespaces := list -}}
+{{- $namespaces := .Values.secretStore.k8s.additionalNamespaces | default list -}}
 {{- if not (include "hush-am.kubeSiloUsesSelfNamespace" .) -}}
-  {{- $namespaces = append $namespaces (include "hush-am.kubeSiloNamespace" .) -}}
+  {{- $namespaces = concat $namespaces (list (include "hush-am.kubeSiloNamespace" .)) -}}
 {{- end -}}
+{{- $namespaces = without ($namespaces | uniq) (include "hush-common.namespace" .) -}}
 {{- $namespaces | join " " -}}
 {{- end }}
 
