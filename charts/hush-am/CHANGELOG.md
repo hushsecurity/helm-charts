@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `secretStore.k8s.additionalNamespaces` to grant the access manager write
+  access to secrets in namespaces other than its own, for k8s secret stores
+  placed there via the Secret Store API. The grant is scoped to each listed
+  namespace (which must already exist), never cluster-wide. Example:
+
+  ```yaml
+  secretStore:
+    k8s:
+      additionalNamespaces:
+        - team-a
+        - team-b
+  ```
+
 ### Changed
 
 - the access manager no longer gets cluster-wide write access to Secrets. When

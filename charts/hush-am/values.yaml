@@ -251,6 +251,13 @@ secretStore:
     # If not specified, the namespace where the chart is installed is used.
     namespace: ""
 
+    # Additional namespaces where the access manager may write secrets, for
+    # k8s secret stores that the Secret Store API places outside the silo's
+    # own namespace. Each namespace must already exist; the access manager
+    # is granted write access only in these namespaces (a scoped RoleBinding
+    # each), never cluster-wide.
+    additionalNamespaces: []
+
 # Container registry configuration.
 # This affects the way Hush Access Management platform accesses workload container images'
 # manifest to update injector command accordingly
