@@ -870,7 +870,7 @@ diagnostics:
   # Cadence between diagnostic runs while one or more checks fail. The
   # daemon retries at this (shorter) interval until all checks pass, then
   # returns to the normal interval.
-  retryInterval: "5m"
+  retryInterval: "15m"
 
   # Per-check timeout passed to the diagnostics binary.
   perCheckTimeout: "30s"
