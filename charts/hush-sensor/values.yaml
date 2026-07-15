@@ -26,6 +26,38 @@ namespaceOverride: ""
 # - "heartbeat" - log heartbeat events only (low volume)
 eventReportingConsole: "heartbeat"
 
+# OpenShift-specific settings. Detected via the 'security.openshift.io/v1' API
+# group; a no-op on vanilla Kubernetes.
+openshift:
+  # Grant each component its required SCC by creating RBAC RoleBindings to the
+  # built-in 'system:openshift:scc:<name>' ClusterRoles (the declarative
+  # equivalent of 'oc adm policy add-scc-to-user'):
+  #   - sensor DaemonSet SA         -> 'privileged'
+  #   - sentry/vermon/connector SAs -> 'anyuid'
+  # Change the default (set to false) to assign SCCs yourself, e.g. via a
+  # separately-reviewed cluster policy, or when the installer is not permitted to
+  # grant the referenced SCCs (creating the bindings requires that permission,
+  # e.g. cluster-admin/kubeadmin).
+  createSCCBindings: true
+
+  # Label the install namespace for the privileged Pod Security Admission level
+  # the sensor DaemonSet requires ('enforce'/'warn'/'audit'
+  # 'pod-security.kubernetes.io/*=privileged'), via a pre-install/pre-upgrade hook
+  # Job (Helm cannot label a namespace it does not own). Create the namespace with
+  # 'helm install --create-namespace' so it, and the label, survive uninstall.
+  # Change the default (set to false) to label the namespace yourself.
+  labelNamespace: true
+
+  # Image the labeling hook Job runs 'oc' (or 'kubectl') from. The default is the
+  # CLI image present on every OpenShift cluster, served from the internal
+  # registry with no external pull, so it needs no credentials. Change it only for
+  # a restricted/air-gapped registry, to any image with a shell and 'oc' or
+  # 'kubectl' on its PATH. The Job pulls it using only pre-created secrets listed
+  # in 'image.pullSecretList' (the chart-managed pull Secret is not created until
+  # after this pre-install hook runs), so for a private registry place a
+  # pre-created secret there.
+  namespaceLabelImage: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+
 # Hush deployment configuration
 hushDeployment:
   # Authentication mode for Hush API token exchange.

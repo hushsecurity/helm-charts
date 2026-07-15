@@ -111,6 +111,14 @@ HUSH_SENSOR_VALUES = [
 ]
 CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
 
+# ci value files whose scenario needs cluster capabilities that 'helm template'
+# does not advertise by default (e.g. OpenShift-only resources gated on their API
+# group). Rendered with --api-versions so the resources are schema-checked.
+CI_API_VERSIONS = {
+    "openshift-values.yaml": ["security.openshift.io/v1"],
+    "openshift-custom-label-image-values.yaml": ["security.openshift.io/v1"],
+}
+
 
 @contextlib.contextmanager
 def values_tmp_file(chart: str, values: dict):
@@ -142,8 +150,10 @@ def values_tmp_file(chart: str, values: dict):
 
 @pytest.mark.parametrize("chart", CHARTS)
 def test_kubeconform(chart):
-    def _test_ver_path(chart_path, kube_version, path):
+    def _test_ver_path(chart_path, kube_version, path, api_versions=()):
         args = f"--kube-version {kube_version} -f {path}"
+        for api_version in api_versions:
+            args += f" --api-versions {api_version}"
         conform_kube_version = kube_version.split("-")[0]
         conform_args = f"-strict -kubernetes-version {conform_kube_version}"
         bash(f"helm template {args} {chart_path} | kubeconform {conform_args}")
@@ -163,7 +173,12 @@ def test_kubeconform(chart):
                 if not filename.endswith("-values.yaml"):
                     continue
                 path = os.path.join(ci_dir, filename)
-                _test_ver_path(chart_path, kube_version, path)
+                _test_ver_path(
+                    chart_path,
+                    kube_version,
+                    path,
+                    CI_API_VERSIONS.get(filename, ()),
+                )
 
 
 def test_hush_sensor_minimum_supported_version():
