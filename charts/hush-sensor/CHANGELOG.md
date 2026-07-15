@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- on OpenShift, automatically grant each component its required Security Context
+  Constraint by creating RBAC `RoleBinding`s to the built-in
+  `system:openshift:scc:<name>` ClusterRoles (`privileged` for the sensor
+  DaemonSet, `anyuid` for `sentry`/`vermon`/`connector`). Rendered only when the
+  `security.openshift.io/v1` API is present; disable with
+  `openshift.createSCCBindings=false`. No effect on non-OpenShift clusters.
+- on OpenShift, label the install namespace with the privileged Pod Security
+  Admission level the sensor DaemonSet requires (the `enforce`, `warn` and `audit`
+  `pod-security.kubernetes.io/*` labels set to `privileged`), via a
+  pre-install/pre-upgrade hook Job. The namespace is not owned by the release -
+  create it with
+  `helm install --create-namespace` (Helm leaves such namespaces on uninstall) -
+  so the label survives uninstall too. Controlled by `openshift.labelNamespace`
+  (default `true`); the `oc` image is configurable via
+  `openshift.namespaceLabelImage`. No effect on non-OpenShift clusters.
+
 ### Changed
 
 - store `sentry` and `vermon` identity (UUID) in a pod-local `emptyDir` instead of

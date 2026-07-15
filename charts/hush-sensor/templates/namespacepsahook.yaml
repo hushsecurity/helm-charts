@@ -1,0 +1,134 @@
+{{- /*
+Label the install namespace for the privileged Pod Security Admission level the
+sensor DaemonSet requires enforce/warn/audit pod-security.kubernetes.io/*=privileged.
+
+A pre-install/pre-upgrade hook Job applies it imperatively.
+Helm cannot label a namespace it does not own,
+and the namespace must survive uninstall so it is not a release resource.
+Create it with 'helm install --create-namespace'; this hook
+only labels it. The Job and its RBAC are hook resources that self-delete on
+success; the label persists.
+
+Rendered only on OpenShift ('security.openshift.io/v1') and when
+'openshift.labelNamespace' is set; a no-op on vanilla Kubernetes.
+*/ -}}
+{{- if and .Values.openshift .Values.openshift.labelNamespace (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
+{{- $ns := include "hush-common.namespace" . }}
+{{- $name := printf "%s-psa-label" (include "hush-common.fullName" . | trunc 53 | trimSuffix "-") }}
+{{- $clusterName := printf "%s-%s" $name $ns }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $clusterName }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+rules:
+  # Least privilege: get/patch only, and only this one namespace object.
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    resourceNames: [{{ $ns | quote }}]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $clusterName }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $clusterName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ $ns }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels: {{- include "hush-common.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ $name }}
+      restartPolicy: Never
+      # Only pre-created secrets from 'image.pullSecretList'. The chart-managed
+      # pull Secret is not a hook resource, so it does not exist yet when this
+      # pre-install hook runs.
+      {{- with (and .Values.image .Values.image.pullSecretList) }}
+      imagePullSecrets: {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      # Restricted-compliant so PSA admits the pod before its own label exists.
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: label-namespace
+          image: {{ .Values.openshift.namespaceLabelImage | quote }}
+          imagePullPolicy: IfNotPresent
+          # Prefer 'oc', fall back to 'kubectl' so any image with either on its
+          # PATH works; 'label' syntax is identical for both.
+          command:
+            - /bin/sh
+            - -c
+            - |
+              if command -v oc >/dev/null 2>&1; then cli=oc; else cli=kubectl; fi
+              # 'enforce' admits the sensor DaemonSet; 'warn'/'audit' match it so
+              # PSA stays quiet about it against 'restricted'.
+              exec "$cli" label namespace {{ $ns }} \
+                pod-security.kubernetes.io/enforce=privileged \
+                pod-security.kubernetes.io/warn=privileged \
+                pod-security.kubernetes.io/audit=privileged \
+                --overwrite
+          env:
+            - name: HOME
+              value: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+{{- end }}
