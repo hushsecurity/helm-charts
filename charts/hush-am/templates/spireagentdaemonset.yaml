@@ -66,6 +66,9 @@ spec:
             sources:
               - serviceAccountToken:
                   path: {{ include "hush-common.k8sSaTokenFileName" . }}
+                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
+                  audience: {{ . | quote }}
+                  {{- end }}
         {{- if not .Values.spireAgent.skipKubeletVerification }}
         - name: kubelet-cert-dir
           hostPath:

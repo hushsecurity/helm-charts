@@ -59,6 +59,9 @@ spec:
             sources:
               - serviceAccountToken:
                   path: {{ include "hush-common.k8sSaTokenFileName" . }}
+                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
+                  audience: {{ . | quote }}
+                  {{- end }}
         {{- with and .Values.vermon .Values.vermon.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}

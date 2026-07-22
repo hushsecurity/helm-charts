@@ -66,6 +66,17 @@ hushDeployment:
   # - oidc - use K8S SA token (oidc_provider must be configured in deployment)
   authMode: "password"
 
+  # OIDC authentication settings. Used only when 'hushDeployment.authMode' is "oidc".
+  oidc:
+    # Audience ('aud' claim) requested for the projected K8S service account
+    # token sent as the OIDC assertion. It must match the audience configured in
+    # the deployment's oidc_provider.
+    #
+    # Empty (the default) requests no explicit audience, keeping the cluster
+    # default for backward compatibility. On EKS the platform default is
+    # "https://kubernetes.default.svc".
+    audience: ""
+
   # The deployment token as received from API/UI.
   #
   # When 'hushDeployment.secretKeyRef.{name,tokenKey}' are defined this value is ignored.

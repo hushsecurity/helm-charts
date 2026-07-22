@@ -250,6 +250,14 @@ K8S SA token path
 {{- end }}
 
 {{/*
+Audience requested for the K8S SA token projected as the OIDC assertion.
+Empty by default, which keeps the cluster default audience.
+*/}}
+{{- define "hush-common.k8sSaTokenAudience" -}}
+{{- dig "oidc" "audience" "" .Values.hushDeployment -}}
+{{- end }}
+
+{{/*
 Validate auth mode value.
 */}}
 {{- define "hush-common.validateAuthMode" -}}

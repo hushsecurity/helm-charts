@@ -53,6 +53,9 @@ spec:
             sources:
               - serviceAccountToken:
                   path: {{ include "hush-common.k8sSaTokenFileName" . }}
+                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
+                  audience: {{ . | quote }}
+                  {{- end }}
       containers:
         - name: hush-connector-client
           image: {{ include "hush-sensor.connectorClientImagePath" . }}
