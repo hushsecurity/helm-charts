@@ -365,6 +365,9 @@ spec:
             sources:
               - serviceAccountToken:
                   path: {{ include "hush-common.k8sSaTokenFileName" . }}
+                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
+                  audience: {{ . | quote }}
+                  {{- end }}
         {{- if .Values.accessManager.logConfig }}
         - name: access-manager-log-config
           configMap:

@@ -4,6 +4,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- `hushDeployment.oidc.audience` to set the audience (`aud` claim) of the
+  Kubernetes service account token used as the OIDC assertion when
+  `hushDeployment.authMode` is `oidc`. Empty by default, which keeps the cluster
+  default audience (backward compatible). Example:
+
+  ```yaml
+  hushDeployment:
+    authMode: oidc
+    oidc:
+      audience: https://kubernetes.default.svc
+  ```
+
 ## hush-am 0.21.0 - 2026-07-19
 
 ### Added

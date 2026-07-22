@@ -1,0 +1,11 @@
+---
+hushDeployment:
+  authMode: "oidc"
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  oidc:
+    audience: "https://kubernetes.default.svc"
+
+secretStore:
+  kind: "awssm"
+  aws:
+    region: "eu-central-1"
