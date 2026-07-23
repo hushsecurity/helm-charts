@@ -71,7 +71,7 @@ spec:
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
-            {{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:

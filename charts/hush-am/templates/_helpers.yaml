@@ -636,62 +636,10 @@ azure.workload.identity/client-id: {{ . | quote }}
 {{- end }}
 
 {{/*
-Which secret to use for deployment token?
-*/}}
-{{- define "hush-am.effectiveDeploymentTokenKubeSecretRef" -}}
-{{- if .Values.hushDeployment.token -}}
-    {{- dict
-        "name" (include "hush-common.deploymentKubeSecretName" .)
-        "key" "deployment-token"
-        | toYaml
-    -}}
-{{- else if and .Values.hushDeployment.secretKeyRef.name .Values.hushDeployment.secretKeyRef.tokenKey -}}
-    {{- dict
-        "name" .Values.hushDeployment.secretKeyRef.name
-        "key" .Values.hushDeployment.secretKeyRef.tokenKey
-        | toYaml
-    -}}
-{{- else -}}
-    {{- dict
-        "name" .Values.hushDeployment.sensorDeploymentSecretName
-        "key" "deployment-token"
-        | toYaml
-    -}}
-{{- end }}
-{{- end }}
-
-{{/*
-Which secret to use for deployment password?
-*/}}
-{{- define "hush-am.effectiveDeploymentPasswordKubeSecretRef" -}}
-{{- if include "hush-common.isPasswordAuthMode" . -}}
-  {{- if .Values.hushDeployment.password -}}
-    {{- dict
-        "name" (include "hush-common.deploymentKubeSecretName" .)
-        "key" "deployment-password"
-        | toYaml
-    -}}
-  {{- else if and .Values.hushDeployment.secretKeyRef.name .Values.hushDeployment.secretKeyRef.key -}}
-    {{- dict
-        "name" .Values.hushDeployment.secretKeyRef.name
-        "key" .Values.hushDeployment.secretKeyRef.key
-        | toYaml
-    -}}
-  {{- else -}}
-    {{- dict
-        "name" .Values.hushDeployment.sensorDeploymentSecretName
-        "key" "deployment-password"
-        | toYaml
-    -}}
-  {{- end }}
-{{- end }}
-{{- end }}
-
-{{/*
 Mandatory envs
 */}}
 {{- define "hush-am.mandatoryEnvs" -}}
-{{- with (include "hush-am.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
+{{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRefWithSensorFallback" . | fromYaml) }}
 - name: DEPLOYMENT_TOKEN
   valueFrom:
     secretKeyRef:
@@ -715,7 +663,7 @@ Access Manager envs
 */}}
 {{- define "hush-am.accessManagerEnvs" -}}
 {{ include "hush-am.mandatoryEnvs" . }}
-{{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
 - name: DEPLOYMENT_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -754,7 +702,7 @@ Diag envs
 */}}
 {{- define "hush-am.diagEnvs" -}}
 {{ include "hush-am.mandatoryEnvs" . }}
-{{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
 - name: DEPLOYMENT_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -981,7 +929,7 @@ API Controller envs
 */}}
 {{- define "hush-am.apiControllerEnvs" -}}
 {{ include "hush-am.mandatoryEnvs" . }}
-{{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
 - name: DEPLOYMENT_PASSWORD
   valueFrom:
     secretKeyRef:
