@@ -20,7 +20,7 @@ spec:
         app.kubernetes.io/component: api-controller
     spec:
       restartPolicy: Always
-      {{- with (include "hush-am.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "hush-am.apiControllerFullName" . }}

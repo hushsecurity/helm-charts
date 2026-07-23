@@ -903,17 +903,6 @@ Access Manager Priority Class Name
 {{- end }}
 
 {{/*
-List of image pull secrets to use
-*/}}
-{{- define "hush-am.kubeImagePullSecretEffectiveList" -}}
-{{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) -}}
-  {{- . -}}
-{{- else -}}
-- name: {{ .Values.image.sensorImagePullSecretName | quote }}
-{{- end }}
-{{- end }}
-
-{{/*
 Spire Agent Priority Class Name
 */}}
 {{- define "hush-am.spireAgentPriorityClassName" -}}

@@ -233,6 +233,17 @@ PullSecret effective list
 {{- end }}
 
 {{/*
+PullSecret effective list, falling back to the sensor-created pull secret.
+*/}}
+{{- define "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" -}}
+{{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) -}}
+  {{- . -}}
+{{- else -}}
+- name: {{ .Values.image.sensorImagePullSecretName | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 K8S secrets projection volume name
 */}}
 {{- define "hush-common.k8sSecretsProjectionVolumeName" -}}
