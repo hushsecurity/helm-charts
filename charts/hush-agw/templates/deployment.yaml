@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "hush-common.podLabels" . | nindent 8 }}
+        app.kubernetes.io/component: gateway
+      {{- with .Values.agw.annotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "hush-common.fullName" . }}
+      securityContext: {{- toYaml .Values.agw.podSecurityContext | nindent 8 }}
+      {{- with .Values.agw.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.agw.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agw.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agw.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (include "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" .) }}
+      imagePullSecrets: {{- . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.agw.terminationGracePeriodSeconds }}
+      initContainers:
+        - name: agw-controller-init
+          image: {{ include "hush-agw.controllerImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/usr/local/bin/agent-warden-init.sh"]
+          env: {{- include "hush-agw.controllerEnv" . | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+          resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
+      containers:
+        - name: agw-agentgateway
+          image: {{ include "hush-agw.agentgatewayImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["--config", "{}"]
+          env:
+            - name: XDS_ADDRESS
+              value: http://localhost:18000
+            - name: NAMESPACE
+              value: hush-agw
+            - name: GATEWAY
+              value: hush-agw
+            - name: ADMIN_ADDR
+              value: localhost:15000
+            - name: STATS_ADDR
+              value: 0.0.0.0:15020
+            - name: READINESS_ADDR
+              value: 0.0.0.0:15021
+            - name: HUSH_HIDE_UPSTREAM_TOOLS
+              value: "true"
+          ports:
+            - name: gateway
+              containerPort: 3001
+            - name: readiness
+              containerPort: 15021
+            - name: metrics
+              containerPort: 15020
+          volumeMounts:
+            - name: vector-sockets
+              mountPath: /tmp/vector
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: readiness
+            initialDelaySeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: readiness
+            initialDelaySeconds: 10
+          resources: {{- toYaml .Values.agw.agentgateway.resources | nindent 12 }}
+        - name: agw-controller
+          image: {{ include "hush-agw.controllerImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env: {{- include "hush-agw.controllerEnv" . | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: xds
+              containerPort: 18000
+          volumeMounts:
+            - name: vector-sockets
+              mountPath: /tmp/vector
+            - name: data
+              mountPath: /data
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+          resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
+        - name: agw-vector
+          image: {{ include "hush-agw.vectorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env: {{- include "hush-agw.vectorEnv" . | nindent 12 }}
+          volumeMounts:
+            - name: vector-sockets
+              mountPath: /tmp/vector
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+          startupProbe:
+            exec:
+              command: ["test", "-S", "/tmp/vector/audit.sock"]
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: ["test", "-S", "/tmp/vector/audit.sock"]
+            periodSeconds: 10
+          resources: {{- toYaml .Values.agw.vector.resources | nindent 12 }}
+      volumes:
+        - name: vector-sockets
+          emptyDir: {}
+        - name: data
+          {{- if .Values.agw.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "hush-agw.dataClaimName" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}

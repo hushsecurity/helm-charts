@@ -128,6 +128,9 @@ def values_tmp_file(chart: str, values: dict):
     )
     if "secretKeyRef" not in hushDeployment:
         hushDeployment.setdefault("password", "dummy_password")
+    if chart == "hush-agw":
+        agw = values.setdefault("agw", {})
+        agw.setdefault("hostname", "gw.example.com")
     if chart == "hush-am":
         secretStore = values.setdefault("secretStore", {})
         secretStore.setdefault("kind", "awssm")

@@ -1,0 +1,126 @@
+{{/*
+External base URL clients reach the gateway on, built from the hostname.
+*/}}
+{{- define "hush-agw.baseUrl" -}}
+{{- $host := required "'agw.hostname' is required" .Values.agw.hostname -}}
+{{- if ne $host (lower $host) -}}
+{{- fail "'agw.hostname' must be lowercase" -}}
+{{- end -}}
+{{- if not (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)+$" $host) -}}
+{{- fail "'agw.hostname' must be a bare domain name, without a scheme, port or path" -}}
+{{- end -}}
+https://{{ $host }}
+{{- end }}
+
+{{/*
+Image path for the agw-controller container.
+*/}}
+{{- define "hush-agw.controllerImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.controllerRepository
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Image path for the agw-agentgateway container.
+*/}}
+{{- define "hush-agw.agentgatewayImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.agentgatewayRepository
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Image path for the agw-vector container.
+*/}}
+{{- define "hush-agw.vectorImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.vectorRepository
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Persistent volume claim name for the gateway's data.
+*/}}
+{{- define "hush-agw.dataClaimName" -}}
+{{- if .Values.agw.persistence.existingClaim -}}
+  {{- .Values.agw.persistence.existingClaim -}}
+{{- else -}}
+  {{- printf "%s-data" (include "hush-common.fullName" .) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Shared environment for the agw-controller (init + server).
+*/}}
+{{- define "hush-agw.controllerEnv" -}}
+{{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRefWithSensorFallback" . | fromYaml) }}
+- name: DEPLOYMENT_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
+- name: DEPLOYMENT_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+- name: DEPLOYMENT_KIND
+  value: k8s
+- name: HUSH_AUTH_MODE
+  value: {{ .Values.hushDeployment.authMode | quote }}
+- name: ADDR
+  value: ":8080"
+- name: XDS_ADDR
+  value: ":18000"
+- name: BASE_URL
+  value: {{ include "hush-agw.baseUrl" . | quote }}
+- name: INTERNAL_BASE_URL
+  value: "http://localhost:8080"
+- name: DB_DIR
+  value: /data
+- name: DYNAMIC_OAUTH_REGISTRATION_TTL
+  value: {{ .Values.agw.dynamicOAuthRegistrationTTL | quote }}
+- name: HUSH_K8S_SA_TOKEN_PATH
+  value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
+{{- end }}
+
+{{/*
+Environment for the agw-vector container.
+*/}}
+{{- define "hush-agw.vectorEnv" -}}
+{{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRefWithSensorFallback" . | fromYaml) }}
+- name: DEPLOYMENT_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
+- name: DEPLOYMENT_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+- name: DEPLOYMENT_KIND
+  value: k8s
+- name: HUSH_AUTH_MODE
+  value: {{ .Values.hushDeployment.authMode | quote }}
+- name: TOKENGEN_SKIP_ON_NO_CONFIG
+  value: "1"
+- name: HUSH_K8S_SA_TOKEN_PATH
+  value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
+{{- end }}

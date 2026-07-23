@@ -1,0 +1,11 @@
+apiVersion: v2
+name: hush-agw
+description: A Helm chart for the Hush Security Agent Gateway.
+type: application
+version: 0.1.0
+appVersion: "v0.2.0"
+home: https://hush.security
+dependencies:
+  - name: hush-common
+    version: 0.1.0
+    repository: "file://./charts/hush-common"
