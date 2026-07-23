@@ -1,0 +1,20 @@
+{{- if and .Values.agw.persistence.enabled (not .Values.agw.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-data" (include "hush-common.fullName" .) }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  namespace: {{ include "hush-common.namespace" . }}
+  {{- if .Values.agw.persistence.retainOnDelete }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:
+  accessModes: {{- toYaml .Values.agw.persistence.accessModes | nindent 4 }}
+  {{- with .Values.agw.persistence.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.agw.persistence.size }}
+{{- end }}

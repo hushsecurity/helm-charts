@@ -1,0 +1,7 @@
+agw:
+  hostname: gw.example.com
+  persistence:
+    existingClaim: my-existing-claim
+hushDeployment:
+  token: dummy-token
+  password: dummy-password

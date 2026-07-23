@@ -1,0 +1,5 @@
+agw:
+  hostname: gw.example.com
+hushDeployment:
+  authMode: oidc
+  token: dummy-token

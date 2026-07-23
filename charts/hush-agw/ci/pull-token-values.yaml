@@ -1,0 +1,7 @@
+agw:
+  hostname: gw.example.com
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
+image:
+  pullToken: cDE6cmVnLmV4YW1wbGUuY29tOnVzZXI6cGFzcw==

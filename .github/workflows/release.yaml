@@ -11,6 +11,7 @@ on:
         options:
           - hush-sensor
           - hush-am
+          - hush-agw
 
 jobs:
   release:
