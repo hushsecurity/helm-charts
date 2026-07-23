@@ -61,14 +61,7 @@ spec:
                   path: spire-agent
                   expirationSeconds: 600
                   audience: spire-server
-        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-          projected:
-            sources:
-              - serviceAccountToken:
-                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
-                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
-                  audience: {{ . | quote }}
-                  {{- end }}
+        {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- if not .Values.spireAgent.skipKubeletVerification }}
         - name: kubelet-cert-dir
           hostPath:
@@ -110,9 +103,7 @@ spec:
               readOnly: true
             - name: spire-agent-psat
               mountPath: /var/run/secrets/tokens
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- if not .Values.spireAgent.skipKubeletVerification }}
             - name: kubelet-cert-dir
               mountPath: {{ include "hush-am.kubeletCertDirMountPath" . }}

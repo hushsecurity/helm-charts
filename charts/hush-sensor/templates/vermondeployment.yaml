@@ -54,14 +54,7 @@ spec:
         - name: host-dir
           emptyDir:
             sizeLimit: 1Mi
-        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-          projected:
-            sources:
-              - serviceAccountToken:
-                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
-                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
-                  audience: {{ . | quote }}
-                  {{- end }}
+        {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- with and .Values.vermon .Values.vermon.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -80,9 +73,7 @@ spec:
               readOnly: true
             - name: host-dir
               mountPath: /var/lib/hush-security
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- with and .Values.vermon .Values.vermon.vermonExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -131,9 +122,7 @@ spec:
             - name: host-dir
               mountPath: /var/lib/hush-security
               readOnly: true
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           env:
             - name: HUSH_K8S_SA_TOKEN_PATH
               value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
