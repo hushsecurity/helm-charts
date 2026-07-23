@@ -55,24 +55,13 @@ Create a default fully qualified app name for Diag.
 {{- end }}
 
 {{/*
-Image tag to use
-*/}}
-{{- define "hush-am.imageTag" -}}
-{{- if and .Values.image .Values.image.tag -}}
-  {{- .Values.image.tag -}}
-{{- else -}}
-  {{- .Chart.AppVersion -}}
-{{- end -}}
-{{- end }}
-
-{{/*
 Image path for Access Manager container.
 */}}
 {{- define "hush-am.accessManagerImagePath" -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.accessManagerRepository
-    "tag" (include "hush-am.imageTag" .)
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -84,7 +73,7 @@ Image path for Access Manager Vector container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.accessManagerVectorRepository
-    "tag" (include "hush-am.imageTag" .)
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -96,7 +85,7 @@ Image path for Spire Server container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.spireServerRepository
-    "tag" (include "hush-am.imageTag" .)
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -120,7 +109,7 @@ Image path for Admission Controller container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.admissionControllerRepository
-    "tag" (include "hush-am.imageTag" .)
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -132,7 +121,7 @@ Image path for API Controller container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.apiControllerRepository
-    "tag" (include "hush-am.imageTag" .)
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
@@ -156,7 +145,7 @@ Image path for Diagnostics container.
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.diagRepository
-    "tag" (include "hush-am.imageTag" .)
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
 -}}
 {{- include "hush-common.buildImagePath" $ctx -}}
 {{- end }}
