@@ -102,6 +102,17 @@ Deployment K8S Secret name
 {{- end }}
 
 {{/*
+Image tag to use: the explicit image.tag override, or the chart appVersion.
+*/}}
+{{- define "hush-common.imageTagOrAppVersion" -}}
+{{- if and .Values.image .Values.image.tag -}}
+  {{- .Values.image.tag -}}
+{{- else -}}
+  {{- .Chart.AppVersion -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Build image path from components
 */}}
 {{- define "hush-common.buildImagePath" -}}
