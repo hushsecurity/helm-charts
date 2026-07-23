@@ -56,7 +56,7 @@ spec:
       hostNetwork: {{ include "hush-am.accessManagerHostNetwork" . }}
       dnsPolicy: {{ include "hush-am.accessManagerDnsPolicy" . }}
       restartPolicy: Always
-      {{- with (include "hush-am.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.accessManager.terminationGracePeriodSeconds }}

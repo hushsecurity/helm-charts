@@ -21,7 +21,7 @@ spec:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: diag
     spec:
-      {{- with (include "hush-am.kubeImagePullSecretEffectiveList" .) }}
+      {{- with (include "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "hush-am.accessManagerFullName" . }}
