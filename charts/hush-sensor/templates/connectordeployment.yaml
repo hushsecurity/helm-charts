@@ -48,14 +48,7 @@ spec:
         - name: tokengen-state
           emptyDir:
             sizeLimit: 1Mi
-        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-          projected:
-            sources:
-              - serviceAccountToken:
-                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
-                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
-                  audience: {{ . | quote }}
-                  {{- end }}
+        {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
       containers:
         - name: hush-connector-client
           image: {{ include "hush-sensor.connectorClientImagePath" . }}
@@ -68,9 +61,7 @@ spec:
               mountPath: /tmp/vector
             - name: tokengen-state
               mountPath: /var/run/tokengen
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- with and .Values.connector .Values.connector.clientExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -106,9 +97,7 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- with and .Values.connector .Values.connector.forwarderExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -146,9 +135,7 @@ spec:
           volumeMounts:
             - name: vector-socket
               mountPath: /tmp/vector
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           env:
             - name: HUSH_K8S_SA_TOKEN_PATH
               value: {{ include "hush-common.k8sSaTokenPath" . | quote }}

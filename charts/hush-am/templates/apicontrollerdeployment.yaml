@@ -46,9 +46,7 @@ spec:
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             - name: vector-socket-dir
               mountPath: /tmp/vector
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -70,9 +68,7 @@ spec:
           volumeMounts:
             - name: vector-socket-dir
               mountPath: /tmp/vector
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             {{- with (include "hush-am.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
@@ -100,12 +96,5 @@ spec:
         - name: vector-socket-dir
           emptyDir:
             sizeLimit: 1Mi
-        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-          projected:
-            sources:
-              - serviceAccountToken:
-                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
-                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
-                  audience: {{ . | quote }}
-                  {{- end }}
+        {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
 {{- end }}

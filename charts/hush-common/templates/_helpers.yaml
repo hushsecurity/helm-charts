@@ -269,6 +269,29 @@ Empty by default, which keeps the cluster default audience.
 {{- end }}
 
 {{/*
+Projected volume mounting the K8S SA token used as the Hush OIDC assertion.
+*/}}
+{{- define "hush-common.k8sSecretsProjectionVolume" -}}
+- name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+  projected:
+    sources:
+      - serviceAccountToken:
+          path: {{ include "hush-common.k8sSaTokenFileName" . }}
+          {{- with (include "hush-common.k8sSaTokenAudience" .) }}
+          audience: {{ . | quote }}
+          {{- end }}
+{{- end }}
+
+{{/*
+Volume mount for the projected K8S SA token.
+*/}}
+{{- define "hush-common.k8sSecretsProjectionVolumeMount" -}}
+- name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+  mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
+  readOnly: true
+{{- end }}
+
+{{/*
 Validate auth mode value.
 */}}
 {{- define "hush-common.validateAuthMode" -}}

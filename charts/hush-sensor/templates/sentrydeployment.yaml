@@ -63,14 +63,7 @@ spec:
         {{- with (include "hush-sensor.sentryHcVaultJwtProjectedVolume" .) }}
           {{- . | nindent 8 }}
         {{- end }}
-        - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-          projected:
-            sources:
-              - serviceAccountToken:
-                  path: {{ include "hush-common.k8sSaTokenFileName" . }}
-                  {{- with (include "hush-common.k8sSaTokenAudience" .) }}
-                  audience: {{ . | quote }}
-                  {{- end }}
+        {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- with and .Values.sentry .Values.sentry.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -95,9 +88,7 @@ spec:
             {{- with (include "hush-sensor.sentryHcVaultJwtVolumeMount" .) }}
               {{- . | nindent 12 }}
             {{- end }}
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- with and .Values.sentry .Values.sentry.sentryExtraVolumeMounts -}}
               {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -160,9 +151,7 @@ spec:
             - name: host-dir
               mountPath: /var/lib/hush-security
               readOnly: true
-            - name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-              mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-              readOnly: true
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           env:
             - name: HUSH_K8S_SA_TOKEN_PATH
               value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
