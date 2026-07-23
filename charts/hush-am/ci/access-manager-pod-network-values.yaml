@@ -1,0 +1,8 @@
+---
+accessManager:
+  forcePodNetwork: true
+
+secretStore:
+  kind: "awssm"
+  aws:
+    region: "eu-central-1"

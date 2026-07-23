@@ -327,6 +327,24 @@ accessManager:
   # Listening port for REST API
   port: 8743
 
+  # Force the access-manager Pod onto the Pod network.
+  #
+  # By default the Pod runs on the host network when it needs the node's cloud
+  # instance metadata service to obtain instance-profile credentials (the AWS
+  # EC2 instance role path). Set this to true to keep the Pod on the Pod
+  # network regardless of that auto-detection.
+  #
+  # Use this on installations that do not rely on instance-profile credentials
+  # (e.g. on-prem), where the host network is unnecessary and node-to-node
+  # connectivity to the SPIRE server port may be blocked by a firewall.
+  #
+  # When forced onto the Pod network the Pod can no longer reach node-local
+  # instance metadata, so it cannot use instance-profile credentials; cloud
+  # access must use workload identity (IRSA on AWS, a GCP service account, or
+  # an Azure client ID). For the same reason the admission controller stops
+  # authenticating to the container registry through the EC2 instance role.
+  forcePodNetwork: false
+
   # Number of manager replicas
   replicas: 2
 

@@ -8,6 +8,23 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `accessManager.forcePodNetwork` to keep the access-manager Pod on the Pod
+  network even when the chart would otherwise place it on the host network to
+  reach cloud instance metadata. Use on installations that do not rely on
+  instance-profile credentials (e.g. on-prem), where node-to-node connectivity
+  to the SPIRE server port may be blocked by a firewall. `false` by default,
+  which keeps the current auto-detection (backward compatible). When enabled,
+  the Pod can no longer reach node-local instance metadata and cannot use
+  instance-profile credentials, so cloud access must use workload identity
+  (IRSA on AWS, a GCP service account, or an Azure client ID); the admission
+  controller correspondingly stops authenticating to the container registry
+  through the EC2 instance role. Example:
+
+  ```yaml
+  accessManager:
+    forcePodNetwork: true
+  ```
+
 - `hushDeployment.oidc.audience` to set the audience (`aud` claim) of the
   Kubernetes service account token used as the OIDC assertion when
   `hushDeployment.authMode` is `oidc`. Empty by default, which keeps the cluster
