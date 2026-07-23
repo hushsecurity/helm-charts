@@ -244,6 +244,58 @@ PullSecret effective list, falling back to the sensor-created pull secret.
 {{- end }}
 
 {{/*
+Which deployment-token secret to use, with fallback to the sensor deployment secret.
+*/}}
+{{- define "hush-common.effectiveDeploymentTokenKubeSecretRefWithSensorFallback" -}}
+{{- if .Values.hushDeployment.token -}}
+    {{- dict
+        "name" (include "hush-common.deploymentKubeSecretName" .)
+        "key" "deployment-token"
+        | toYaml
+    -}}
+{{- else if and .Values.hushDeployment.secretKeyRef.name .Values.hushDeployment.secretKeyRef.tokenKey -}}
+    {{- dict
+        "name" .Values.hushDeployment.secretKeyRef.name
+        "key" .Values.hushDeployment.secretKeyRef.tokenKey
+        | toYaml
+    -}}
+{{- else -}}
+    {{- dict
+        "name" .Values.hushDeployment.sensorDeploymentSecretName
+        "key" "deployment-token"
+        | toYaml
+    -}}
+{{- end }}
+{{- end }}
+
+{{/*
+Which deployment-password secret to use (password auth mode), with fallback to the sensor deployment secret.
+*/}}
+{{- define "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" -}}
+{{- if include "hush-common.isPasswordAuthMode" . -}}
+  {{- if .Values.hushDeployment.password -}}
+    {{- dict
+        "name" (include "hush-common.deploymentKubeSecretName" .)
+        "key" "deployment-password"
+        | toYaml
+    -}}
+  {{- else if and .Values.hushDeployment.secretKeyRef.name .Values.hushDeployment.secretKeyRef.key -}}
+    {{- dict
+        "name" .Values.hushDeployment.secretKeyRef.name
+        "key" .Values.hushDeployment.secretKeyRef.key
+        | toYaml
+    -}}
+  {{- else -}}
+    {{- dict
+        "name" .Values.hushDeployment.sensorDeploymentSecretName
+        "key" "deployment-password"
+        | toYaml
+    -}}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
 K8S secrets projection volume name
 */}}
 {{- define "hush-common.k8sSecretsProjectionVolumeName" -}}
