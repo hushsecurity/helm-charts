@@ -63,7 +63,7 @@ hushDeployment:
     name: ""
 
     # Password secret key
-    #
+    # Only used when 'hushDeployment.authMode' is "password".
     # If 'hushDeployment.password' is defined this value is ignored.
     key: ""
 
