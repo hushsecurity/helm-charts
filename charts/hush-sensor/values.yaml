@@ -101,8 +101,10 @@ hushDeployment:
     name: ""
     # Password secret key
     # Only used when 'hushDeployment.authMode' is "password".
+    # If 'hushDeployment.password' is defined this value is ignored.
     key: ""
     # Token secret key
+    # If 'hushDeployment.token' is defined this value is ignored.
     tokenKey: ""
 
 
