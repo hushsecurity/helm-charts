@@ -24,4 +24,4 @@ def bash(cmd, env=None, **kwargs):
                 e.stdout,
                 e.stderr,
             )
-        raise e
+        raise

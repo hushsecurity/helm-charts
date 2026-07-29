@@ -19,7 +19,7 @@ def bash(cmd, env=None, **kwargs):
         logger.error(
             "command failed: %s\nstdout=\n%s\nstderr=\n%s\n", cmd, e.stdout, e.stderr
         )
-        raise e
+        raise
     if trace:
         logger.info("output:\n%s", output)
     return output
