@@ -161,10 +161,12 @@ def test_kubeconform(chart):
     chart_path = os.path.join(CHARTS_DIR, chart)
     for kube_version in KUBE_VERSION_VALUES:
         for values in CHART_VALUES.get(chart, []) + [{}]:
-            with values_tmp_file(chart, values) as path:
-                with open(path, "r", encoding="utf-8") as f:
-                    logger.info("values:\n%s", f.read())
-                    _test_ver_path(chart_path, kube_version, path)
+            with (
+                values_tmp_file(chart, values) as path,
+                open(path, "r", encoding="utf-8") as f,
+            ):
+                logger.info("values:\n%s", f.read())
+                _test_ver_path(chart_path, kube_version, path)
 
     ci_dir = os.path.join(chart_path, "ci")
     if os.path.isdir(ci_dir):
