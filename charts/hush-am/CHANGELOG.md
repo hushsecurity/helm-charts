@@ -4,6 +4,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-am 0.22.1 - 2026-08-03
+
+### Changed
+
+- bump the app version to `v0.18.0`. This adds support for AMR (Azure Managed Redis).
+  The chart itself remains unchanged.
+
 ## hush-am 0.22.0 - 2026-07-23
 
 ### Added
