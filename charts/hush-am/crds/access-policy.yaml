@@ -215,3 +215,9 @@ spec:
                     modification in Hush UAM as observed by the
                     controller. Compared against the metadata table to
                     decide whether to re-reconcile.
+                foreignId:
+                  type: string
+                  description: >
+                    The kubernetes-local identifier of this resource, as
+                    recorded on the corresponding entity in Hush UAM in its
+                    foreign id. Empty until recorded.
