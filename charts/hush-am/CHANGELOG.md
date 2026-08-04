@@ -4,6 +4,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- `status.foreignId` on `AccessCredential`, `AccessPrivilege` and `AccessPolicy`.
+  The api-controller records here the identifier by which this cluster knows the
+  resource, so a cluster rebuilt from scratch recognises the entities its
+  predecessor created instead of creating a second set.
+
+  Nothing in a manifest changes: the field is written by the controller only, and
+  it is additive, so existing custom resources stay valid.
+
+  **Apply the CRDs before upgrading**, as described under Upgrading in this
+  chart's README -- `helm upgrade` never updates them. Skipping it leaves the
+  field undeclared; the api-controller detects that and keeps its previous
+  behaviour, so nothing breaks, but a rebuilt cluster goes on duplicating
+  entities until the CRDs are applied.
+
 ## hush-am 0.22.1 - 2026-08-03
 
 ### Changed
