@@ -83,9 +83,17 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           securityContext:
+            {{- if (include "hush-sensor.privilegedMode" .) }}
             privileged: true
+            {{- else }}
+            capabilities:
+              add: {{- include "hush-sensor.sensorCapabilities" . | nindent 16 }}
+            {{- end }}
             seccompProfile:
               type: Unconfined
+            {{- with (include "hush-sensor.seLinuxOptions" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- with (include "hush-sensor.appArmorProfile" .) }}
             appArmorProfile:
               {{- . | nindent 14 }}

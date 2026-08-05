@@ -8,6 +8,15 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `daemonSet.privilegedMode` (boolean, default `true`, unchanged behaviour).
+  Set it to `false` to run the sensor with the capability set in
+  `daemonSet.capabilities` instead of `privileged: true`, added on top of the
+  container runtime's default set.
+  In capability mode the sensor container also runs with SELinux type `spc_t`.
+  Without it the sensor runs as 'container_t', confined by MCS categories and denied
+  part of the access it needs.
+  If any node's SELinux policy does not define spc_t, the sensor must run privileged.
+
 - `hushDeployment.oidc.audience` to set the audience (`aud` claim) of the
   Kubernetes service account token used as the OIDC assertion when
   `hushDeployment.authMode` is `oidc`. Empty by default, which keeps the cluster

@@ -1,0 +1,11 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+daemonSet:
+  privilegedMode: false
+  capabilities:
+    - SYS_ADMIN
+    - SYS_PTRACE
+    - DAC_READ_SEARCH

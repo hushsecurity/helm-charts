@@ -188,6 +188,29 @@ daemonSet:
   # Disable probing of Java applications
   disableJavaProbing: false
 
+  # Run the sensor container fully privileged.
+  #
+  # Set to 'false' to run it with the explicit capability set below instead.
+  # The seccomp, AppArmor and SELinux profiles stay unconfined either way: the
+  # sensor does not run under a confining profile of any of the three.
+  #
+  # Must be a boolean. A quoted 'false' is refused rather than being treated as
+  # 'true', which is what any truthiness test would do with it.
+  privilegedMode: true
+
+  # Capabilities added to the sensor container when 'privilegedMode' is
+  # 'false', on top of the container runtime's default set.
+  capabilities:
+    - SYS_ADMIN
+    - BPF
+    - PERFMON
+    - SYS_PTRACE
+    - SYS_RESOURCE
+    - DAC_READ_SEARCH
+    - DAC_OVERRIDE
+    - SETUID
+    - SETGID
+
   # Workload sampling parameters.
   #
   # Set to override the defaults (default values specified below):
