@@ -362,6 +362,62 @@ type: Unconfined
 {{- end }}
 
 {{/*
+SELinux options, set only in capability mode.
+If any node's SELinux policy does not define spc_t, the sensor must run privileged.
+*/}}
+{{- define "hush-sensor.seLinuxOptions" -}}
+{{- if not (include "hush-sensor.privilegedMode" .) -}}
+seLinuxOptions:
+  type: "spc_t"
+{{- end -}}
+{{- end }}
+
+{{/*
+Whether the sensor container runs fully privileged.
+Only a real boolean is accepted: a quoted "false" - what '--set-string' and
+Argo CD's helm.parameters produce - is truthy in a template and would otherwise
+render a privileged container with no error.
+*/}}
+{{- define "hush-sensor.privilegedMode" -}}
+{{- $mode := and .Values.daemonSet .Values.daemonSet.privilegedMode -}}
+{{- if not (kindIs "bool" $mode) -}}
+    {{- fail (printf "'daemonSet.privilegedMode' must be a boolean, got %s (%v)" (kindOf $mode) $mode) -}}
+{{- end -}}
+{{- if $mode -}}
+true
+{{- end }}
+{{- end }}
+
+{{/*
+Capabilities added to the sensor container when 'privilegedMode' is off.
+Rejected up front rather than rendering an 'add:' the API server would refuse:
+empty, a scalar - which is what '--set x=[]' produces, the list form being
+'--set x={SYS_ADMIN,...}' - a blank entry, which is what '--set x={}' produces,
+or a 'CAP_' prefix, which Kubernetes adds itself.
+The kind check comes first so that a falsy scalar - '0', 'false' - is reported
+as the wrong kind rather than as empty; an unset value falls through to the
+emptiness check.
+*/}}
+{{- define "hush-sensor.sensorCapabilities" -}}
+{{- $caps := and .Values.daemonSet .Values.daemonSet.capabilities -}}
+{{- if not (or (kindIs "slice" $caps) (kindIs "invalid" $caps)) -}}
+    {{- fail (printf "'daemonSet.capabilities' must be a list, got %s (%v)" (kindOf $caps) $caps) -}}
+{{- end -}}
+{{- if not $caps -}}
+    {{- fail "'daemonSet.capabilities' must not be empty when 'daemonSet.privilegedMode' is false" -}}
+{{- end -}}
+{{- range $caps -}}
+    {{- if not (trim (toString .)) -}}
+        {{- fail "'daemonSet.capabilities' must not contain empty entries" -}}
+    {{- end -}}
+    {{- if hasPrefix "CAP_" (upper (toString .)) -}}
+        {{- fail (printf "'daemonSet.capabilities': drop the 'CAP_' prefix from %q - Kubernetes adds it" .) -}}
+    {{- end -}}
+{{- end -}}
+{{- toYaml $caps -}}
+{{- end }}
+
+{{/*
 Verify hushDeployment.token was defined
 */}}
 {{- define "hush-sensor.getDeploymentTokenValue" -}}
