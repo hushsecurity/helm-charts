@@ -91,15 +91,30 @@ def test_selinux_type_is_set_only_in_capability_mode():
     assert _sensor_security_context(capability)["seLinuxOptions"]["type"] == SPC_T
 
 
-@pytest.mark.parametrize("kube_version", ["1.30.0", "1.31.0"])
-def test_apparmor_unconfined_on_both_kube_paths(kube_version):
+@pytest.mark.parametrize(
+    "kube_version,as_annotation",
+    [
+        ("v1.30.0", True),
+        ("v1.31.0", False),
+        # Distro version strings: a '-suffix' is a semver pre-release, which
+        # constraints exclude, and a '+suffix' is build metadata, which they
+        # ignore. Both must still land on exactly one of the two paths.
+        ("v1.29.10-eks-7f9249a", True),
+        ("v1.30.8-eks-2d5f260", True),
+        ("v1.31.4-eks-2d5f260", False),
+        ("v1.31.1-gke.1146000", False),
+        ("v1.31.7+aa0e7f2", False),
+        ("v1.31.4+k3s1", False),
+    ],
+)
+def test_apparmor_unconfined_on_both_kube_paths(kube_version, as_annotation):
     # Pre-1.31 AppArmor is expressed as a pod annotation, 1.31+ as a field.
     docs = _template(kube_version=kube_version)
     annotations = _daemonset(docs)["spec"]["template"]["metadata"].get(
         "annotations", {}
     )
     profile = _sensor_security_context(docs).get("appArmorProfile")
-    if kube_version == "1.30.0":
+    if as_annotation:
         assert (
             annotations["container.apparmor.security.beta.kubernetes.io/hush-sensor"]
             == "unconfined"
