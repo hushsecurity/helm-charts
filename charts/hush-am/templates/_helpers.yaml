@@ -254,10 +254,10 @@ Access Manager Rest Server address
 {{- end }}
 
 {{/*
-Access Manager Service Cert Alt Names
+Access Manager Service Cert DNS names
 */}}
-{{- define "hush-am.accessManagerServiceAltNames" -}}
-{{- printf "DNS:%s,DNS:%s"
+{{- define "hush-am.accessManagerServiceDnsNames" -}}
+{{- printf "%s,%s"
     (include "hush-am.accessManagerServiceFqdn" .)
     (include "hush-am.accessManagerServiceShortName" .)
 -}}
@@ -268,13 +268,6 @@ Access Manager data directory path
 */}}
 {{- define "hush-am.accessManagerDataDirPath" -}}
 {{- printf "%s/hush/access-manager" (include "hush-am.dataVolumeMountPath" .) -}}
-{{- end }}
-
-{{/*
-Admission Controller data directory path
-*/}}
-{{- define "hush-am.admissionControllerDataDirPath" -}}
-{{- printf "%s/hush/admission-controller" (include "hush-am.dataVolumeMountPath" .) -}}
 {{- end }}
 
 {{/*
@@ -345,6 +338,34 @@ Mutating webhook FQDN
 */}}
 {{- define "hush-am.mutatingWebhookFqdn" -}}
 {{- printf "%s.webhook.local" (include "hush-am.mutatingWebhookFullName" .) -}}
+{{- end }}
+
+{{/*
+Mutating webhook healthcheck entry FQDN
+*/}}
+{{- define "hush-am.mutatingWebhookHealthcheckFqdn" -}}
+{{- printf "healthcheck.%s" (include "hush-am.mutatingWebhookFqdn" .) -}}
+{{- end }}
+
+{{/*
+Comma-separated names of the rendered mutating webhook entries
+*/}}
+{{- define "hush-am.mutatingWebhookNames" -}}
+{{- if .Values.diagnostics.enabled -}}
+{{- printf "%s,%s"
+    (include "hush-am.mutatingWebhookFqdn" .)
+    (include "hush-am.mutatingWebhookHealthcheckFqdn" .)
+-}}
+{{- else -}}
+{{- include "hush-am.mutatingWebhookFqdn" . -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Name of the secret holding the per-cluster admission controller CA
+*/}}
+{{- define "hush-am.admissionControllerCaSecretName" -}}
+{{- printf "%s-admission-controller-ca" (include "hush-common.fullName" .) -}}
 {{- end }}
 
 {{/*
@@ -574,20 +595,6 @@ Silo env vars
 {{- else -}}
     {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
 {{- end -}}
-{{- end }}
-
-{{- define "hush-am.admissionControllerRootCert" -}}
------BEGIN CERTIFICATE-----
-MIIBjTCCATOgAwIBAgIUDWQE72A0mJnVr5Irib43J+lv6XMwCgYIKoZIzj0EAwIw
-FDESMBAGA1UEAwwJemF6dS1yb290MB4XDTI1MTEyNTA5NTIxNloXDTM1MTEyMzA5
-NTIxNlowFDESMBAGA1UEAwwJemF6dS1yb290MFkwEwYHKoZIzj0CAQYIKoZIzj0D
-AQcDQgAEMMqQj9UxEBLDOCxvJr/OgeKC3v0wWrVtqa1AIVB4MNYwO1FDPE5sQX7y
-tXnQSGFhX0N4DP7Zmi0gdRIfAsduW6NjMGEwHQYDVR0OBBYEFEO53S/dH0DlUzGv
-NcirsvwDZX/7MB8GA1UdIwQYMBaAFEO53S/dH0DlUzGvNcirsvwDZX/7MA8GA1Ud
-EwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIH7S
-bHRt42QaI/Wwt631nZXcTQeerGBJcHBe2bnvrrg8AiEAhtZszVJ7Gg25c4D42f/D
-zdquv84vGcviev0hoiJTwaY=
------END CERTIFICATE-----
 {{- end }}
 
 {{/*

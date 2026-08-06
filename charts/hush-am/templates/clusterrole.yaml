@@ -26,6 +26,22 @@ rules:
     verbs:
       - get
       - watch
+---
+# Separate from the common ClusterRole, which is also bound to spire-agent.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "hush-am.accessManagerFullName" . }}-webhook-publisher-cluster-role
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: access-manager-webhook-publisher-cluster-role
+rules:
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources:
+      - mutatingwebhookconfigurations
+    resourceNames:
+      - {{ include "hush-am.mutatingWebhookFullName" . }}
+    verbs:
+      - patch
 {{- if (include "hush-am.secretWriteNamespaces" .) }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
