@@ -29,6 +29,14 @@ All notable changes to this project will be documented in this file.
       audience: https://kubernetes.default.svc
   ```
 
+### Fixed
+
+- the sensor container now gets its unconfined AppArmor profile on clusters
+  whose version carries a distro suffix (`v1.31.4-eks-2d5f260`,
+  `v1.31.1-gke.1146000`). Those are semver pre-releases, which the version gate
+  excluded from both of its branches, so neither the `appArmorProfile` field nor
+  the pre-1.31 annotation was rendered.
+
 ## hush-sensor 0.30.0 - 2026-07-20
 
 ### Added

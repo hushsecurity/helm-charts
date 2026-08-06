@@ -328,10 +328,14 @@ azure:
 {{- end }}
 
 {{/*
-Kubernetes version
+Kubernetes version, reduced to its numeric part.
+EKS reports 'v1.31.4-eks-2d5f260' and GKE 'v1.31.1-gke.1146000'; both are semver
+pre-releases, which semverCompare excludes from every constraint, so a version
+gate built on them would take neither branch.
+The leading 'v' is kept, as semverCompare accepts it.
 */}}
 {{- define "hush-sensor.kubeVersion" -}}
-{{- .Capabilities.KubeVersion.Version }}
+{{- regexFind "^v?[0-9]+(\\.[0-9]+)*" .Capabilities.KubeVersion.Version }}
 {{- end }}
 
 {{/*
