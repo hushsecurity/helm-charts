@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-am 0.23.0 - 2026-08-06
 
 ### Added
 
@@ -21,6 +21,12 @@ All notable changes to this project will be documented in this file.
   field undeclared; the api-controller detects that and keeps its previous
   behaviour, so nothing breaks, but a rebuilt cluster goes on duplicating
   entities until the CRDs are applied.
+
+### Changed
+
+- bump the app version to `v0.19.0`. This adds support for taking over gitops-managed
+  objects by their K8S unique identifier (requires CRD additions above) when no
+  status is found in (possibly re-created from scratch) cluster.
 
 ## hush-am 0.22.1 - 2026-08-03
 
