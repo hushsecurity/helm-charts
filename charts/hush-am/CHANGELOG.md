@@ -4,6 +4,59 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- the admission controller no longer uses a certificate authority baked into
+  its image. It now generates a CA per cluster, stored in a secret in the
+  release namespace, and publishes that CA into the webhook's `caBundle` itself,
+  re-checking on a timer so a cleared or drifted `caBundle` self-heals. The
+  chart and image must be upgraded together.
+
+  Publishing is the running controller's own work, so it needs nothing
+  configured and behaves the same under every delivery tool (helm, ArgoCD, Flux,
+  and raw `kubectl`/kustomize applies).
+
+  During the first upgrade there is a short window, bounded by the rollout, in
+  which pods may be created without injection. Prefer a low-churn period. The CA
+  secret is not tracked by helm and is not to be deleted; to replace the CA
+  deliberately, contact Hush support.
+
+- the chart now requires an app version that ships the admission controller
+  which generates and publishes the CA. The chart and image are a matched pair
+  and neither half works alone. Both mismatches fail loudly rather than
+  degrading: the admission controller exits at startup and the pod
+  restart-loops. Do not pin `image.tag` across this upgrade.
+
+- rolling back to an earlier chart version is not supported across this
+  upgrade. The previous chart and image restore the certificate authority whose
+  private key ships inside the image, which is exactly what this release
+  removes, so a rollback reinstates that exposure. If an upgrade has to be
+  reversed, contact Hush support.
+
+- a new ClusterRole, `<release>-hush-am-access-manager-webhook-publisher-cluster-role`,
+  grants `patch` on the mutating webhook configuration, restricted by name to
+  this release's own object, so the controller can keep its `caBundle`
+  published. It is bound to the access-manager ServiceAccount alone rather than
+  added to the common ClusterRole, which the spire-agent DaemonSet also uses.
+  The chart always renders both, so a normal upgrade grants it. If RBAC is
+  instead managed out of band --
+  a policy engine that rejects the rule, or a ClusterRole edited or pruned
+  outside helm -- the grant is the one prerequisite whose absence is quiet: the
+  controller starts, serves, and stays ready, but every publish is denied, so
+  `caBundle` is never written and the webhook admits pods without injection.
+  `patch` on the named object is the whole grant; the controller never reads,
+  lists or watches it. The `webhook-cert` diagnostic check reports this state.
+
+### Added
+
+- `admissionController.caBundleRepatchInterval` (default `2m`), the steady-state
+  interval at which the controller re-publishes its CA. Install, upgrade and CA
+  changes publish promptly regardless; this is the drift-repair backstop and it
+  sets the audit-log volume at one write per webhook entry per interval.
+  Shorten it on high-churn clusters.
+
 ## hush-am 0.23.0 - 2026-08-06
 
 ### Added

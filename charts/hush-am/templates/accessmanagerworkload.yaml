@@ -93,33 +93,6 @@ spec:
           securityContext:
             runAsUser: 0
             runAsGroup: 0
-        - name: admission-controller-init
-          image: {{ include "hush-am.admissionControllerImagePath" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          volumeMounts:
-            - name: data-volume
-              mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
-            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
-          command: ["/bin/bash", "-xc"]
-          args:
-            - |
-              mkdir -p {{ include "hush-am.admissionControllerDataDirPath" . }}
-              openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.key
-              openssl req -x509 -key {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.key \
-                -out {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.crt \
-                -sha256 -days 3650 \
-                -CA /opt/zazu/zazu-root.crt -CAkey /opt/zazu/zazu-root.key \
-                -subj "/CN=zazu" \
-                -addext "basicConstraints=critical,CA:FALSE" \
-                -addext "keyUsage=digitalSignature" \
-                -addext "extendedKeyUsage=serverAuth" \
-                -addext "subjectAltName={{ include "hush-am.accessManagerServiceAltNames" . }}"
-              openssl x509 -in {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.crt -noout -text
-          env:
-            {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
-          securityContext:
-            runAsUser: 0
-            runAsGroup: 0
       containers:
         - name: spire-server
           image: {{ include "hush-am.spireServerImagePath" . }}
@@ -223,7 +196,7 @@ spec:
             {{- toYaml .Values.admissionController.readinessProbe | nindent 12 }}
           livenessProbe:
             httpGet:
-              path: /health
+              path: /livez
               port: {{ .Values.admissionController.port }}
               scheme: HTTPS
             {{- toYaml .Values.admissionController.livenessProbe | nindent 12 }}
@@ -249,10 +222,16 @@ spec:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             - name: MUFASA_INJECTOR_IMAGE
               value: {{ include "hush-am.injectorImagePath" . }}
-            - name: ZAZU_CERT_FILE_PATH
-              value: {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.crt
-            - name: ZAZU_KEY_FILE_PATH
-              value: {{ include "hush-am.admissionControllerDataDirPath" . }}/tls.key
+            - name: ZAZU_CA_SECRET_NAME
+              value: {{ include "hush-am.admissionControllerCaSecretName" . }}
+            - name: ZAZU_CERT_DNS_NAMES
+              value: {{ include "hush-am.accessManagerServiceDnsNames" . | quote }}
+            - name: ZAZU_WEBHOOK_CONFIG_NAME
+              value: {{ include "hush-am.mutatingWebhookFullName" . }}
+            - name: ZAZU_WEBHOOK_NAMES
+              value: {{ include "hush-am.mutatingWebhookNames" . | quote }}
+            - name: ZAZU_CA_BUNDLE_REPATCH_INTERVAL
+              value: {{ .Values.admissionController.caBundleRepatchInterval | quote }}
             - name: MUFASA_POLICY_DB_PATH
               value: {{ include "hush-am.policyDbFilePath" . }}
             - name: MUFASA_SPIRE_AGENT_HOST_DIR

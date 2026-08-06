@@ -836,6 +836,16 @@ admissionController:
   #   loggers: []
   logConfig: {}
 
+  # How often the admission controller re-publishes its CA into the webhook's
+  # caBundle. This is the steady-state drift-repair backstop -- install, upgrade
+  # and CA changes publish promptly regardless. Each webhook entry is patched
+  # separately and every patch is an audited API write, so this sets the
+  # audit-log volume at one write per entry per interval -- two with
+  # diagnostics enabled. Shorten it on high-churn clusters to narrow the window
+  # in which a drifted caBundle admits pods without injection. A briefly
+  # missing webhook config is retried faster.
+  caBundleRepatchInterval: "2m"
+
 # Values for API Controller
 apiController:
   # Enable the API controller deployment
