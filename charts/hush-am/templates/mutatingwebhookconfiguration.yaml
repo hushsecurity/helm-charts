@@ -14,12 +14,13 @@ webhooks:
     failurePolicy: Ignore
     timeoutSeconds: {{ .Values.admissionController.mutatingWebhookTimeout }}
     clientConfig:
+      # caBundle is written at runtime by the admission controller, not rendered
+      # here, so a chart apply never clears the CA it publishes.
       service:
         namespace: {{ include "hush-common.namespace" . }}
         name: {{ include "hush-am.accessManagerFullName" . }}
         path: /
         port: {{ .Values.admissionController.port }}
-      caBundle: {{ (include "hush-am.admissionControllerRootCert" .) | b64enc }}
     rules:
       - apiGroups: [""]
         apiVersions: ["v1"]
@@ -32,19 +33,20 @@ webhooks:
     objectSelector: {{- . | nindent 6 }}
     {{- end }}
   {{- if .Values.diagnostics.enabled }}
-  - name: healthcheck.{{ include "hush-am.mutatingWebhookFqdn" . }}
+  - name: {{ include "hush-am.mutatingWebhookHealthcheckFqdn" . }}
     admissionReviewVersions: ["v1"]
     sideEffects: None
     reinvocationPolicy: Never
     failurePolicy: Ignore
     timeoutSeconds: 5
     clientConfig:
+      # caBundle is written at runtime by the admission controller, not rendered
+      # here, so a chart apply never clears the CA it publishes.
       service:
         namespace: {{ include "hush-common.namespace" . }}
         name: {{ include "hush-am.accessManagerFullName" . }}
         path: /
         port: {{ .Values.admissionController.port }}
-      caBundle: {{ (include "hush-am.admissionControllerRootCert" .) | b64enc }}
     rules:
       - apiGroups: ["coordination.k8s.io"]
         apiVersions: ["v1"]
