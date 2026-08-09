@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-sensor 0.31.0 - 2026-08-09
 
 ### Added
 
