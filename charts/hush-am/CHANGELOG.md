@@ -14,6 +14,40 @@ All notable changes to this project will be documented in this file.
   `events.k8s.io/v1`, and RBAC matches on the API group, so without this rule
   the api server refuses every one of them.
 
+- `secretStore.prefix` was validated by one pattern for every backend,
+  `^[a-z][a-z0-9]{0,9}$`: ten characters, lowercase, no punctuation. It may now
+  be up to **80 characters** and carry the punctuation the backend named by
+  `secretStore.kind` accepts.
+
+      kind         punctuation      notes
+      awssm        - _ . + = @ /
+      awsssm       - _ . /          at most 9 '/'-separated segments in the
+                                    prefix; may not start with "aws" or "ssm"
+      gcpsm        - _
+      kubesecrets  - .              a Kubernetes Secret name
+
+  Lowercase, and a leading digit is now allowed. Punctuation separates segments
+  and may not lead or trail one, so `acme/prod/secrets` is accepted while
+  `/acme` and `acme/` are not. It may sit next to itself where the kind's
+  charset allows the character -- `acme__prod` on `awsssm` -- except the
+  separator, and except `.`, which may not repeat for any kind: `acme..prod`
+  is an empty label in a Kubernetes Secret name. Each malformation says which
+  it is rather than reporting a generic invalid prefix. A prefix cannot be
+  changed once secrets exist under it.
+
+  Every value the old pattern accepted still passes, with one exception: for
+  `awsssm`, a prefix beginning "aws" or "ssm" is now refused, because Parameter
+  Store reserves both and the prefix is the first path element of every
+  parameter name. Such an install could never write a secret, so it now fails
+  the install rather than every write.
+
+  **A prefix outside the path the access manager's credential covers installs
+  cleanly, then fails every write and stays in `error` with a config that
+  cannot be edited.** For AWS that credential is an IRSA policy naming
+  `secret:<prefix>/*`, and the boundary is a path: under `acme/*`, `acme/prod`
+  works and `acme_prod` does not. For `kubesecrets` it is this chart's own
+  namespace plus `secretStore.k8s.additionalNamespaces`.
+
 ## hush-am 0.26.0 - 2026-09-08
 
 ### Changed

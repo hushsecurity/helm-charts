@@ -186,7 +186,21 @@ secretStore:
   # - kubesecrets: K8S Secrets
   kind: "kubesecrets"
 
-  # A prefix used to distinguish secrets created by hush-am platform
+  # A prefix used to distinguish secrets created by hush-am platform, and to
+  # place them under a path of your choosing. At most 80 characters, lowercase,
+  # starting and ending with a letter or digit, and fixed once secrets exist
+  # under it. An invalid prefix fails the install. '.' may not repeat.
+  #
+  #   kind         punctuation      notes
+  #   awssm        - _ . + = @ /
+  #   awsssm       - _ . /          at most 9 '/'-separated segments in the
+  #                                 prefix; may not start with "aws" or "ssm"
+  #   gcpsm        - _
+  #   kubesecrets  - .              a Kubernetes Secret name
+  #
+  # Check the access manager's credential before choosing a prefix outside the
+  # path it was provisioned with -- for AWS an IRSA policy naming
+  # 'secret:<prefix>/*' -- or the store installs and then fails every write.
   prefix: "hush"
 
   # AWS secret store configuration (used by awssm and awsssm)
