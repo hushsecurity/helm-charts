@@ -116,12 +116,14 @@ def test_only_liveness_probes_the_certificate():
 
 # The controller resolves the namespace of its CA secret from this variable and
 # requires it, so a hardcoded value would send it looking in a namespace it does
-# not run in, where every read is denied by RBAC.
-def test_namespace_env_comes_from_the_downward_api():
+# not run in, where every read is denied by RBAC. Both names carry it while
+# consumers move to the generic one.
+@pytest.mark.parametrize("name", ["MUFASA_K8S_NAMESPACE", "HUSH_K8S_NAMESPACE"])
+def test_namespace_env_comes_from_the_downward_api(name):
     container = _admission_controller_container(_template())
     env = {var["name"]: var for var in container["env"]}
 
-    field_ref = env["MUFASA_K8S_NAMESPACE"]["valueFrom"]["fieldRef"]
+    field_ref = env[name]["valueFrom"]["fieldRef"]
 
     assert field_ref["fieldPath"] == "metadata.namespace"
 
