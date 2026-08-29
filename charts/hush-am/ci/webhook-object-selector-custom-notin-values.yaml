@@ -9,4 +9,6 @@ admissionController:
     custom:
       matchExpressions:
         - key: am.hush.security/admission
-          operator: Exists
+          operator: NotIn
+          values:
+            - "false"

@@ -764,10 +764,8 @@ admissionController:
     # Example:
     # custom:
     #   matchExpressions:
-    #     - key: hush.security/inject
-    #       operator: NotIn
-    #       values:
-    #         - "false"
+    #     - key: am.hush.security/admission
+    #       operator: Exists
     custom: {}
 
   # Listening port for Admission Controller webhook
