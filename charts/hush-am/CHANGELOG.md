@@ -55,6 +55,16 @@ All notable changes to this project will be documented in this file.
   kube-system, kube-public and kube-node-lease; workloads in any other namespace
   are gated like the rest.
 
+### Changed
+
+- shutting down the access manager now keeps within
+  `accessManager.terminationGracePeriodSeconds` while it finishes the admission
+  calls it is already serving, so lowering that value shortens the time those
+  calls are given rather than letting them be cut off. A cut-off call counts as
+  a failed admission, and under the default `failurePolicy` of `Ignore` that
+  starts the pod without injection. Nothing to configure, though the behaviour
+  needs an app version that reads the value; an older one shuts down as before.
+
 ## hush-am 0.24.0 - 2026-08-18
 
 ### Changed
