@@ -378,26 +378,36 @@ Mutating webhook namespaceSelector
   {{- fail (printf "'admissionController.namespaceSelector.type' must be one of %v" $validTypes) -}}
 {{- end -}}
 {{- if or (eq $type "names") (eq $type "not_names") -}}
-{{- if not .Values.admissionController.namespaceSelector.names -}}
-  {{- fail "'admissionController.namespaceSelector.names' must not be empty when type is \"names\" or \"not_names\"" -}}
-{{- end -}}
-{{- $names := .Values.admissionController.namespaceSelector.names -}}
-{{- if eq $type "not_names" -}}
-  {{- $ns := include "hush-common.namespace" . -}}
-  {{- if not (has $ns $names) -}}
-    {{- $names = append $names $ns -}}
-  {{- end -}}
-{{- end -}}
 matchExpressions:
   - key: kubernetes.io/metadata.name
     operator: {{ if eq $type "names" }}In{{ else }}NotIn{{ end }}
-    values: {{- $names | toYaml | nindent 6 }}
+    values: {{- include "hush-am.mutatingWebhookNamespaceSelectorNamespaceNames" . | nindent 6 }}
 {{- else if eq $type "custom" -}}
 {{- if not .Values.admissionController.namespaceSelector.custom -}}
   {{- fail "'admissionController.namespaceSelector.custom' must not be empty when type is \"custom\"" -}}
 {{- end -}}
 {{- .Values.admissionController.namespaceSelector.custom | toYaml -}}
 {{- end -}}
+{{- end }}
+
+{{/*
+Mutating webhook namespaceSelector namespace names.
+
+The release namespace is appended for "not_names", so that the webhook is never
+invoked on the access manager's own pods.
+*/}}
+{{- define "hush-am.mutatingWebhookNamespaceSelectorNamespaceNames" -}}
+{{- if not .Values.admissionController.namespaceSelector.names -}}
+  {{- fail "'admissionController.namespaceSelector.names' must not be empty when type is \"names\" or \"not_names\"" -}}
+{{- end -}}
+{{- $names := .Values.admissionController.namespaceSelector.names -}}
+{{- if eq .Values.admissionController.namespaceSelector.type "not_names" -}}
+  {{- $ns := include "hush-common.namespace" . -}}
+  {{- if not (has $ns $names) -}}
+    {{- $names = append $names $ns -}}
+  {{- end -}}
+{{- end -}}
+{{- $names | toYaml -}}
 {{- end }}
 
 {{/*
