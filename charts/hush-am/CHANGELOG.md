@@ -4,6 +4,57 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- `admissionController.failurePolicy` selects what happens to a pod when
+  admission does not complete. The default is `Ignore`: the pod is admitted
+  without injection, and because Kubernetes never re-runs admission on an
+  existing pod, it stays uninjected until something recreates it. `Fail` rejects
+  the creation instead, and the controller owning the pod retries it, so the pod
+  appears once admission succeeds. This covers any admission that does not
+  complete, not only a webhook that cannot be reached, so a cause which does not
+  clear keeps the pod rejected.
+
+  That retry is the client issuing the CREATE again; nothing in Kubernetes
+  re-runs admission. ReplicaSets, StatefulSets, DaemonSets and Jobs retry
+  indefinitely, but a pod created with no owning controller gets one error, a
+  static pod runs anyway because only its mirror pod is admitted, and a Job past
+  `activeDeadlineSeconds` or a CronJob run missed past `startingDeadlineSeconds`
+  stops retrying. Both values also decide only what happens when the webhook
+  cannot be called: if it answers but its patch cannot be applied to the pod,
+  the creation is rejected either way.
+
+  `Fail` blocks the creation of every pod the webhook is invoked on for as long
+  as admission keeps failing, so scope the webhook to the workloads that need
+  Hush Access Management:
+
+  ```yaml
+  admissionController:
+    failurePolicy: "Fail"
+    objectSelector:
+      type: "labels"
+      labels:
+        am.hush.security/admission: "true"
+  ```
+
+  The label `am.hush.security/admission: "true"` is the installation's own and
+  nothing sets it, so with this pairing every workload that needs Hush Access
+  Management must carry it. Put it on the **pod template** --
+  `spec.template.metadata.labels` of a Deployment, StatefulSet, DaemonSet or
+  Job, not the workload's own labels -- because the object the selector matches
+  is the pod. A pod without the label is never sent to the webhook, so it is
+  admitted without injection and without any rejection to notice.
+
+  The release namespace must stay outside the webhook's scope. With it in scope,
+  `Fail` rejects the creation of the access manager's own pod, which is the pod
+  that serves the webhook, so the release cannot start and no retry recovers it;
+  the chart refuses to render that combination. The default `not_names`
+  namespace selector keeps the webhook out of the release namespace,
+  kube-system, kube-public and kube-node-lease; workloads in any other namespace
+  are gated like the rest.
+
 ## hush-am 0.24.0 - 2026-08-18
 
 ### Changed

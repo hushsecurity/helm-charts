@@ -1,5 +1,6 @@
 import base64
 import os
+import subprocess
 import pytest
 from yaml import CSafeLoader as Loader
 from yaml import load_all
@@ -13,11 +14,11 @@ NAMES_ENV = "ZAZU_WEBHOOK_NAMES"
 CONFIG_NAME_ENV = "ZAZU_WEBHOOK_CONFIG_NAME"
 
 
-def _template(extra_args=""):
+def _template(extra_args="", trace_err=True):
     args = (
         f"--set hushDeployment.token={DUMMY_TOKEN} --set hushDeployment.password=dummy"
     )
-    out = bash(f"helm template {args} {extra_args} {CHART}")
+    out = bash(f"helm template {args} {extra_args} {CHART}", traceErr=trace_err)
     return [doc for doc in load_all(out, Loader=Loader) if doc]
 
 
@@ -152,3 +153,127 @@ def test_healthcheck_entry_is_only_rendered_with_diagnostics():
 
     assert len(_webhook_config(with_diag)["webhooks"]) == 2
     assert len(_webhook_config(without_diag)["webhooks"]) == 1
+
+
+def _pods_entry(docs):
+    for hook in _webhook_config(docs)["webhooks"]:
+        if any("pods" in rule["resources"] for rule in hook["rules"]):
+            return hook
+    raise AssertionError("no pods webhook entry found")
+
+
+def _healthcheck_entry(docs):
+    for hook in _webhook_config(docs)["webhooks"]:
+        if any("leases" in rule["resources"] for rule in hook["rules"]):
+            return hook
+    raise AssertionError("no healthcheck webhook entry found")
+
+
+# A "helm upgrade --reuse-values" carries no value for a key the new chart adds,
+# so the key arrives unset rather than empty and must still render.
+def test_failure_policy_defaults_to_ignore_when_unset():
+    docs = _template("--set admissionController.failurePolicy=null")
+
+    assert _pods_entry(docs)["failurePolicy"] == "Ignore"
+
+
+# The healthcheck entry carries diag's lease probe. Failing it closed would
+# block diag whenever the access manager is down, so it stays Ignore.
+def test_failure_policy_fail_reaches_the_pods_entry_alone():
+    docs = _template("--set admissionController.failurePolicy=Fail")
+
+    assert _pods_entry(docs)["failurePolicy"] == "Fail"
+    assert _healthcheck_entry(docs)["failurePolicy"] == "Ignore"
+
+
+def test_failure_policy_rejects_an_unknown_value():
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        _template("--set admissionController.failurePolicy=fail", trace_err=False)
+
+    assert "must be one of [Ignore Fail]" in err.value.stderr
+
+
+# Fail with the release namespace in the webhook's scope rejects the CREATE of
+# the access-manager pod that serves that webhook, so the release never starts
+# and no retry recovers it.
+def test_failure_policy_fail_requires_the_release_namespace_out_of_scope():
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        _template(
+            "--set admissionController.failurePolicy=Fail"
+            " --set admissionController.namespaceSelector.type=none",
+            trace_err=False,
+        )
+
+    assert "would let the webhook be invoked" in err.value.stderr
+
+
+# An objectSelector on a label the access manager's own pod does not carry keeps
+# it out of scope just as well, so it is accepted in place of the namespace one.
+def test_failure_policy_fail_accepts_an_object_selector_instead():
+    docs = _template(
+        "--set admissionController.failurePolicy=Fail"
+        " --set admissionController.namespaceSelector.type=none"
+        " --set admissionController.objectSelector.type=labels"
+        " --set admissionController.objectSelector.labels."
+        "am\\\\.hush\\\\.security/admission=true"
+    )
+
+    assert _pods_entry(docs)["failurePolicy"] == "Fail"
+
+
+# The objectSelector escape only works on a label the access manager's own pod
+# does not carry: it lives in the release namespace, so selecting it puts the
+# deadlock back.
+def test_failure_policy_fail_rejects_a_selector_the_manager_pod_matches():
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        _template(
+            "--set admissionController.failurePolicy=Fail"
+            " --set admissionController.namespaceSelector.type=none"
+            " --set admissionController.objectSelector.type=labels"
+            " --set admissionController.objectSelector.labels."
+            "app\\\\.kubernetes\\\\.io/managed-by=Helm",
+            trace_err=False,
+        )
+
+    assert "would let the webhook be invoked" in err.value.stderr
+
+
+# not_labels renders DoesNotExist, which selects the access manager's pod
+# precisely because it does not carry the key, so it is no escape at all.
+def test_failure_policy_fail_rejects_a_not_labels_selector():
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        _template(
+            "--set admissionController.failurePolicy=Fail"
+            " --set admissionController.namespaceSelector.type=none"
+            " --set admissionController.objectSelector.type=not_labels"
+            " --set admissionController.objectSelector.labels.skip=",
+            trace_err=False,
+        )
+
+    assert "would let the webhook be invoked" in err.value.stderr
+
+
+# A custom selector cannot be read from a template, so it is taken as deliberate.
+def test_failure_policy_fail_accepts_a_custom_selector():
+    docs = _template(
+        "--set admissionController.failurePolicy=Fail"
+        " --set admissionController.namespaceSelector.type=custom"
+        " --set admissionController.namespaceSelector.custom.matchLabels.x=y"
+    )
+
+    assert _pods_entry(docs)["failurePolicy"] == "Fail"
+
+
+# A label the access manager's Pod does not carry at all keeps it out of scope,
+# whatever value the selector asks for -- an empty one included, which compares
+# equal to an absent label unless the key itself is checked.
+def test_failure_policy_fail_accepts_an_empty_valued_label():
+    docs = _template(
+        "--set admissionController.failurePolicy=Fail"
+        " --set admissionController.namespaceSelector.type=none"
+        " --set admissionController.objectSelector.type=labels"
+        " --set admissionController.objectSelector.labels."
+        "am\\.hush\\.security/admission="
+    )
+
+    assert _pods_entry(docs)["failurePolicy"] == "Fail"
