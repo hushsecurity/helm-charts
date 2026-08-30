@@ -246,6 +246,8 @@ spec:
             {{- end }}
             - name: ZAZU_MUTATION_TIMEOUT
               value: "{{ .Values.admissionController.mutatingWebhookTimeout | default 30 }}s"
+            - name: ZAZU_TERMINATION_GRACE_PERIOD
+              value: "{{ .Values.accessManager.terminationGracePeriodSeconds | default 30 }}s"
             {{- if .Values.admissionController.verboseInjector }}
             - name: ZAZU_VERBOSE_INJECTOR
               value: "true"

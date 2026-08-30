@@ -283,6 +283,30 @@ def test_failure_policy_fail_accepts_an_empty_valued_label():
 # admission controller refuses to parse, and it exits rather than starting
 # without a webhook.
 def test_duration_envs_survive_a_nulled_value():
-    docs = _template("--set admissionController.mutatingWebhookTimeout=null")
+    docs = _template(
+        "--set admissionController.mutatingWebhookTimeout=null"
+        " --set accessManager.terminationGracePeriodSeconds=null"
+    )
 
-    assert _admission_controller_env(docs)["ZAZU_MUTATION_TIMEOUT"] == "30s"
+    env = _admission_controller_env(docs)
+    assert env["ZAZU_MUTATION_TIMEOUT"] == "30s"
+    assert env["ZAZU_TERMINATION_GRACE_PERIOD"] == "30s"
+
+
+def _access_manager_pod_spec(docs):
+    for doc in docs:
+        if doc["kind"] != "Deployment":
+            continue
+        spec = doc["spec"]["template"]["spec"]
+        if any(c["name"] == "admission-controller" for c in spec["containers"]):
+            return spec
+    raise AssertionError("no admission-controller container found")
+
+
+# The point of passing the grace period in is that the Pod's own setting and
+# what the admission controller is told cannot drift, so pin both to one --set.
+def test_grace_period_env_follows_the_pod_setting():
+    docs = _template("--set accessManager.terminationGracePeriodSeconds=17")
+
+    assert _access_manager_pod_spec(docs)["terminationGracePeriodSeconds"] == 17
+    assert _admission_controller_env(docs)["ZAZU_TERMINATION_GRACE_PERIOD"] == "17s"
