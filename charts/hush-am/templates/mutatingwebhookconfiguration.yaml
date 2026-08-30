@@ -11,7 +11,7 @@ webhooks:
     admissionReviewVersions: ["v1"]
     sideEffects: None
     reinvocationPolicy: Never
-    failurePolicy: Ignore
+    failurePolicy: {{ include "hush-am.mutatingWebhookFailurePolicy" . }}
     timeoutSeconds: {{ .Values.admissionController.mutatingWebhookTimeout }}
     clientConfig:
       # caBundle is written at runtime by the admission controller, not rendered

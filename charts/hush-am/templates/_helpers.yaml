@@ -456,6 +456,55 @@ matchExpressions:
 {{- end }}
 
 {{/*
+Mutating webhook failurePolicy
+*/}}
+{{- define "hush-am.mutatingWebhookFailurePolicy" -}}
+{{- $policy := .Values.admissionController.failurePolicy | default "Ignore" -}}
+{{- $validPolicies := list "Ignore" "Fail" -}}
+{{- if not (has $policy $validPolicies) -}}
+  {{- fail (printf "'admissionController.failurePolicy' must be one of %v" $validPolicies) -}}
+{{- end -}}
+{{- if eq $policy "Fail" -}}
+  {{- $_ := include "hush-am.mutatingWebhookNamespaceSelector" . -}}
+  {{- $_ = include "hush-am.mutatingWebhookObjectSelector" . -}}
+  {{- $ns := include "hush-common.namespace" . -}}
+  {{- $nsType := .Values.admissionController.namespaceSelector.type -}}
+  {{- $objType := .Values.admissionController.objectSelector.type -}}
+  {{- $safe := false -}}
+  {{- if eq $nsType "custom" -}}
+    {{- $safe = true -}}
+  {{- else if or (eq $nsType "names") (eq $nsType "not_names") -}}
+    {{- $names := include "hush-am.mutatingWebhookNamespaceSelectorNamespaceNames" . | fromYamlArray -}}
+    {{- if eq $nsType "not_names" -}}
+      {{- $safe = has $ns $names -}}
+    {{- else -}}
+      {{- $safe = not (has $ns $names) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if eq $objType "custom" -}}
+    {{- $safe = true -}}
+  {{- else if eq $objType "labels" -}}
+    {{- $managerLabels := fromYaml (include "hush-am.accessManagerPodLabels" .) -}}
+    {{- $selectsManager := true -}}
+    {{- range $key, $value := .Values.admissionController.objectSelector.labels -}}
+      {{- if not (hasKey $managerLabels $key) -}}
+        {{- $selectsManager = false -}}
+      {{- else if ne (printf "%v" (get $managerLabels $key)) (printf "%v" $value) -}}
+        {{- $selectsManager = false -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if not $selectsManager -}}
+      {{- $safe = true -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not $safe -}}
+    {{- fail (printf "'admissionController.failurePolicy: Fail' would let the webhook be invoked on the access manager's own pod in namespace %q, whose creation it would then reject, so the release could not start. Keep that pod out of the webhook's scope: set 'admissionController.namespaceSelector.type' to \"not_names\", or to \"names\" without %q, or set an 'admissionController.objectSelector' of type \"labels\" whose labels the access manager's pod does not carry. A \"custom\" selector of either kind is taken as deliberate and is not checked." $ns $ns) -}}
+  {{- end -}}
+{{- end -}}
+{{- $policy -}}
+{{- end }}
+
+{{/*
 Silo namespace prefix
 */}}
 {{- define "hush-am.siloNamespacePrefix" -}}

@@ -709,6 +709,58 @@ admissionController:
   # Mutating Webhook timeout in seconds
   mutatingWebhookTimeout: 30
 
+  # What happens to a pod when admission does not complete.
+  #
+  # Allowed values:
+  # - "Ignore" - admit the pod without injection. Kubernetes never re-runs
+  #              admission on an existing pod, so it stays uninjected until
+  #              something recreates it.
+  # - "Fail"   - reject the pod creation. The controller owning the pod retries,
+  #              so the pod appears once admission succeeds. This covers any
+  #              admission that does not complete, not only a webhook that
+  #              cannot be reached.
+  #
+  # When not defined "Ignore" is used.
+  #
+  # Both values decide only what happens when the webhook cannot be called. If
+  # it answers but the patch it returns cannot be applied to the pod, the
+  # creation is rejected whatever this is set to.
+  #
+  # The retry that makes "Fail" worthwhile is the client issuing the CREATE
+  # again; nothing in Kubernetes re-runs admission. ReplicaSets, StatefulSets,
+  # DaemonSets and Jobs retry indefinitely, so a pod they own appears once
+  # admission succeeds. It does not hold everywhere:
+  # - a pod created with no owning controller gets one error and is not created;
+  # - a static pod runs anyway, because only its mirror pod is admitted;
+  # - a rejection caused by the pod itself rather than by an outage is answered
+  #   the same way every time, leaving that workload at zero pods until the
+  #   cause is fixed;
+  # - a Job past 'activeDeadlineSeconds', or a CronJob run missed past
+  #   'startingDeadlineSeconds', stops retrying.
+  #
+  # "Fail" blocks the creation of every pod the webhook is invoked on for as
+  # long as admission keeps failing, so use the namespaceSelector and
+  # objectSelector below to scope the webhook to the workloads that need
+  # injection.
+  #
+  # Prefer an opt-in objectSelector for that scoping. The default
+  # namespaceSelector excludes only the release namespace, kube-system,
+  # kube-public and kube-node-lease, so "Fail" on its own still gates pod
+  # creation in every other namespace, including the ones cluster
+  # infrastructure is commonly given.
+  #
+  # On a fresh install "Fail" rejects pod creations until the access manager is
+  # running, because the webhook is registered before it can answer: its
+  # caBundle is published by the access manager itself.
+  #
+  # The release namespace must stay outside that scope, which the default
+  # namespaceSelector ensures. A "custom" selector of either kind is taken as
+  # deliberate and is not checked. With the release namespace in scope, "Fail"
+  # rejects the creation of the access manager's own pod, which is the pod that
+  # serves the webhook, so the release cannot start; the render is refused
+  # rather than producing that state.
+  failurePolicy: "Ignore"
+
   # Mutating webhook namespace selector configuration.
   #
   # For more information see
