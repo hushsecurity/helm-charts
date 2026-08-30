@@ -13,8 +13,8 @@ All notable changes to this project will be documented in this file.
   without injection, and because Kubernetes never re-runs admission on an
   existing pod, it stays uninjected until something recreates it. `Fail` rejects
   the creation instead, and the controller owning the pod retries it, so the pod
-  appears once admission succeeds. This covers any admission that does not
-  complete, not only a webhook that cannot be reached, so a cause which does not
+  appears once admission succeeds. This covers every way the call itself can
+  fail, not only a controller that is not running, so a cause which does not
   clear keeps the pod rejected.
 
   That retry is the client issuing the CREATE again; nothing in Kubernetes
