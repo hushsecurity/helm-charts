@@ -4,6 +4,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- pass Hush standard environment variables to vector.
+
 ## hush-agw 0.1.1 - 2026-08-13
 
 ### Changed
