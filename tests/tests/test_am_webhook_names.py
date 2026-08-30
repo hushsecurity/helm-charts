@@ -277,3 +277,12 @@ def test_failure_policy_fail_accepts_an_empty_valued_label():
     )
 
     assert _pods_entry(docs)["failurePolicy"] == "Fail"
+
+
+# A nulled value renders no digits, so the env would become a bare "s" that the
+# admission controller refuses to parse, and it exits rather than starting
+# without a webhook.
+def test_duration_envs_survive_a_nulled_value():
+    docs = _template("--set admissionController.mutatingWebhookTimeout=null")
+
+    assert _admission_controller_env(docs)["ZAZU_MUTATION_TIMEOUT"] == "30s"

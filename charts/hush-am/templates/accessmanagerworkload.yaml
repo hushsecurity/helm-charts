@@ -245,7 +245,7 @@ spec:
               value: {{ . | quote }}
             {{- end }}
             - name: ZAZU_MUTATION_TIMEOUT
-              value: "{{ .Values.admissionController.mutatingWebhookTimeout }}s"
+              value: "{{ .Values.admissionController.mutatingWebhookTimeout | default 30 }}s"
             {{- if .Values.admissionController.verboseInjector }}
             - name: ZAZU_VERBOSE_INJECTOR
               value: "true"
