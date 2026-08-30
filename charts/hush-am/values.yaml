@@ -394,7 +394,9 @@ accessManager:
   # Custom node selector
   nodeSelector: {}
 
-  # Termination grace period
+  # Termination grace period. It also bounds how long the access manager may
+  # take to finish the admission calls it is already serving when it shuts
+  # down.
   terminationGracePeriodSeconds: 30
 
   # Additional annotations.
