@@ -391,6 +391,20 @@ matchExpressions:
 {{- end }}
 
 {{/*
+Access Manager Pod labels.
+
+Emitted as YAML so that a caller can also read them back with fromYaml, which is
+how the failurePolicy guard decides whether a selector would match this Pod.
+*/}}
+{{- define "hush-am.accessManagerPodLabels" -}}
+{{ include "hush-common.labels" . }}
+app.kubernetes.io/component: access-manager
+{{- if or .Values.accessManager.workloadIdentity.azure.clientId .Values.containerRegistry.azure.clientId }}
+azure.workload.identity/use: "true"
+{{- end }}
+{{- end }}
+
+{{/*
 Mutating webhook namespaceSelector namespace names.
 
 The release namespace is appended for "not_names", so that the webhook is never
