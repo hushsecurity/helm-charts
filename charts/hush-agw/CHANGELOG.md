@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-agw 0.3.0 - 2026-08-31
 
 ### Added
 
@@ -27,6 +27,11 @@ All notable changes to this project will be documented in this file.
   selector cannot change once the Deployment exists. Delete the Deployment and
   run the upgrade again, or uninstall and install again under the same release
   name and namespace. The volume claim survives either way, so no state is lost.
+
+- bump the app version to v0.4.1.
+
+  The gateway reports the cluster and the helm context the chart passes it. On
+  v0.4.0 it collected them and reported neither.
 
 ## hush-agw 0.2.0 - 2026-08-31
 
