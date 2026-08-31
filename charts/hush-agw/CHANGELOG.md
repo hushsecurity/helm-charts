@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- report which cluster the gateway runs in.
+
+  The chart now creates a ClusterRole and a ClusterRoleBinding granting the
+  gateway `get` on the `kube-system` namespace and nothing else, so its reports
+  say which cluster they came from. Installing or upgrading the chart now needs
+  permission to create cluster-scoped RBAC.
+
 ### Changed
 
 - add an `app.kubernetes.io/component` label to the gateway's Deployment,
