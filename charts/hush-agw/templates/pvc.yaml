@@ -4,6 +4,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ printf "%s-data" (include "hush-common.fullName" .) }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-persistent-volume-claim
   namespace: {{ include "hush-common.namespace" . }}
   {{- if .Values.agw.persistence.retainOnDelete }}
   annotations:

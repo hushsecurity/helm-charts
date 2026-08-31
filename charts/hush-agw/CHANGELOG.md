@@ -4,6 +4,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- add an `app.kubernetes.io/component` label to the gateway's Deployment,
+  Service, ServiceAccount and PersistentVolumeClaim, naming the role each plays,
+  and to the Deployment and Service selectors, so the objects can be selected by
+  role rather than by name.
+
+  Upgrading a release installed with an earlier version fails with
+  `spec.selector: Invalid value: ...: field is immutable`, because a Deployment's
+  selector cannot change once the Deployment exists. Delete the Deployment and
+  run the upgrade again, or uninstall and install again under the same release
+  name and namespace. The volume claim survives either way, so no state is lost.
+
 ## hush-agw 0.2.0 - 2026-08-31
 
 ### Changed

@@ -3,10 +3,12 @@ kind: Service
 metadata:
   name: {{ include "hush-common.fullName" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-service
   namespace: {{ include "hush-common.namespace" . }}
 spec:
   type: ClusterIP
   selector: {{- include "hush-common.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
   ports:
     - name: gateway
       port: 3001
