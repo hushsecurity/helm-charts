@@ -4,6 +4,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- run a genai-toolbox sidecar in the gateway pod, so the gateway can serve
+  database-backed tools. Its resources and config-volume size are the new
+  `agw.genaiToolbox.resources` and `agw.genaiToolbox.configSizeLimit` values.
+
+  Upgrading an existing release with `--reuse-values` fails, because that flag
+  drops the new chart's defaults; upgrade with explicit values or
+  `--reset-then-reuse-values` (Helm 3.14+) instead.
+
 ## hush-agw 0.6.0 - 2026-09-22
 
 ### Changed
