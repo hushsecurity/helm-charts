@@ -47,6 +47,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: genai-toolbox-config
+              mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
       containers:
@@ -101,6 +103,8 @@ spec:
               mountPath: /tmp/vector
             - name: data
               mountPath: /data
+            - name: genai-toolbox-config
+              mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           livenessProbe:
             httpGet:
@@ -126,9 +130,21 @@ spec:
               command: ["test", "-S", "/tmp/vector/audit.sock"]
             periodSeconds: 10
           resources: {{- toYaml .Values.agw.vector.resources | nindent 12 }}
+        - name: agw-genai-toolbox
+          image: {{ include "hush-agw.genaiToolboxImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: genai-toolbox-config
+              mountPath: /etc/toolbox
+              readOnly: true
+          resources: {{- toYaml .Values.agw.genaiToolbox.resources | nindent 12 }}
       volumes:
         - name: vector-sockets
           emptyDir: {}
+        - name: genai-toolbox-config
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.agw.genaiToolbox.configSizeLimit }}
         - name: data
           {{- if .Values.agw.persistence.enabled }}
           persistentVolumeClaim:
