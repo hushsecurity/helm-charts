@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: {{ include "hush-common.fullName" . }}
   labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
   namespace: {{ include "hush-common.namespace" . }}
 spec:
   replicas: 1
@@ -10,6 +11,7 @@ spec:
     type: Recreate
   selector:
     matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: gateway
   template:
     metadata:
       labels: {{- include "hush-common.podLabels" . | nindent 8 }}
