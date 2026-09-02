@@ -509,8 +509,52 @@ Silo namespace prefix
 */}}
 {{- define "hush-am.siloNamespacePrefix" -}}
 {{- $prefix := and .Values.secretStore .Values.secretStore.prefix -}}
-{{- if not (regexMatch "^[a-z][a-z0-9]{0,9}$" $prefix) -}}
-    {{- fail "'secretStore.prefix' is invalid" -}}
+{{- $kind := and .Values.secretStore .Values.secretStore.kind -}}
+{{/*
+Per-kind prefix rules, mirroring the access manager's. The separator is its own
+alternative so it never repeats, and the shape checks below run before the
+pattern so each malformation names itself. RE2: no lookaheads.
+*/}}
+{{- $maxPrefix := 80 -}}
+{{- $rules := dict
+    "awssm"       (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.+=@]+|/)[a-z0-9]+)*$" "max" $maxPrefix)
+    "awsssm"      (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "segments" 9 "reserved" (list "aws" "ssm"))
+    "gcpsm"       (dict "sep" "-" "pattern" "^[a-z0-9]+((_+|-)[a-z0-9]+)*$"         "max" $maxPrefix)
+    "kubesecrets" (dict "sep" "-" "pattern" "^[a-z0-9]+([-.][a-z0-9]+)*$"           "max" $maxPrefix)
+-}}
+{{- $rule := get $rules (toString $kind) -}}
+{{- if not $rule -}}
+    {{- fail (printf "'secretStore.kind' is invalid: %s" (toString $kind)) -}}
+{{- end -}}
+{{- $sep := get $rule "sep" -}}
+{{- if hasPrefix $sep (toString $prefix) -}}
+    {{- fail (printf "'secretStore.prefix' must not start with '%s' for kind %s" $sep $kind) -}}
+{{- end -}}
+{{- if hasSuffix $sep (toString $prefix) -}}
+    {{- fail (printf "'secretStore.prefix' must not end with '%s' for kind %s" $sep $kind) -}}
+{{- end -}}
+{{- if contains (printf "%s%s" $sep $sep) (toString $prefix) -}}
+    {{- fail (printf "'secretStore.prefix' must not repeat '%s' for kind %s" $sep $kind) -}}
+{{- end -}}
+{{- if not (regexMatch (get $rule "pattern") (toString $prefix)) -}}
+    {{- fail (printf "'secretStore.prefix' is invalid for kind %s: %s" $kind (toString $prefix)) -}}
+{{- end -}}
+{{- if gt (len (toString $prefix)) (int (get $rule "max")) -}}
+    {{- fail (printf "'secretStore.prefix' exceeds %d characters for kind %s" (int (get $rule "max")) $kind) -}}
+{{- end -}}
+{{- $segments := get $rule "segments" -}}
+{{- if $segments -}}
+    {{- if gt (len (splitList "/" (toString $prefix))) (int $segments) -}}
+        {{- fail (printf "'secretStore.prefix' exceeds %d '/'-separated segments for kind %s" (int $segments) $kind) -}}
+    {{- end -}}
+{{- end -}}
+{{- $reserved := get $rule "reserved" -}}
+{{- if $reserved -}}
+    {{- range $reserved -}}
+        {{- if hasPrefix . (toString $prefix) -}}
+            {{- fail (printf "'secretStore.prefix' must not start with '%s' for kind %s" . $kind) -}}
+        {{- end -}}
+    {{- end -}}
 {{- end -}}
 {{ $prefix }}
 {{- end }}

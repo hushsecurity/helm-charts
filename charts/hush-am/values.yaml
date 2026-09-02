@@ -186,7 +186,25 @@ secretStore:
   # - kubesecrets: K8S Secrets
   kind: "kubesecrets"
 
-  # A prefix used to distinguish secrets created by hush-am platform
+  # A prefix used to distinguish secrets created by hush-am platform, and to
+  # place them under a path of your choosing.
+  #
+  # At most 80 characters, whatever the 'kind'. A prefix cannot be changed once
+  # secrets exist under it.
+  #
+  # Lowercase, starting and ending with a letter or digit. The separator may not
+  # repeat, so 'acme//prod' is refused; other punctuation may, so 'acme__prod'
+  # is accepted except on kubesecrets, where the name is a Kubernetes Secret
+  # name and punctuation must stay single.
+  #
+  #   kind         punctuation      notes
+  #   awssm        - _ . + = @ /
+  #   awsssm       - _ . /          at most 9 '/'-separated segments; may not
+  #                                 start with "aws" or "ssm"
+  #   gcpsm        - _
+  #   kubesecrets  - .              a Kubernetes Secret name
+  #
+  # An invalid prefix fails the install rather than the deployment.
   prefix: "hush"
 
   # AWS secret store configuration (used by awssm and awsssm)

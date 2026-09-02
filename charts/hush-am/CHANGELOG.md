@@ -4,6 +4,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- `secretStore.prefix` was validated by one pattern for every backend,
+  `^[a-z][a-z0-9]{0,9}$`: ten characters, lowercase, no punctuation. It may now
+  be up to **80 characters** and carry the punctuation the backend named by
+  `secretStore.kind` accepts.
+
+      kind         punctuation      notes
+      awssm        - _ . + = @ /
+      awsssm       - _ . /          at most 9 '/'-separated segments; may not
+                                    start with "aws" or "ssm"
+      gcpsm        - _
+      kubesecrets  - .              a Kubernetes Secret name
+
+  The maximum is 80 whatever the kind, and a prefix cannot be changed once
+  secrets exist under it.
+
+  Punctuation separates segments and may not lead or trail, so
+  `acme/prod/secrets` is accepted while `/acme` and `acme/` are not. The
+  separator may not repeat either -- `acme//prod` is refused -- and each of
+  those three says which it is rather than reporting a generic invalid prefix.
+  Other punctuation *may* sit next to itself, so `acme__prod` is accepted for
+  every kind except `kubesecrets`, whose name is a Kubernetes Secret name and
+  so a DNS subdomain: there `.` delimits labels and a label may not begin or
+  end with `-`, which rules out `a..b`, `a.-b` and `a-.b` alike.
+
+  A prefix may also begin with a digit now; the old pattern required a letter,
+  which is the DNS label rule and applies to no backend here.
+
+  Every value the old pattern accepted still passes, with one exception. For
+  `awsssm`, a prefix beginning "aws" or "ssm" is now refused, because Parameter
+  Store reserves both and the prefix is the first path element of every
+  parameter name -- such an install could never write a secret. It now fails the
+  install rather than every write.
 ## hush-am 0.25.0 - 2026-08-30
 
 ### Added
