@@ -4,6 +4,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-am 0.25.1 - 2026-09-03
+
+### Changed
+
+- bump the app version to `v0.20.2`.
+
+  This contains a fix for Temporal Cloud connector to issue credentials with maximal
+  allowed expiration of 2 years, instead of previous 30 days. This allows workloads
+  receiving credentials via env vars to run without restart up to that longer period.
+
 ## hush-am 0.25.0 - 2026-08-30
 
 ### Added
