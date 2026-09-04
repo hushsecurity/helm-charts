@@ -9,5 +9,5 @@ accessManager:
     default_export: true
     default_export_level: warn
     loggers:
-      - name: acrsyncer
+      - name: am.acrsyncer
         level: debug
