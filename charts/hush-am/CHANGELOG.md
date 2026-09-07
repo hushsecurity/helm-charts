@@ -4,6 +4,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-am 0.26.0 - 2026-09-08
+
+### Changed
+
+- bump the app version to `v0.21.0`
+
+  This simplifies `Azure Redis` connector logic, and includes internal improvements.
+
+  The chart is changed to fulfill the new env var contract.
+
 ## hush-am 0.25.1 - 2026-09-03
 
 ### Changed
