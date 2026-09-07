@@ -757,11 +757,11 @@ Access Manager envs
 {{ include "hush-am.siloEnvs" . }}
 - name: MUFASA_POLICY_DB_PATH
   value: {{ include "hush-am.policyDbFilePath" . }}
-- name: MUFASA_KEY_DB_PATH
+- name: HUSH_AM_KEY_DB_PATH
   value: {{ include "hush-am.keyDbFilePath" . }}
-- name: MUFASA_ACR_DB_PATH
+- name: HUSH_AM_ACR_DB_PATH
   value: {{ include "hush-am.acrDbFilePath" . }}
-- name: MUFASA_SECRET_STORE_DB_PATH
+- name: HUSH_AM_SECRET_STORE_DB_PATH
   value: {{ include "hush-am.secretStoreDbFilePath" . }}
 - name: MUFASA_SPIRESERVER_UDS_PATH
   value: {{ include "hush-am.spireServerSocketPath" . }}
@@ -796,9 +796,9 @@ Diag envs
 {{ include "hush-am.siloEnvs" . }}
 - name: MUFASA_POLICY_DB_PATH
   value: {{ include "hush-am.policyDbFilePath" . }}
-- name: MUFASA_KEY_DB_PATH
+- name: HUSH_AM_KEY_DB_PATH
   value: {{ include "hush-am.keyDbFilePath" . }}
-- name: MUFASA_ACR_DB_PATH
+- name: HUSH_AM_ACR_DB_PATH
   value: {{ include "hush-am.acrDbFilePath" . }}
 - name: MUFASA_SPIRESERVER_UDS_PATH
   value: {{ include "hush-am.spireServerSocketPath" . }}
