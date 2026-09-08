@@ -1,12 +1,16 @@
 TOP_DIR:=$(shell git rev-parse --show-toplevel)
 TEST_KW?=
 VERBOSE?=
+JOBS?=
 NO_SYNC?=
 
 __PYTEST_ARGS = --log-level INFO
 __PYTEST_ARGS += --log-format "%(asctime)s.%(msecs)03d %(levelname)s %(message)s"
 ifneq ($(TEST_KW),)
 __PYTEST_ARGS += -k $(TEST_KW)
+endif
+ifneq ($(JOBS),)
+__PYTEST_ARGS += -n $(JOBS)
 endif
 ifeq ($(VERBOSE),1)
 __PYTEST_ARGS += -vvv
