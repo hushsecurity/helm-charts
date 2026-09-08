@@ -1,5 +1,6 @@
 import base64
 import contextlib
+import copy
 import logging
 import os
 import subprocess
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 TOP_DIR = os.environ["TOP_DIR"]
 CHARTS_DIR = os.path.join(TOP_DIR, "charts")
-CHARTS = [name for name in os.listdir(CHARTS_DIR) if name != "hush-common"]
+CHARTS = sorted(name for name in os.listdir(CHARTS_DIR) if name != "hush-common")
 
 SENSOR_MSV = "v0.25.0"
 CONNECTOR_MSV = "v0.5.0"
@@ -122,6 +123,7 @@ CI_API_VERSIONS = {
 
 @contextlib.contextmanager
 def values_tmp_file(chart: str, values: dict):
+    values = copy.deepcopy(values)
     hushDeployment = values.setdefault("hushDeployment", {})
     hushDeployment.setdefault(
         "token", base64.b64encode(DUMMY_DEPLOYMENT_TOKEN.encode()).decode()
@@ -151,39 +153,67 @@ def values_tmp_file(chart: str, values: dict):
         yield tmp_file.name
 
 
-@pytest.mark.parametrize("chart", CHARTS)
-def test_kubeconform(chart):
-    def _test_ver_path(chart_path, kube_version, path, api_versions=()):
-        args = f"--kube-version {kube_version} -f {path}"
-        for api_version in api_versions:
-            args += f" --api-versions {api_version}"
-        conform_kube_version = kube_version.split("-")[0]
-        conform_args = f"-strict -kubernetes-version {conform_kube_version}"
-        bash(f"helm template {args} {chart_path} | kubeconform {conform_args}")
-
+def _kubeconform(chart, kube_version, path, api_versions=()):
+    args = f"--kube-version {kube_version} -f {path}"
+    for api_version in api_versions:
+        args += f" --api-versions {api_version}"
+    conform_kube_version = kube_version.split("-")[0]
+    conform_args = f"-strict -kubernetes-version {conform_kube_version}"
     chart_path = os.path.join(CHARTS_DIR, chart)
-    for kube_version in KUBE_VERSION_VALUES:
-        for values in CHART_VALUES.get(chart, []) + [{}]:
-            with (
-                values_tmp_file(chart, values) as path,
-                open(path, "r", encoding="utf-8") as f,
-            ):
-                logger.info("values:\n%s", f.read())
-                _test_ver_path(chart_path, kube_version, path)
+    bash(f"helm template {args} {chart_path} | kubeconform {conform_args}")
 
-    ci_dir = os.path.join(chart_path, "ci")
-    if os.path.isdir(ci_dir):
-        for kube_version in KUBE_VERSION_VALUES:
-            for filename in os.listdir(ci_dir):
-                if not filename.endswith("-values.yaml"):
-                    continue
-                path = os.path.join(ci_dir, filename)
-                _test_ver_path(
-                    chart_path,
-                    kube_version,
-                    path,
-                    CI_API_VERSIONS.get(filename, ()),
+
+def _values_params():
+    params = []
+    for chart in CHARTS:
+        for index, values in enumerate(CHART_VALUES.get(chart, []) + [{}]):
+            for kube_version in KUBE_VERSION_VALUES:
+                params.append(
+                    pytest.param(
+                        chart,
+                        values,
+                        kube_version,
+                        id=f"{chart}-values{index}-{kube_version}",
+                    )
                 )
+    return params
+
+
+def _ci_values_params():
+    params = []
+    for chart in CHARTS:
+        ci_dir = os.path.join(CHARTS_DIR, chart, "ci")
+        if not os.path.isdir(ci_dir):
+            continue
+        for filename in sorted(os.listdir(ci_dir)):
+            if not filename.endswith("-values.yaml"):
+                continue
+            for kube_version in KUBE_VERSION_VALUES:
+                params.append(
+                    pytest.param(
+                        chart,
+                        filename,
+                        kube_version,
+                        id=f"{chart}-{filename}-{kube_version}",
+                    )
+                )
+    return params
+
+
+@pytest.mark.parametrize("chart,values,kube_version", _values_params())
+def test_kubeconform(chart, values, kube_version):
+    with (
+        values_tmp_file(chart, values) as path,
+        open(path, "r", encoding="utf-8") as f,
+    ):
+        logger.info("values:\n%s", f.read())
+        _kubeconform(chart, kube_version, path)
+
+
+@pytest.mark.parametrize("chart,filename,kube_version", _ci_values_params())
+def test_kubeconform_ci_values(chart, filename, kube_version):
+    path = os.path.join(CHARTS_DIR, chart, "ci", filename)
+    _kubeconform(chart, kube_version, path, CI_API_VERSIONS.get(filename, ()))
 
 
 def test_hush_sensor_minimum_supported_version():
