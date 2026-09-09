@@ -47,6 +47,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: toolbox-config
+              mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
       containers:
@@ -103,6 +105,8 @@ spec:
               mountPath: /tmp/vector
             - name: data
               mountPath: /data
+            - name: toolbox-config
+              mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           livenessProbe:
             httpGet:
@@ -128,9 +132,29 @@ spec:
               command: ["test", "-S", "/tmp/vector/audit.sock"]
             periodSeconds: 10
           resources: {{- toYaml .Values.agw.vector.resources | nindent 12 }}
+        - name: agw-toolbox
+          image: {{ include "hush-agw.toolboxImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["--config", "/etc/toolbox/tools.yaml", "--address", "0.0.0.0", "--ignore-unreachable-sources", "--ignore-invalid-tools", "--ignore-unknown-tools"]
+          ports:
+            - name: toolbox
+              containerPort: 5000
+          volumeMounts:
+            - name: toolbox-config
+              mountPath: /etc/toolbox
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: toolbox
+            initialDelaySeconds: 5
+          resources: {{- toYaml .Values.agw.toolbox.resources | nindent 12 }}
       volumes:
         - name: vector-sockets
           emptyDir: {}
+        - name: toolbox-config
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
         - name: data
           {{- if .Values.agw.persistence.enabled }}
           persistentVolumeClaim:
