@@ -154,7 +154,7 @@ agw:
   #
   # This must match the value configured in the Hush authorization server. Do not
   # change it unless Hush support instructs you to.
-  dynamicOAuthRegistrationTTL: 600
+  dynamicOAuthRegistrationTTL: 3600
 
   # Persistence for the gateway's local state.
   #

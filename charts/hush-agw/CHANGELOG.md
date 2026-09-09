@@ -4,6 +4,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- raise the default of `agw.dynamicOAuthRegistrationTTL` from 600 to 3600.
+
+  Ten minutes proved too short to finish a connect, so the Hush authorization
+  server now holds an unconsented registration for an hour and gives the user
+  that long to log in. This value has to match the server, and an installation
+  that overrides it in its own values file raises it too.
+
 ## hush-agw 0.3.0 - 2026-08-31
 
 ### Added
