@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-agw 0.4.0 - 2026-09-09
 
 ### Changed
 
@@ -14,6 +14,26 @@ All notable changes to this project will be documented in this file.
   server now holds an unconsented registration for an hour and gives the user
   that long to log in. This value has to match the server, and an installation
   that overrides it in its own values file raises it too.
+
+- bump the app version to v0.5.0.
+
+  A tool an application does not catalogue is now gated by that application's
+  default for uncatalogued tools, so it can be blocked or ask for consent.
+  Until now such a tool was let through, leaving an uncatalogued destructive
+  tool less protected than a catalogued read-only one.
+
+  An agent that connects an application receives a short link it can render as
+  a clickable one, instead of the provider's raw authorize URL. A connection
+  still waiting for consent is reported as a normal answer rather than as an
+  error.
+
+  Agent type policies and the audit trail now cover clients speaking the
+  2026-07-28 MCP protocol as well, and a client of either protocol generation
+  reaches an application of either.
+
+  An application connected before 2026-08-29 and not used since shows as
+  disconnected after the upgrade. Connecting it once restores it; an
+  application used since then is unaffected.
 
 ## hush-agw 0.3.0 - 2026-08-31
 
