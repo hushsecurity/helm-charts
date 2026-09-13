@@ -24,7 +24,7 @@ rules:
   resources:
     - secrets
   verbs: ["get", "list", "watch"]
-- apiGroups: [""]
+- apiGroups: ["", "events.k8s.io"]
   resources:
     - events
   verbs: ["create", "patch"]
