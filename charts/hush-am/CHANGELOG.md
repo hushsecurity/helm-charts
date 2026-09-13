@@ -4,6 +4,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- the api controller role now grants `events` in the `events.k8s.io` API group
+  beside the core one. From the paired app version on, the controller records
+  its `AccessPolicy`, `AccessCredential` and `AccessPrivilege` events through
+  `events.k8s.io/v1`, and RBAC matches on the API group, so without this rule
+  the api server refuses every one of them.
+
 ## hush-am 0.26.0 - 2026-09-08
 
 ### Changed
