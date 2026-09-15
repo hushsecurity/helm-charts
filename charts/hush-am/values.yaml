@@ -184,6 +184,7 @@ secretStore:
   # - awsssm: AWS SSM Parameter Store
   # - gcpsm: GCP Secret Manager
   # - kubesecrets: K8S Secrets
+  # - hc_vault: HashiCorp Vault KV v2
   kind: "kubesecrets"
 
   # A prefix used to distinguish secrets created by hush-am platform, and to
@@ -197,6 +198,7 @@ secretStore:
   #                                 prefix; may not start with "aws" or "ssm"
   #   gcpsm        - _
   #   kubesecrets  - .              a Kubernetes Secret name
+  #   hc_vault     - _ . /          a KV v2 path under the mount
   #
   # Check the access manager's credential before choosing a prefix outside the
   # path it was provisioned with -- for AWS an IRSA policy naming
@@ -287,6 +289,69 @@ secretStore:
     # is granted write access only in these namespaces (a scoped RoleBinding
     # each), never cluster-wide.
     additionalNamespaces: []
+
+  # HashiCorp Vault secret store configuration (used by hc_vault)
+  vault:
+    # Vault address, e.g. "https://vault.example.com:8200". Must be https: a
+    # login and every request afterwards carry a credential.
+    address: ""
+
+    # The KV version 2 mount to store secrets in. When empty, "secret" is used.
+    # It must exist and be version 2; version 1 is refused at startup.
+    mount: ""
+
+    # Vault Enterprise namespace the mount lives in, e.g. "admin/team-a".
+    # Leave empty on Vault Community Edition, which has no namespaces.
+    namespace: ""
+
+    # PEM bundle of the CA that signed the Vault server certificate. Needed
+    # only for a private CA.
+    caCert: ""
+
+    # Per-request timeout, e.g. "30s". When empty, 30s is used.
+    timeout: ""
+
+    # How the access manager authenticates to Vault.
+    auth:
+      # - kubernetes: the pod's service account token, validated by Vault
+      #   calling the cluster's TokenReview API. Needs Vault to reach it.
+      # - jwt: the same token, validated against keys Vault already holds.
+      #   For a Vault that cannot reach the API server.
+      # - token: a token supplied here. Nothing renews it; for testing.
+      method: "kubernetes"
+
+      # The auth mount to log in against. When empty, the method's
+      # conventional path is used: "kubernetes" or "jwt".
+      mount: ""
+
+      # The Vault role to log in as. Required for the kubernetes and jwt
+      # methods. It must bind this chart's service account and namespace, and
+      # grant at least:
+      #
+      #   path "<mount>/data/<prefix>/*"     { capabilities = ["create", "update", "read"] }
+      #   path "<mount>/metadata/<prefix>/*" { capabilities = ["read", "delete"] }
+      #
+      # Without the metadata grants the store reads and writes but can never
+      # delete. Leave the role's default policy in place; 'renew-self' rides
+      # on it.
+      role: ""
+
+      # Audience to request in the projected service account token, for the
+      # kubernetes and jwt methods. When empty the cluster's default is used;
+      # set it to the role's bound_audiences (commonly "vault") if it names one.
+      audience: ""
+
+      # A Vault token, for the token method; testing only. Mutually exclusive
+      # with 'tokenSecret'.
+      token: ""
+
+      # A pre-existing Kubernetes Secret holding the Vault token, for the
+      # token method. Keeps the token out of the release manifest.
+      tokenSecret:
+        # Name of the Secret, in the namespace the chart is installed in.
+        name: ""
+        # Key within the Secret.
+        key: ""
 
 # Container registry configuration.
 # This affects the way Hush Access Management platform accesses workload container images'
