@@ -5,5 +5,7 @@ hushDeployment:
 
 secretStore:
   kind: "awsssm"
+  # path-style, three '/'-separated segments
+  prefix: "acme/prod/eu"
   aws:
     region: "eu-central-1"

@@ -5,5 +5,7 @@ hushDeployment:
 
 secretStore:
   kind: "gcpsm"
+  # an underscore beside a hyphen
+  prefix: "acme_prod-eu"
   gcp:
     projectId: "my-gcp-project"
