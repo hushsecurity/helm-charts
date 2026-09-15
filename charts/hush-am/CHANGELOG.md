@@ -6,6 +6,66 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `secretStore.kind` accepts `hc_vault`, storing secrets in a HashiCorp Vault
+  KV version 2 mount. Configure it under `secretStore.vault`:
+
+      secretStore:
+        kind: "hc_vault"
+        prefix: "acme/prod"
+        vault:
+          address: "https://vault.example.com:8200"
+          mount: "hush-kv"
+          auth:
+            method: "kubernetes"
+            role: "hush-access-manager"
+
+  `address` is required and must be https: every request carries the Vault
+  token in a header and a kubernetes or jwt login posts the pod's service
+  account token in the body, so a plaintext address would put a live
+  credential on the wire. `mount` defaults to `secret` and must be KV version
+  2 -- the access manager checks the mount's version at startup and refuses
+  version 1, whose API has no compare-and-set and so cannot tell a create from
+  an overwrite. `namespace` names a Vault Enterprise namespace and stays empty
+  on Community Edition. `caCert` takes the PEM bundle of a private CA, and is
+  not needed for a certificate that chains to a CA the container already
+  trusts.
+
+  `auth.method` is one of three:
+
+  - `kubernetes` (the default) presents the pod's service account token, which
+    Vault validates by calling the cluster's TokenReview API. Vault must be
+    able to reach the API server.
+  - `jwt` presents the same token, which Vault validates against keys it
+    already holds. For a Vault that cannot reach the API server.
+  - `token` uses a token given in `auth.token`, or taken from a pre-existing
+    Kubernetes Secret named by `auth.tokenSecret`. Nothing renews it, so it
+    stops working when it expires; intended for testing.
+
+  `kubernetes` and `jwt` need `auth.role`, and mount a service account token
+  projected for Vault alone, separate from the one the Hush OIDC assertion
+  uses -- the audience a Vault role accepts is the operator's choice and has no
+  reason to match the one Hush issues against. Set `auth.audience` to the
+  role's `bound_audiences` when it names one; leave it empty for the cluster
+  default, which a role with no bound audience accepts.
+
+  The Vault role must bind the access manager's service account and the
+  namespace the chart is installed in, and grant a policy carrying at least:
+
+      path "<mount>/data/<prefix>/*"     { capabilities = ["create", "update", "read"] }
+      path "<mount>/metadata/<prefix>/*" { capabilities = ["read", "delete"] }
+
+  No `list` is needed. A policy missing the metadata grants yields a store
+  that reads and writes but can never delete, and Vault answers 403, which
+  nothing retries. Leave the role's default policy in place too: `renew-self`
+  rides on it, so a role with `token_no_default_policy=true` cannot renew its
+  token and falls back to logging in again whenever a request is denied.
+
+  This needs an access manager that carries the `hc_vault` silo. An older
+  image installs and then fails to start, reporting an unknown secret store
+  kind.
+
 ### Changed
 
 - the api controller role now grants `events` in the `events.k8s.io` API group
@@ -25,6 +85,7 @@ All notable changes to this project will be documented in this file.
                                     prefix; may not start with "aws" or "ssm"
       gcpsm        - _
       kubesecrets  - .              a Kubernetes Secret name
+      hc_vault     - _ . /          a KV v2 path under the mount
 
   Lowercase, and a leading digit is now allowed. Punctuation separates segments
   and may not lead or trail one, so `acme/prod/secrets` is accepted while
