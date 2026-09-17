@@ -48,6 +48,19 @@ All notable changes to this project will be documented in this file.
   works and `acme_prod` does not. For `kubesecrets` it is this chart's own
   namespace plus `secretStore.k8s.additionalNamespaces`.
 
+- the vector sidecars now request `96Mi` of memory instead of `64Mi`, under
+  `accessManager.vectorResources`, `apiController.vectorResources` and
+  `diagnostics.vectorResources`: their resting usage grew past the old
+  request. The `256Mi` limit is unchanged. An install that pins these values
+  itself should raise them:
+
+  ```yaml
+  accessManager:
+    vectorResources:
+      requests:
+        memory: "96Mi"
+  ```
+
 ## hush-am 0.26.0 - 2026-09-08
 
 ### Changed
