@@ -67,6 +67,9 @@ spec:
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- if .Values.accessManager.logConfig }}
             - name: access-manager-log-config
               mountPath: /opt/mufasa
@@ -122,9 +125,15 @@ spec:
             - name: spire-server-log-dir
               mountPath: {{ include "hush-am.spireServerLogDirMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             {{- include "hush-am.siloEnvs" . | nindent 12 }}
+            {{- with (include "hush-am.awsWebIdentityEnvs" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             - name: AUTH_PLUGIN_KEY_DB_PATH
               value: {{ include "hush-am.keyDbFilePath" . }}
             - name: MUFASA_SPIRE_SERVER_PORT
@@ -171,6 +180,9 @@ spec:
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- if .Values.accessManager.logConfig }}
             - name: access-manager-log-config
               mountPath: /opt/mufasa
@@ -209,6 +221,9 @@ spec:
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
               readOnly: true
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- if .Values.admissionController.logConfig }}
             - name: admission-controller-log-config
               mountPath: /opt/zazu
@@ -256,6 +271,9 @@ spec:
               value: {{ include "hush-am.admissionControllerBindAddress" . | quote }}
             - name: ZAZU_AWS_ECR_CFG_MODE
               value: {{ include "hush-am.admissionControllerAwcEcrCfgMode" . | quote }}
+            {{- with (include "hush-am.awsWebIdentityEnvs" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- with .Values.admissionController.injectorSpireAgentWaitDuration }}
             - name: ZAZU_SPIRE_AGENT_WAIT_DURATION
               value: {{ . | quote }}
@@ -326,6 +344,9 @@ spec:
         - name: spire-server-log-dir
           emptyDir: {}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
+        {{- with (include "hush-am.awsWebIdentityVolume" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}
         {{- if .Values.accessManager.logConfig }}
         - name: access-manager-log-config
           configMap:
