@@ -6,6 +6,45 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `secretStore.kind` accepts `azure_kv`, storing secrets in an Azure Key Vault.
+  Configure it under `secretStore.azureKv`:
+
+      secretStore:
+        kind: "azure_kv"
+        prefix: "acme-prod"
+        azureKv:
+          vaultUrl: "https://acme-prod.vault.azure.net"
+          auth:
+            method: "default"
+            tenantId: "<entra-tenant-id>"
+
+  Two auth methods. `default` uses the pod's own identity, which on AKS means
+  workload identity: set `accessManager.workloadIdentity.azure.clientId` and
+  nothing secret is configured in the chart. `client_secret` uses a service
+  principal, taking the secret inline or from a Secret that already exists.
+
+  The vault must **not** have purge protection enabled. A deleted Key Vault
+  secret keeps its name reserved for the vault's retention period, 7 to 90
+  days, and a write to that name is refused until it is purged, so the access
+  manager purges on delete. This is not housekeeping: relocating a secret
+  deletes a name and creates it again in the same operation, and a reserved
+  name refuses the create. A vault that forbids purging leaves every deleted
+  name unusable for the retention period and the store never becomes ready.
+
+  The identity needs four permissions on the vault's secrets -- get, set,
+  delete and purge -- in whichever permission model the vault uses;
+  `Key Vault Secrets Officer` covers all four.
+
+  The prefix cap for this kind is **32 characters**, not the 80 the others
+  carry: a Key Vault secret name is limited to 127, and the namespace and key
+  take the rest. Its alphabet allows no punctuation but `-`.
+
+  `azureKv.auth.clientSecret` and `azureKv.timeout` are carried whatever
+  `secretStore.kind` is, so a store created through the Hush API takes them
+  from this deployment as well.
+
 ### Changed
 
 - `secretStore.gcp.credentials_json` now applies whatever `secretStore.kind`

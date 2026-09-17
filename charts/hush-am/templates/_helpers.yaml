@@ -531,6 +531,11 @@ pattern so each malformation names itself -- "." is checked there too, since
 the patterns let a punctuation run repeat and "." is the one that may not, and
 only for the kinds whose charset carries it, so a kind without "." reports the
 charset instead. RE2: no lookaheads.
+
+azure_kv is the one kind whose backend limit binds the prefix: a Key Vault
+secret name is 127 characters, and a maximum key plus the namespace leaves 32.
+Its alphabet admits no punctuation but the separator, so it carries no "dot".
+Both maxima mirror am's KindLimits.MaxUserPrefix(), which derives them.
 */}}
 {{- $maxPrefix := 80 -}}
 {{- $rules := dict
@@ -539,6 +544,7 @@ charset instead. RE2: no lookaheads.
     "gcpsm"       (dict "sep" "-" "pattern" "^[a-z0-9]+((_+|-)[a-z0-9]+)*$"         "max" $maxPrefix)
     "kubesecrets" (dict "sep" "-" "pattern" "^[a-z0-9]+([-.][a-z0-9]+)*$"           "max" $maxPrefix "dot" true)
     "hc_vault"    (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "dot" true)
+    "azure_kv"    (dict "sep" "-" "pattern" "^[a-z0-9]+(-[a-z0-9]+)*$"              "max" 32)
 -}}
 {{- $rule := get $rules (toString $kind) -}}
 {{/* every caller is already inside a branch that rejects an unknown kind */}}
@@ -601,6 +607,59 @@ GCP Secret Manager project
     {{- fail "'secretStore.gcp.projectId' must be defined for GCP secret store" -}}
 {{- end -}}
 {{ $project }}
+{{- end }}
+
+{{/*
+Azure Key Vault URL
+*/}}
+{{- define "hush-am.azureKvSiloVaultUrl" -}}
+{{- $url := dig "azureKv" "vaultUrl" "" .Values.secretStore -}}
+{{- if not $url -}}
+    {{- fail "'secretStore.azureKv.vaultUrl' must be defined for the azure_kv secret store" -}}
+{{- end -}}
+{{- if not (regexMatch "^https://[^/?#]+/?$" (lower $url)) -}}
+    {{- fail (printf "'secretStore.azureKv.vaultUrl' must be an https URL naming a vault, with no path, query or fragment, got %q" $url) -}}
+{{- end -}}
+{{ $url }}
+{{- end }}
+
+{{/*
+How the access manager authenticates to Key Vault.
+
+"default" needs nothing here: on AKS the identity comes from workload identity,
+which 'accessManager.workloadIdentity.azure.clientId' turns on. "client_secret"
+needs a client id and exactly one of the two secret forms.
+*/}}
+{{- define "hush-am.azureKvSiloAuthMethod" -}}
+{{- $method := dig "azureKv" "auth" "method" "default" .Values.secretStore -}}
+{{- if not (has $method (list "default" "client_secret")) -}}
+    {{- fail (printf "'secretStore.azureKv.auth.method' is invalid: %s" $method) -}}
+{{- end -}}
+{{- if not (dig "azureKv" "auth" "tenantId" "" .Values.secretStore) -}}
+    {{- fail "'secretStore.azureKv.auth.tenantId' must be defined for the azure_kv secret store" -}}
+{{- end -}}
+{{- $clientId := dig "azureKv" "auth" "clientId" "" .Values.secretStore -}}
+{{- $secret := dig "azureKv" "auth" "clientSecret" "" .Values.secretStore -}}
+{{- $secretRef := dig "azureKv" "auth" "clientSecretRef" dict .Values.secretStore -}}
+{{- if eq $method "client_secret" -}}
+    {{- if not $clientId -}}
+        {{- fail "'secretStore.azureKv.auth.clientId' must be defined for the client_secret method" -}}
+    {{- end -}}
+    {{- if and $secret (get $secretRef "name") -}}
+        {{- fail "set only one of 'secretStore.azureKv.auth.clientSecret' and '.clientSecretRef'" -}}
+    {{- end -}}
+    {{- if and (not $secret) (not (get $secretRef "name")) -}}
+        {{- fail "'secretStore.azureKv.auth.clientSecret' or '.clientSecretRef' must be defined for the client_secret method" -}}
+    {{- end -}}
+    {{- if and (get $secretRef "name") (not (get $secretRef "key")) -}}
+        {{- fail "'secretStore.azureKv.auth.clientSecretRef.key' must be defined with '.name'" -}}
+    {{- end -}}
+{{- else -}}
+    {{- if $clientId -}}
+        {{- fail "'secretStore.azureKv.auth.clientId' is not used by the default method; set 'accessManager.workloadIdentity.azure.clientId'" -}}
+    {{- end -}}
+{{- end -}}
+{{ $method }}
 {{- end }}
 
 {{/*
@@ -780,6 +839,44 @@ created through the Hush API, so emitted whatever 'secretStore.kind' is.
 {{- end }}
 
 {{/*
+Azure Key Vault settings the access manager reads for every store it serves,
+not only the one this chart configures: a store created through the Hush API
+carries its own addressing but takes the client secret and the timeout from
+the process. Emitted whatever 'secretStore.kind' is, as the vault ones are.
+*/}}
+{{- define "hush-am.azureKvSiloProcessEnvs" -}}
+{{- $store := .Values.secretStore | default dict -}}
+{{- with (dig "azureKv" "timeout" "" $store) }}
+- name: SILO_AZURE_KV_TIMEOUT
+  value: {{ . | quote }}
+{{- end }}
+{{- $secretRef := dig "azureKv" "auth" "clientSecretRef" dict $store }}
+{{- $secret := dig "azureKv" "auth" "clientSecret" "" $store }}
+{{/*
+Checked here rather than in azureKvSiloAuthMethod: this renders for every kind,
+so a client secret given under 'default' or 'kubesecrets' never reaches that
+branch and would emit an empty 'key', which the api server refuses at install.
+*/}}
+{{- if and $secret (get $secretRef "name") -}}
+    {{- fail "set only one of 'secretStore.azureKv.auth.clientSecret' and '.clientSecretRef'" -}}
+{{- end -}}
+{{- if and (get $secretRef "name") (not (get $secretRef "key")) -}}
+    {{- fail "'secretStore.azureKv.auth.clientSecretRef.key' must be defined with '.name'" -}}
+{{- end -}}
+{{- if or (get $secretRef "name") $secret }}
+- name: SILO_AZURE_KV_CLIENT_SECRET
+{{- if get $secretRef "name" }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ get $secretRef "name" | quote }}
+      key: {{ get $secretRef "key" | quote }}
+{{- else }}
+  value: {{ $secret | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
 K8S Secrets Silo namespace to use
 */}}
 {{- define "hush-am.kubeSiloNamespace" -}}
@@ -929,11 +1026,35 @@ Silo env vars
   value: {{ . | quote }}
         {{- end }}
     {{- end }}
+{{- else if eq $siloKind "azure_kv" -}}
+- name: SILO_KIND
+  value: "azure_kv"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
+- name: SILO_AZURE_KV_VAULT_URL
+  value: {{ include "hush-am.azureKvSiloVaultUrl" . | quote }}
+    {{- with (dig "azureKv" "cloud" "" .Values.secretStore) }}
+        {{- if not (has . (list "public" "china" "usgov")) }}
+            {{- fail (printf "'secretStore.azureKv.cloud' must be one of public, china, usgov, got %q" .) }}
+        {{- end }}
+- name: SILO_AZURE_KV_CLOUD
+  value: {{ . | quote }}
+    {{- end }}
+    {{- $method := include "hush-am.azureKvSiloAuthMethod" . }}
+- name: SILO_AZURE_KV_AUTH_METHOD
+  value: {{ $method | quote }}
+- name: SILO_AZURE_KV_TENANT_ID
+  value: {{ dig "azureKv" "auth" "tenantId" "" .Values.secretStore | quote }}
+    {{- if eq $method "client_secret" }}
+- name: SILO_AZURE_KV_CLIENT_ID
+  value: {{ dig "azureKv" "auth" "clientId" "" .Values.secretStore | quote }}
+    {{- end }}
 {{- else -}}
     {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
 {{- end -}}
 {{- include "hush-am.hcVaultSiloProcessEnvs" . }}
 {{- include "hush-am.gcpSmSiloProcessEnvs" . }}
+{{- include "hush-am.azureKvSiloProcessEnvs" . }}
 {{- end }}
 
 {{/*
