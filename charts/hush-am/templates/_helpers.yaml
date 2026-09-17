@@ -527,14 +527,20 @@ pattern so each malformation names itself -- "." is checked there too, since
 the patterns let a punctuation run repeat and "." is the one that may not, and
 only for the kinds whose charset carries it, so a kind without "." reports the
 charset instead. RE2: no lookaheads.
+
+az_key_vault is the one kind whose backend limit binds the prefix: a Key Vault
+secret name is 127 characters, and a maximum key plus the namespace leaves 32.
+Its alphabet admits no punctuation but the separator, so it carries no "dot".
+Both maxima mirror am's KindLimits.MaxUserPrefix, declared per kind there.
 */}}
 {{- $maxPrefix := 80 -}}
 {{- $rules := dict
-    "awssm"       (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.+=@]+|/)[a-z0-9]+)*$" "max" $maxPrefix "dot" true)
-    "awsssm"      (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "segments" 9 "reserved" (list "aws" "ssm") "dot" true)
-    "gcpsm"       (dict "sep" "-" "pattern" "^[a-z0-9]+((_+|-)[a-z0-9]+)*$"         "max" $maxPrefix)
-    "kubesecrets" (dict "sep" "-" "pattern" "^[a-z0-9]+([-.][a-z0-9]+)*$"           "max" $maxPrefix "dot" true)
-    "hc_vault"    (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "dot" true)
+    "awssm"        (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.+=@]+|/)[a-z0-9]+)*$" "max" $maxPrefix "dot" true)
+    "awsssm"       (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "segments" 9 "reserved" (list "aws" "ssm") "dot" true)
+    "gcpsm"        (dict "sep" "-" "pattern" "^[a-z0-9]+((_+|-)[a-z0-9]+)*$"         "max" $maxPrefix)
+    "kubesecrets"  (dict "sep" "-" "pattern" "^[a-z0-9]+([-.][a-z0-9]+)*$"           "max" $maxPrefix "dot" true)
+    "hc_vault"     (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "dot" true)
+    "az_key_vault" (dict "sep" "-" "pattern" "^[a-z0-9]+(-[a-z0-9]+)*$"              "max" 32)
 -}}
 {{- $rule := get $rules (toString $kind) -}}
 {{/* every caller is already inside a branch that rejects an unknown kind */}}
@@ -597,6 +603,60 @@ GCP Secret Manager project
     {{- fail "'secretStore.gcp.projectId' must be defined for GCP secret store" -}}
 {{- end -}}
 {{ $project }}
+{{- end }}
+
+{{/*
+Azure Key Vault URL
+*/}}
+{{- define "hush-am.azKeyVaultSiloVaultUrl" -}}
+{{- $url := dig "azKeyVault" "vaultUrl" "" .Values.secretStore -}}
+{{- if not $url -}}
+    {{- fail "'secretStore.azKeyVault.vaultUrl' must be defined for the az_key_vault secret store" -}}
+{{- end -}}
+{{- if not (regexMatch "^https://[^/?#]+/?$" (lower $url)) -}}
+    {{- fail (printf "'secretStore.azKeyVault.vaultUrl' must be an https URL naming a vault, with no path, query or fragment, got %q" $url) -}}
+{{- end -}}
+{{ $url }}
+{{- end }}
+
+{{/*
+How the access manager authenticates to Key Vault.
+
+"default" needs nothing here: on AKS the identity comes from workload identity,
+which 'accessManager.workloadIdentity.azure.clientId' turns on. "client_secret"
+needs a client id and exactly one of the two secret forms.
+*/}}
+{{- define "hush-am.azKeyVaultSiloAuthMethod" -}}
+{{- $method := dig "azKeyVault" "auth" "method" "default" .Values.secretStore -}}
+{{- if not (has $method (list "default" "client_secret")) -}}
+    {{- fail (printf "'secretStore.azKeyVault.auth.method' is invalid: %s" $method) -}}
+{{- end -}}
+{{- $clientId := dig "azKeyVault" "auth" "clientId" "" .Values.secretStore -}}
+{{- $secret := dig "azKeyVault" "auth" "clientSecret" "" .Values.secretStore -}}
+{{- $secretRef := dig "azKeyVault" "auth" "clientSecretRef" dict .Values.secretStore -}}
+{{- $tenantId := dig "azKeyVault" "auth" "tenantId" "" .Values.secretStore -}}
+{{- if eq $method "client_secret" -}}
+    {{- if not $tenantId -}}
+        {{- fail "'secretStore.azKeyVault.auth.tenantId' must be defined for the client_secret method" -}}
+    {{- end -}}
+    {{- if not (regexMatch "^[A-Za-z0-9.-]+$" (toString $tenantId)) -}}
+        {{- fail (printf "'secretStore.azKeyVault.auth.tenantId' must be letters, digits, '.' and '-', got %q" $tenantId) -}}
+    {{- end -}}
+    {{- if not $clientId -}}
+        {{- fail "'secretStore.azKeyVault.auth.clientId' must be defined for the client_secret method" -}}
+    {{- end -}}
+    {{- if and (not $secret) (not (get $secretRef "name")) -}}
+        {{- fail "'secretStore.azKeyVault.auth.clientSecret' or '.clientSecretRef' must be defined for the client_secret method" -}}
+    {{- end -}}
+{{- else -}}
+    {{- if $clientId -}}
+        {{- fail "'secretStore.azKeyVault.auth.clientId' is not used by the default method; set 'accessManager.workloadIdentity.azure.clientId'" -}}
+    {{- end -}}
+    {{- if $tenantId -}}
+        {{- fail "'secretStore.azKeyVault.auth.tenantId' is not used by the default method; the workload identity webhook sets AZURE_TENANT_ID" -}}
+    {{- end -}}
+{{- end -}}
+{{ $method }}
 {{- end }}
 
 {{/*
@@ -790,6 +850,39 @@ created through the Hush API, so emitted whatever 'secretStore.kind' is.
 {{- end }}
 
 {{/*
+Azure Key Vault settings the access manager reads for every store it serves,
+not only the one this chart configures: a store created through the Hush API
+carries its own addressing but takes the client secret and the timeout from
+the process. Emitted whatever 'secretStore.kind' is, as the vault ones are.
+*/}}
+{{- define "hush-am.azKeyVaultSiloProcessEnvs" -}}
+{{- $store := .Values.secretStore | default dict -}}
+{{- with (dig "azKeyVault" "timeout" "" $store) }}
+- name: SILO_AZ_KEY_VAULT_TIMEOUT
+  value: {{ . | quote }}
+{{- end }}
+{{- $secretRef := dig "azKeyVault" "auth" "clientSecretRef" dict $store }}
+{{- $secret := dig "azKeyVault" "auth" "clientSecret" "" $store }}
+{{- if and $secret (get $secretRef "name") -}}
+    {{- fail "set only one of 'secretStore.azKeyVault.auth.clientSecret' and '.clientSecretRef'" -}}
+{{- end -}}
+{{- if and (get $secretRef "name") (not (get $secretRef "key")) -}}
+    {{- fail "'secretStore.azKeyVault.auth.clientSecretRef.key' must be defined with '.name'" -}}
+{{- end -}}
+{{- if or (get $secretRef "name") $secret }}
+- name: SILO_AZ_KEY_VAULT_CLIENT_SECRET
+{{- if get $secretRef "name" }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ get $secretRef "name" | quote }}
+      key: {{ get $secretRef "key" | quote }}
+{{- else }}
+  value: {{ $secret | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
 K8S Secrets Silo namespace to use
 */}}
 {{- define "hush-am.kubeSiloNamespace" -}}
@@ -939,11 +1032,35 @@ Silo env vars
   value: {{ . | quote }}
         {{- end }}
     {{- end }}
+{{- else if eq $siloKind "az_key_vault" -}}
+- name: SILO_KIND
+  value: "az_key_vault"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
+- name: SILO_AZ_KEY_VAULT_VAULT_URL
+  value: {{ include "hush-am.azKeyVaultSiloVaultUrl" . | quote }}
+    {{- with (dig "azKeyVault" "cloud" "" .Values.secretStore) }}
+        {{- if not (has . (list "public" "china" "usgov")) }}
+            {{- fail (printf "'secretStore.azKeyVault.cloud' must be one of public, china, usgov, got %q" .) }}
+        {{- end }}
+- name: SILO_AZ_KEY_VAULT_CLOUD
+  value: {{ . | quote }}
+    {{- end }}
+    {{- $method := include "hush-am.azKeyVaultSiloAuthMethod" . }}
+- name: SILO_AZ_KEY_VAULT_AUTH_METHOD
+  value: {{ $method | quote }}
+- name: SILO_AZ_KEY_VAULT_TENANT_ID
+  value: {{ dig "azKeyVault" "auth" "tenantId" "" .Values.secretStore | quote }}
+    {{- if eq $method "client_secret" }}
+- name: SILO_AZ_KEY_VAULT_CLIENT_ID
+  value: {{ dig "azKeyVault" "auth" "clientId" "" .Values.secretStore | quote }}
+    {{- end }}
 {{- else -}}
     {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
 {{- end -}}
 {{- include "hush-am.hcVaultSiloProcessEnvs" . }}
 {{- include "hush-am.gcpSmSiloProcessEnvs" . }}
+{{- include "hush-am.azKeyVaultSiloProcessEnvs" . }}
 {{- end }}
 
 {{/*
