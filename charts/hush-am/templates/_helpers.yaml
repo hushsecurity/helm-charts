@@ -729,11 +729,20 @@ Which address the admission controller should bind to?
 {{- end }}
 
 {{/*
+Is an AWS identity configured for the access manager or the container registry?
+*/}}
+{{- define "hush-am.awsIdentityConfigured" -}}
+{{- if or .Values.accessManager.workloadIdentity.aws.irsa .Values.containerRegistry.aws.irsa -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Admission-controller mode of AWS Config for Container Registry access
 */}}
 {{- define "hush-am.admissionControllerAwcEcrCfgMode" -}}
-{{- $irsa := or .Values.accessManager.workloadIdentity.aws.irsa .Values.containerRegistry.aws.irsa -}}
-{{- if or $irsa .Values.accessManager.forcePodNetwork -}}
+{{- $awsIdentity := include "hush-am.awsIdentityConfigured" . -}}
+{{- if or $awsIdentity .Values.accessManager.forcePodNetwork -}}
 default
 {{- else -}}
 ec2role
@@ -955,10 +964,10 @@ Should access manager use host network?
 {{- if .Values.accessManager.forcePodNetwork -}}
 false
 {{- else -}}
-  {{- $awsEcrCfgMode := include "hush-am.admissionControllerAwcEcrCfgMode" . -}}
+  {{- $noAwsIdentity := empty (include "hush-am.awsIdentityConfigured" .) -}}
   {{- $noGcpSa := and (empty .Values.accessManager.workloadIdentity.gcp.sa) (empty .Values.containerRegistry.gcp.sa) -}}
   {{- $noAzureCid := and (empty .Values.accessManager.workloadIdentity.azure.clientId) (empty .Values.containerRegistry.azure.clientId) -}}
-  {{- printf "%t" (and (eq $awsEcrCfgMode "ec2role") $noGcpSa $noAzureCid) -}}
+  {{- printf "%t" (and $noAwsIdentity $noGcpSa $noAzureCid) -}}
 {{- end -}}
 {{- end }}
 
