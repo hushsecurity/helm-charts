@@ -530,7 +530,7 @@ accessManager:
       ephemeral-storage: "512Mi"
     requests:
       cpu: "30m"
-      memory: "64Mi"
+      memory: "96Mi"
       ephemeral-storage: "128Mi"
 
   # Custom log configuration for Access Manager
@@ -943,7 +943,7 @@ apiController:
       ephemeral-storage: "512Mi"
     requests:
       cpu: "20m"
-      memory: "64Mi"
+      memory: "96Mi"
       ephemeral-storage: "128Mi"
 
   # Readiness probe parameters for api-controller.
@@ -1005,7 +1005,7 @@ diagnostics:
       ephemeral-storage: "512Mi"
     requests:
       cpu: "20m"
-      memory: "64Mi"
+      memory: "96Mi"
       ephemeral-storage: "128Mi"
 
   # Custom log configuration for the diag container.
