@@ -517,6 +517,11 @@ pattern so each malformation names itself -- "." is checked there too, since
 the patterns let a punctuation run repeat and "." is the one that may not, and
 only for the kinds whose charset carries it, so a kind without "." reports the
 charset instead. RE2: no lookaheads.
+
+azure_kv is the one kind whose backend limit binds the prefix: a Key Vault
+secret name is 127 characters, and a maximum key plus the namespace leaves 32.
+Its alphabet admits no punctuation but the separator, so it carries no "dot".
+Both maxima mirror am's KindLimits.MaxUserPrefix(), which derives them.
 */}}
 {{- $maxPrefix := 80 -}}
 {{- $rules := dict
@@ -525,6 +530,7 @@ charset instead. RE2: no lookaheads.
     "gcpsm"       (dict "sep" "-" "pattern" "^[a-z0-9]+((_+|-)[a-z0-9]+)*$"         "max" $maxPrefix)
     "kubesecrets" (dict "sep" "-" "pattern" "^[a-z0-9]+([-.][a-z0-9]+)*$"           "max" $maxPrefix "dot" true)
     "hc_vault"    (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "dot" true)
+    "azure_kv"    (dict "sep" "-" "pattern" "^[a-z0-9]+(-[a-z0-9]+)*$"              "max" 32)
 -}}
 {{- $rule := get $rules (toString $kind) -}}
 {{/* every caller is already inside a branch that rejects an unknown kind */}}
@@ -596,6 +602,67 @@ account token in the body, so plaintext would put a live credential on the
 wire. The access manager allows plaintext on this path, where its own tests
 talk to a dev-mode Vault; a chart install is not that, so it is refused here.
 */}}
+{{/*
+Azure Key Vault URL
+*/}}
+{{- define "hush-am.siloAzureVaultUrl" -}}
+{{- $url := dig "azure" "vaultUrl" "" .Values.secretStore -}}
+{{- if not $url -}}
+    {{- fail "'secretStore.azure.vaultUrl' must be defined for the azure_kv secret store" -}}
+{{- end -}}
+{{- if not (hasPrefix "https://" $url) -}}
+    {{- fail (printf "'secretStore.azure.vaultUrl' must be an https URL, got %q" $url) -}}
+{{- end -}}
+{{ $url }}
+{{- end }}
+
+{{/*
+How the access manager authenticates to Key Vault.
+
+"default" needs nothing here: on AKS the identity comes from workload identity,
+which 'accessManager.workloadIdentity.azure.clientId' turns on. "client_secret"
+needs a client id and exactly one of the two secret forms.
+*/}}
+{{- define "hush-am.siloAzureAuthMethod" -}}
+{{- $method := dig "azure" "auth" "method" "default" .Values.secretStore -}}
+{{- if not (has $method (list "default" "client_secret")) -}}
+    {{- fail (printf "'secretStore.azure.auth.method' is invalid: %s" $method) -}}
+{{- end -}}
+{{- if not (dig "azure" "auth" "tenantId" "" .Values.secretStore) -}}
+    {{- fail "'secretStore.azure.auth.tenantId' must be defined for the azure_kv secret store" -}}
+{{- end -}}
+{{- $clientId := dig "azure" "auth" "clientId" "" .Values.secretStore -}}
+{{- $secret := dig "azure" "auth" "clientSecret" "" .Values.secretStore -}}
+{{- $secretRef := dig "azure" "auth" "clientSecretSecret" dict .Values.secretStore -}}
+{{- if eq $method "client_secret" -}}
+    {{- if not $clientId -}}
+        {{- fail "'secretStore.azure.auth.clientId' must be defined for the client_secret method" -}}
+    {{- end -}}
+    {{- if and $secret (get $secretRef "name") -}}
+        {{- fail "set only one of 'secretStore.azure.auth.clientSecret' and '.clientSecretSecret'" -}}
+    {{- end -}}
+    {{- if and (not $secret) (not (get $secretRef "name")) -}}
+        {{- fail "'secretStore.azure.auth.clientSecret' or '.clientSecretSecret' must be defined for the client_secret method" -}}
+    {{- end -}}
+    {{- if and (get $secretRef "name") (not (get $secretRef "key")) -}}
+        {{- fail "'secretStore.azure.auth.clientSecretSecret.key' must be defined with '.name'" -}}
+    {{- end -}}
+{{- else -}}
+    {{/*
+    The access manager refuses a client id on this method: the SDK has no field
+    for one and reads AZURE_CLIENT_ID from the environment instead, which the
+    workload identity webhook sets. Refusing it here says so before the install.
+    */}}
+    {{- if $clientId -}}
+        {{- fail "'secretStore.azure.auth.clientId' is not used by the default method; set 'accessManager.workloadIdentity.azure.clientId'" -}}
+    {{- end -}}
+    {{- if or $secret (get $secretRef "name") -}}
+        {{- fail "'secretStore.azure.auth.clientSecret' is not used by the default method" -}}
+    {{- end -}}
+{{- end -}}
+{{ $method }}
+{{- end }}
+
 {{- define "hush-am.siloVaultAddress" -}}
 {{- $address := dig "vault" "address" "" .Values.secretStore -}}
 {{- if not $address -}}
@@ -930,6 +997,50 @@ Silo env vars
         {{- with (dig "vault" "auth" "mount" "" .Values.secretStore) }}
 - name: SILO_HC_VAULT_AUTH_MOUNT
   value: {{ . | quote }}
+        {{- end }}
+    {{- end }}
+{{- else if eq $siloKind "azure_kv" -}}
+- name: SILO_KIND
+  value: "azure_kv"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
+- name: SILO_AZURE_KV_VAULT_URL
+  value: {{ include "hush-am.siloAzureVaultUrl" . | quote }}
+    {{- with (dig "azure" "cloud" "" .Values.secretStore) }}
+        {{/*
+        Refused here as midgard refuses it, rather than rendering cleanly and
+        failing at pod start: the access manager accepts these three and
+        nothing else, so a typo would otherwise be the only invalid Azure
+        value that installs.
+        */}}
+        {{- if not (has . (list "public" "china" "usgov")) }}
+            {{- fail (printf "'secretStore.azure.cloud' must be one of public, china, usgov, got %q" .) }}
+        {{- end }}
+- name: SILO_AZURE_KV_CLOUD
+  value: {{ . | quote }}
+    {{- end }}
+    {{- with (dig "azure" "timeout" "" .Values.secretStore) }}
+- name: SILO_AZURE_KV_TIMEOUT
+  value: {{ . | quote }}
+    {{- end }}
+    {{- $method := include "hush-am.siloAzureAuthMethod" . }}
+- name: SILO_AZURE_KV_AUTH_METHOD
+  value: {{ $method | quote }}
+- name: SILO_AZURE_KV_TENANT_ID
+  value: {{ dig "azure" "auth" "tenantId" "" .Values.secretStore | quote }}
+    {{- if eq $method "client_secret" }}
+- name: SILO_AZURE_KV_CLIENT_ID
+  value: {{ dig "azure" "auth" "clientId" "" .Values.secretStore | quote }}
+        {{- $secretRef := dig "azure" "auth" "clientSecretSecret" dict .Values.secretStore }}
+        {{- if get $secretRef "name" }}
+- name: SILO_AZURE_KV_CLIENT_SECRET
+  valueFrom:
+    secretKeyRef:
+      name: {{ get $secretRef "name" | quote }}
+      key: {{ get $secretRef "key" | quote }}
+        {{- else }}
+- name: SILO_AZURE_KV_CLIENT_SECRET
+  value: {{ dig "azure" "auth" "clientSecret" "" .Values.secretStore | quote }}
         {{- end }}
     {{- end }}
 {{- else -}}

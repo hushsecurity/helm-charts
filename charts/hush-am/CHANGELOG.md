@@ -8,6 +8,41 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `secretStore.kind` accepts `azure_kv`, storing secrets in an Azure Key Vault.
+  Configure it under `secretStore.azure`:
+
+      secretStore:
+        kind: "azure_kv"
+        prefix: "acme-prod"
+        azure:
+          vaultUrl: "https://acme-prod.vault.azure.net"
+          auth:
+            method: "default"
+            tenantId: "<entra-tenant-id>"
+
+  Two auth methods. `default` uses the pod's own identity, which on AKS means
+  workload identity: set `accessManager.workloadIdentity.azure.clientId` and
+  nothing secret is configured in the chart. `client_secret` uses a service
+  principal, taking the secret inline or from a Secret that already exists.
+
+  The vault must **not** have purge protection enabled. The access manager
+  deletes a secret by purging it so the name can be reused; a vault that
+  forbids purging leaves every deleted name unusable for its retention period
+  and the store never becomes ready. The identity needs four permissions on
+  the vault's secrets -- get, set, delete and purge -- in whichever permission
+  model the vault uses; `Key Vault Secrets Officer` covers all four.
+
+  The prefix cap for this kind is **32 characters**, not the 80 the others
+  carry: a Key Vault secret name is limited to 127, and the namespace and key
+  take the rest. Its alphabet allows no punctuation but `-`.
+
+  Note that `secretStore.azure` configures the access manager's own store. A
+  store created through the Hush API carries its own config, but the access
+  manager still reads a `client_secret` from this deployment's environment,
+  which the chart sets only when `secretStore.kind` is `azure_kv`. Use
+  `default` for API-created stores, or configure a chart-level `azure_kv` silo
+  as well. `hc_vault`'s `token` method has the same shape.
+
 - `secretStore.kind` accepts `hc_vault`, storing secrets in a HashiCorp Vault
   KV version 2 mount. Configure it under `secretStore.vault`:
 
