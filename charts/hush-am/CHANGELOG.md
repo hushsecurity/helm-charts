@@ -6,6 +6,47 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `accessManager.workloadIdentity.aws.oidc.role` names an AWS IAM role the access
+  manager assumes with its own Kubernetes service account token. This reaches an
+  AWS secret store, and an ECR registry, from a cluster that has no IRSA, with no
+  AWS access key kept in the cluster.
+
+  Enable the cluster OIDC issuer, register it as an IAM OIDC identity provider,
+  and let the role be assumed over that provider by the access manager's service
+  account. Its subject is `system:serviceaccount:<namespace>:<account>`, where
+  `<account>` is the service account name the chart derives from the release,
+  `hush-am-access-manager` for a release named `hush-am`.
+
+  `accessManager.workloadIdentity.aws.oidc.audience` is the audience the identity
+  provider is registered with. It defaults to `sts.amazonaws.com`, the audience
+  IRSA uses on EKS.
+
+  The role is an AWS identity like `irsa`, so setting it also takes the access
+  manager pod off the host network, where it no longer reaches the node's own
+  cloud credentials. Reading image manifests from the registry of the cloud the
+  cluster runs in may then need that cloud's workload identity configured
+  alongside the role:
+
+  ```yaml
+  accessManager:
+    workloadIdentity:
+      aws:
+        oidc:
+          role: "arn:aws:iam::000000000000:role/access-manager"
+      # On AKS, for an Azure container registry
+      azure:
+        clientId: "00000000-0000-0000-0000-000000000000"
+      # On GKE, for a Google container registry
+      gcp:
+        sa: "access-manager@my-project.iam.gserviceaccount.com"
+  ```
+
+  It cannot be combined with any other AWS credential:
+  `accessManager.workloadIdentity.aws.irsa`, `secretStore.aws.irsa`,
+  `containerRegistry.aws.irsa` or `secretStore.aws.access_key`.
+
 ### Changed
 
 - the api controller role now grants `events` in the `events.k8s.io` API group

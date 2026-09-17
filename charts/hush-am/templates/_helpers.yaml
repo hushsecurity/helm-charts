@@ -729,12 +729,105 @@ Which address the admission controller should bind to?
 {{- end }}
 
 {{/*
+AWS IAM role the access manager assumes with its projected K8S SA token
+*/}}
+{{- define "hush-am.awsOidcRole" -}}
+{{- $role := dig "oidc" "role" "" .Values.accessManager.workloadIdentity.aws -}}
+{{- if $role -}}
+  {{- $irsa := or
+        .Values.accessManager.workloadIdentity.aws.irsa
+        .Values.secretStore.aws.irsa
+        .Values.containerRegistry.aws.irsa -}}
+  {{- if $irsa -}}
+      {{- fail "'accessManager.workloadIdentity.aws.oidc.role' must not be combined with 'accessManager.workloadIdentity.aws.irsa', 'secretStore.aws.irsa' or 'containerRegistry.aws.irsa'" -}}
+  {{- end -}}
+  {{- if (include "hush-am.siloAwsAccessToken" .) -}}
+      {{- fail "'accessManager.workloadIdentity.aws.oidc.role' must not be combined with 'secretStore.aws.access_key'" -}}
+  {{- end -}}
+{{- end -}}
+{{ $role }}
+{{- end }}
+
+{{/*
+Audience of the K8S SA token the access manager presents to AWS STS
+*/}}
+{{- define "hush-am.awsOidcAudience" -}}
+{{- dig "oidc" "audience" "" .Values.accessManager.workloadIdentity.aws | default "sts.amazonaws.com" -}}
+{{- end }}
+
+{{/*
 Is an AWS identity configured for the access manager or the container registry?
 */}}
 {{- define "hush-am.awsIdentityConfigured" -}}
-{{- if or .Values.accessManager.workloadIdentity.aws.irsa .Values.containerRegistry.aws.irsa -}}
+{{- $oidcRole := include "hush-am.awsOidcRole" . -}}
+{{- if or .Values.accessManager.workloadIdentity.aws.irsa $oidcRole .Values.containerRegistry.aws.irsa -}}
 true
 {{- end -}}
+{{- end }}
+
+{{/*
+Name of the projected volume carrying the AWS web identity token
+*/}}
+{{- define "hush-am.awsWebIdentityVolumeName" -}}
+aws-token-projection
+{{- end }}
+
+{{/*
+Mount path of the projected volume carrying the AWS web identity token
+*/}}
+{{- define "hush-am.awsWebIdentityVolumePath" -}}
+/var/run/secrets/hush.k8s.aws.projection
+{{- end }}
+
+{{/*
+File name of the AWS web identity token
+*/}}
+{{- define "hush-am.awsWebIdentityTokenFileName" -}}
+sa-token
+{{- end }}
+
+{{/*
+Path of the AWS web identity token
+*/}}
+{{- define "hush-am.awsWebIdentityTokenPath" -}}
+{{ include "hush-am.awsWebIdentityVolumePath" . }}/{{ include "hush-am.awsWebIdentityTokenFileName" . }}
+{{- end }}
+
+{{/*
+Projected volume carrying the K8S SA token AWS STS exchanges for credentials
+*/}}
+{{- define "hush-am.awsWebIdentityVolume" -}}
+{{- if (include "hush-am.awsOidcRole" .) -}}
+- name: {{ include "hush-am.awsWebIdentityVolumeName" . }}
+  projected:
+    sources:
+      - serviceAccountToken:
+          path: {{ include "hush-am.awsWebIdentityTokenFileName" . }}
+          audience: {{ include "hush-am.awsOidcAudience" . | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Volume mount for the projected AWS web identity token
+*/}}
+{{- define "hush-am.awsWebIdentityVolumeMount" -}}
+{{- if (include "hush-am.awsOidcRole" .) -}}
+- name: {{ include "hush-am.awsWebIdentityVolumeName" . }}
+  mountPath: {{ include "hush-am.awsWebIdentityVolumePath" . }}
+  readOnly: true
+{{- end }}
+{{- end }}
+
+{{/*
+Envs directing the AWS SDK to assume a role with the projected K8S SA token
+*/}}
+{{- define "hush-am.awsWebIdentityEnvs" -}}
+{{- with (include "hush-am.awsOidcRole" .) -}}
+- name: AWS_ROLE_ARN
+  value: {{ . | quote }}
+- name: AWS_WEB_IDENTITY_TOKEN_FILE
+  value: {{ include "hush-am.awsWebIdentityTokenPath" $ | quote }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -815,6 +908,9 @@ Access Manager envs
       key: {{ .key }}
 {{- end }}
 {{ include "hush-am.siloEnvs" . }}
+{{- with (include "hush-am.awsWebIdentityEnvs" .) }}
+{{ . }}
+{{- end }}
 - name: MUFASA_POLICY_DB_PATH
   value: {{ include "hush-am.policyDbFilePath" . }}
 - name: HUSH_AM_KEY_DB_PATH
@@ -854,6 +950,9 @@ Diag envs
       key: {{ .key }}
 {{- end }}
 {{ include "hush-am.siloEnvs" . }}
+{{- with (include "hush-am.awsWebIdentityEnvs" .) }}
+{{ . }}
+{{- end }}
 - name: MUFASA_POLICY_DB_PATH
   value: {{ include "hush-am.policyDbFilePath" . }}
 - name: HUSH_AM_KEY_DB_PATH

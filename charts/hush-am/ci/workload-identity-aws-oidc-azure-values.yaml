@@ -1,0 +1,18 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+secretStore:
+  kind: "awsssm"
+  prefix: "hush"
+  aws:
+    region: "eu-central-1"
+
+accessManager:
+  workloadIdentity:
+    aws:
+      oidc:
+        role: "arn:aws:iam::000000000000:role/access-manager-iam-role"
+    azure:
+      clientId: "00000000-0000-0000-0000-000000000000"
