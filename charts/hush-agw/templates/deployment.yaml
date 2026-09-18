@@ -67,8 +67,6 @@ spec:
               value: 0.0.0.0:15020
             - name: READINESS_ADDR
               value: 0.0.0.0:15021
-            - name: HUSH_HIDE_UPSTREAM_TOOLS
-              value: "true"
           ports:
             - name: gateway
               containerPort: 3001

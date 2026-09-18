@@ -4,6 +4,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- drop the `HUSH_HIDE_UPSTREAM_TOOLS` variable from the gateway's Deployment.
+
+  It has had no effect since app version v0.3.0, where hiding the upstream tools
+  stopped being optional. The gateway behaves the same without it.
+
 ## hush-agw 0.4.0 - 2026-09-09
 
 ### Changed
