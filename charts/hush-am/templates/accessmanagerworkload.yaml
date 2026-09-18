@@ -67,6 +67,9 @@ spec:
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-am.siloVaultSaTokenVolumeMount" .) }}
+              {{- . | nindent 12 }}
+            {{- end }}
             {{- if .Values.accessManager.logConfig }}
             - name: access-manager-log-config
               mountPath: /opt/mufasa
@@ -122,6 +125,9 @@ spec:
             - name: spire-server-log-dir
               mountPath: {{ include "hush-am.spireServerLogDirMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-am.siloVaultSaTokenVolumeMount" .) }}
+              {{- . | nindent 12 }}
+            {{- end }}
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             {{- include "hush-am.siloEnvs" . | nindent 12 }}
@@ -171,6 +177,9 @@ spec:
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-am.siloVaultSaTokenVolumeMount" .) }}
+              {{- . | nindent 12 }}
+            {{- end }}
             {{- if .Values.accessManager.logConfig }}
             - name: access-manager-log-config
               mountPath: /opt/mufasa
@@ -326,6 +335,9 @@ spec:
         - name: spire-server-log-dir
           emptyDir: {}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
+        {{- with (include "hush-am.siloVaultSaTokenVolume" .) }}
+          {{- . | nindent 8 }}
+        {{- end }}
         {{- if .Values.accessManager.logConfig }}
         - name: access-manager-log-config
           configMap:
