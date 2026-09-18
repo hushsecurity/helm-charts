@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-agw 0.5.0 - 2026-09-18
 
 ### Changed
 
@@ -12,6 +12,39 @@ All notable changes to this project will be documented in this file.
 
   It has had no effect since app version v0.3.0, where hiding the upstream tools
   stopped being optional. The gateway behaves the same without it.
+
+- bump the app version to v0.6.0.
+
+  The gateway serves the 2026-07-28 MCP protocol as well as the older one, so
+  an agent that has moved to it works. Consent cannot be asked in-band there,
+  so such a client is sent to the browser to approve a call.
+
+  A tool an application does not catalogue now takes the default of the class
+  the server's own description puts it in, where it used to take the
+  application's separate default for uncatalogued tools. Under the shipped
+  defaults a tool marked read-only now runs without asking, one marked
+  destructive is now refused where it used to ask the user, and one that says
+  nothing still asks. An application whose uncatalogued default an administrator
+  had changed loses that setting: the read, write and destructive defaults now
+  govern catalogued and uncatalogued tools alike.
+
+  A custom application whose server speaks only the 2026-07-28 protocol
+  registers with its real tool set instead of failing detection.
+
+  The hush_* tools answer on a deployment with no application registered, where
+  every call to them used to fail as if the tool did not exist.
+
+  An application that refuses a tool call no longer ends the agent's session,
+  and the refusal names its cause: a missing permission, a login the
+  application declined, or a tool it does not have.
+
+  An application whose stored login stops being accepted is reported
+  disconnected, so the user is asked to reconnect instead of every call to it
+  failing.
+
+  Codex connects applications again and shows why a policy blocked a call,
+  where it used to fail with an unexpected-response error and show the user
+  nothing.
 
 ## hush-agw 0.4.0 - 2026-09-09
 
