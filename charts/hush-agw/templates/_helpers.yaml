@@ -49,6 +49,18 @@ Image path for the agw-vector container.
 {{- end }}
 
 {{/*
+Image path for the agw-toolbox container.
+*/}}
+{{- define "hush-agw.toolboxImagePath" -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.toolboxRepository
+    "tag" (include "hush-common.imageTagOrAppVersion" .)
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
 Persistent volume claim name for the gateway's data.
 */}}
 {{- define "hush-agw.dataClaimName" -}}
@@ -95,6 +107,10 @@ Shared environment for the agw-controller (init + server).
   value: {{ .Values.agw.dynamicOAuthRegistrationTTL | quote }}
 - name: HUSH_K8S_SA_TOKEN_PATH
   value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
+- name: TOOLBOX_CONFIG_PATH
+  value: /etc/toolbox/tools.yaml
+- name: TOOLBOX_URL
+  value: http://localhost:5000
 {{- end }}
 
 {{/*

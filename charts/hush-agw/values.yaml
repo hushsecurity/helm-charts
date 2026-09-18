@@ -94,6 +94,9 @@ image:
   # Image repository for the agw-vector container.
   vectorRepository: agw-vector
 
+  # Image repository for the agw-toolbox container.
+  toolboxRepository: agw-genai-toolbox
+
   # A list of pre-created image pull secrets of the form:
   #
   # pullSecretList:
@@ -272,4 +275,15 @@ agw:
         ephemeral-storage: 128Mi
       limits:
         memory: 128Mi
+        ephemeral-storage: 1Gi
+
+  # Default resource requests/limits for the agw-toolbox container.
+  toolbox:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+        ephemeral-storage: 128Mi
+      limits:
+        memory: 256Mi
         ephemeral-storage: 1Gi
