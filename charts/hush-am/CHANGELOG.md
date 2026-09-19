@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-am 0.27.0 - 2026-09-19
 
 ### Added
 
@@ -48,6 +48,16 @@ All notable changes to this project will be documented in this file.
   `containerRegistry.aws.irsa` or `secretStore.aws.access_key`.
 
 ### Changed
+
+- bump the app version to `v0.22.0`, which brings security fixes and SPIRE
+  1.15.3.
+
+  With `accessManager.kind` set to `statefulset`, the upgrade migrates the
+  SPIRE datastore and cannot be rolled back without restoring it from a backup
+  taken beforehand.
+
+- bump the default spire-agent image to `v0.22.0`. The first upgrade after this
+  restarts spire-agent pods once to roll out the new image.
 
 - the api controller role now grants `events` in the `events.k8s.io` API group
   beside the core one. From the paired app version on, the controller records
