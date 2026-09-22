@@ -65,10 +65,10 @@ def test_jwt_methods_wire_the_role_and_the_projected_token(method):
     for _, _, env in _silo_containers(docs):
         values = _values(env)
         assert values["SILO_KIND"] == "hc_vault"
-        assert values["SILO_VAULT_AUTH_METHOD"] == method
-        assert values["SILO_VAULT_ROLE"] == "hush-am"
-        assert values["SILO_VAULT_SA_TOKEN_FILE"] == SA_TOKEN_PATH
-        assert "SILO_VAULT_TOKEN" not in env
+        assert values["SILO_HC_VAULT_AUTH_METHOD"] == method
+        assert values["SILO_HC_VAULT_ROLE"] == "hush-am"
+        assert values["SILO_HC_VAULT_SA_TOKEN_FILE"] == SA_TOKEN_PATH
+        assert "SILO_HC_VAULT_TOKEN" not in env
 
 
 # Nothing ties the variable to the volume, so a container with one and not the
@@ -81,7 +81,7 @@ def test_every_container_told_of_the_token_mounts_it(method):
     )
 
     for spec, container, env in _silo_containers(docs):
-        assert _values(env)["SILO_VAULT_SA_TOKEN_FILE"] == SA_TOKEN_PATH
+        assert _values(env)["SILO_HC_VAULT_SA_TOKEN_FILE"] == SA_TOKEN_PATH
         mounts = {m["name"]: m for m in container["volumeMounts"]}
         assert SA_TOKEN_VOLUME in mounts, container["name"]
         assert SA_TOKEN_PATH.startswith(mounts[SA_TOKEN_VOLUME]["mountPath"] + "/")
@@ -115,9 +115,9 @@ def test_the_token_method_needs_no_projected_token():
 
     for spec, container, env in _silo_containers(docs):
         values = _values(env)
-        assert values["SILO_VAULT_AUTH_METHOD"] == "token"
-        assert values["SILO_VAULT_TOKEN"] == "hvs.example"
-        assert "SILO_VAULT_SA_TOKEN_FILE" not in env
+        assert values["SILO_HC_VAULT_AUTH_METHOD"] == "token"
+        assert values["SILO_HC_VAULT_TOKEN"] == "hvs.example"
+        assert "SILO_HC_VAULT_SA_TOKEN_FILE" not in env
         assert SA_TOKEN_VOLUME not in {m["name"] for m in container["volumeMounts"]}
         assert SA_TOKEN_VOLUME not in {v["name"] for v in spec["volumes"]}
 
@@ -130,9 +130,9 @@ def test_a_named_secret_keeps_the_token_out_of_the_manifest():
     )
 
     for _, _, env in _silo_containers(docs):
-        secret_ref = env["SILO_VAULT_TOKEN"]["valueFrom"]["secretKeyRef"]
+        secret_ref = env["SILO_HC_VAULT_TOKEN"]["valueFrom"]["secretKeyRef"]
         assert secret_ref == {"name": "vault-token", "key": "token"}
-        assert "value" not in env["SILO_VAULT_TOKEN"]
+        assert "value" not in env["SILO_HC_VAULT_TOKEN"]
 
 
 def test_the_optional_settings_are_omitted_rather_than_sent_empty():
@@ -140,11 +140,11 @@ def test_the_optional_settings_are_omitted_rather_than_sent_empty():
 
     for _, _, env in _silo_containers(docs):
         for name in (
-            "SILO_VAULT_MOUNT",
-            "SILO_VAULT_ENTERPRISE_NAMESPACE",
-            "SILO_VAULT_CA_CERT",
-            "SILO_VAULT_TIMEOUT",
-            "SILO_VAULT_AUTH_MOUNT",
+            "SILO_HC_VAULT_MOUNT",
+            "SILO_HC_VAULT_ENTERPRISE_NAMESPACE",
+            "SILO_HC_VAULT_CA_CERT",
+            "SILO_HC_VAULT_TIMEOUT",
+            "SILO_HC_VAULT_AUTH_MOUNT",
         ):
             assert name not in env
 
@@ -161,11 +161,11 @@ def test_the_optional_settings_are_passed_when_given():
 
     for _, _, env in _silo_containers(docs):
         values = _values(env)
-        assert values["SILO_VAULT_MOUNT"] == "hush-kv"
-        assert values["SILO_VAULT_ENTERPRISE_NAMESPACE"] == "admin/team-a"
-        assert values["SILO_VAULT_CA_CERT"] == "PEM"
-        assert values["SILO_VAULT_TIMEOUT"] == "10s"
-        assert values["SILO_VAULT_AUTH_MOUNT"] == "kubernetes-hush"
+        assert values["SILO_HC_VAULT_MOUNT"] == "hush-kv"
+        assert values["SILO_HC_VAULT_ENTERPRISE_NAMESPACE"] == "admin/team-a"
+        assert values["SILO_HC_VAULT_CA_CERT"] == "PEM"
+        assert values["SILO_HC_VAULT_TIMEOUT"] == "10s"
+        assert values["SILO_HC_VAULT_AUTH_MOUNT"] == "kubernetes-hush"
 
 
 # A store that renders and then cannot authenticate leaves the access manager

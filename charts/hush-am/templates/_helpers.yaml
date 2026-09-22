@@ -842,46 +842,46 @@ Silo env vars
   value: "hc_vault"
 - name: SILO_NAMESPACE_PREFIX
   value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
-- name: SILO_VAULT_ADDRESS
+- name: SILO_HC_VAULT_ADDRESS
   value: {{ include "hush-am.siloVaultAddress" . | quote }}
     {{- with (dig "vault" "mount" "" .Values.secretStore) }}
-- name: SILO_VAULT_MOUNT
+- name: SILO_HC_VAULT_MOUNT
   value: {{ . | quote }}
     {{- end }}
     {{- with (dig "vault" "namespace" "" .Values.secretStore) }}
-- name: SILO_VAULT_ENTERPRISE_NAMESPACE
+- name: SILO_HC_VAULT_ENTERPRISE_NAMESPACE
   value: {{ . | quote }}
     {{- end }}
     {{- with (dig "vault" "caCert" "" .Values.secretStore) }}
-- name: SILO_VAULT_CA_CERT
+- name: SILO_HC_VAULT_CA_CERT
   value: {{ . | quote }}
     {{- end }}
     {{- with (dig "vault" "timeout" "" .Values.secretStore) }}
-- name: SILO_VAULT_TIMEOUT
+- name: SILO_HC_VAULT_TIMEOUT
   value: {{ . | quote }}
     {{- end }}
     {{- $method := include "hush-am.siloVaultAuthMethod" . }}
-- name: SILO_VAULT_AUTH_METHOD
+- name: SILO_HC_VAULT_AUTH_METHOD
   value: {{ $method | quote }}
     {{- if eq $method "token" }}
         {{- $secretRef := dig "vault" "auth" "tokenSecret" dict .Values.secretStore }}
         {{- if get $secretRef "name" }}
-- name: SILO_VAULT_TOKEN
+- name: SILO_HC_VAULT_TOKEN
   valueFrom:
     secretKeyRef:
       name: {{ get $secretRef "name" | quote }}
       key: {{ get $secretRef "key" | quote }}
         {{- else }}
-- name: SILO_VAULT_TOKEN
+- name: SILO_HC_VAULT_TOKEN
   value: {{ dig "vault" "auth" "token" "" .Values.secretStore | quote }}
         {{- end }}
     {{- else }}
-- name: SILO_VAULT_ROLE
+- name: SILO_HC_VAULT_ROLE
   value: {{ dig "vault" "auth" "role" "" .Values.secretStore | quote }}
-- name: SILO_VAULT_SA_TOKEN_FILE
+- name: SILO_HC_VAULT_SA_TOKEN_FILE
   value: {{ include "hush-am.siloVaultSaTokenPath" . | quote }}
         {{- with (dig "vault" "auth" "mount" "" .Values.secretStore) }}
-- name: SILO_VAULT_AUTH_MOUNT
+- name: SILO_HC_VAULT_AUTH_MOUNT
   value: {{ . | quote }}
         {{- end }}
     {{- end }}
