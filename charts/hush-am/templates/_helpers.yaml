@@ -718,14 +718,10 @@ it.
 */}}
 {{- define "hush-am.siloVaultSaTokenVolume" -}}
 {{- if include "hush-am.siloVaultUsesSaToken" . -}}
-- name: {{ include "hush-am.siloVaultSaTokenVolumeName" . }}
-  projected:
-    sources:
-      - serviceAccountToken:
-          path: {{ include "hush-am.siloVaultSaTokenFileName" . }}
-          {{- with (dig "vault" "auth" "audience" "" .Values.secretStore) }}
-          audience: {{ . | quote }}
-          {{- end }}
+{{- include "hush-common.saTokenProjectedVolume" (dict
+    "name" (include "hush-am.siloVaultSaTokenVolumeName" .)
+    "fileName" (include "hush-am.siloVaultSaTokenFileName" .)
+    "audience" (dig "vault" "auth" "audience" "" .Values.secretStore)) -}}
 {{- end -}}
 {{- end }}
 
@@ -754,9 +750,9 @@ Volume mount for the Vault service account token.
 */}}
 {{- define "hush-am.siloVaultSaTokenVolumeMount" -}}
 {{- if include "hush-am.siloVaultUsesSaToken" . -}}
-- name: {{ include "hush-am.siloVaultSaTokenVolumeName" . }}
-  mountPath: {{ include "hush-am.siloVaultSaTokenVolumePath" . }}
-  readOnly: true
+{{- include "hush-common.saTokenVolumeMount" (dict
+    "name" (include "hush-am.siloVaultSaTokenVolumeName" .)
+    "mountPath" (include "hush-am.siloVaultSaTokenVolumePath" .)) -}}
 {{- end -}}
 {{- end }}
 
