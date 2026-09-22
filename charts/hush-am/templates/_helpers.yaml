@@ -601,10 +601,34 @@ talk to a dev-mode Vault; a chart install is not that, so it is refused here.
 {{- if not $address -}}
     {{- fail "'secretStore.vault.address' must be defined for the hc_vault secret store" -}}
 {{- end -}}
-{{- if not (hasPrefix "https://" $address) -}}
-    {{- fail (printf "'secretStore.vault.address' must be an https URL, got %q" $address) -}}
+{{/* the scheme is matched lowercased and a host is required, so that this
+     answers exactly as the access manager's url.Parse does: it lowercases the
+     scheme itself, and refuses an empty host. */}}
+{{- if not (regexMatch "^https://[^/]+" (lower $address)) -}}
+    {{- fail (printf "'secretStore.vault.address' must be an https URL with a host, got %q" $address) -}}
 {{- end -}}
 {{ $address }}
+{{- end }}
+
+{{/*
+HashiCorp Vault request timeout, validated where the mistake is cheap.
+
+The access manager parses this with time.ParseDuration and refuses a
+non-positive result, so a bare number -- which the values comment's "e.g. 30s"
+invites -- renders cleanly and then fails the silo build in every container
+that carries it. A unit is required here instead.
+*/}}
+{{- define "hush-am.siloVaultTimeout" -}}
+{{- $timeout := toString (dig "vault" "timeout" "" .Values.secretStore) -}}
+{{- if $timeout -}}
+    {{- if not (regexMatch `^([0-9]+(\.[0-9]+)?(ns|us|ms|s|m|h))+$` $timeout) -}}
+        {{- fail (printf "'secretStore.vault.timeout' must be a duration with a unit, e.g. \"30s\", got %q" $timeout) -}}
+    {{- end -}}
+    {{- if regexMatch `^0+(\.0+)?(ns|us|ms|s|m|h)$` $timeout -}}
+        {{- fail (printf "'secretStore.vault.timeout' must be positive, got %q" $timeout) -}}
+    {{- end -}}
+{{- end -}}
+{{ $timeout }}
 {{- end }}
 
 {{/*
@@ -634,6 +658,13 @@ so it is for testing rather than a deployment.
         {{- end -}}
     {{- else if not (get $auth "token") -}}
         {{- fail "'secretStore.vault.auth.token' or 'secretStore.vault.auth.tokenSecret' must be defined for the token auth method" -}}
+    {{- end -}}
+    {{/* a field belonging to another method is refused rather than ignored,
+         because the mistake it usually represents is naming the wrong one */}}
+    {{- range $field := list "role" "mount" "audience" -}}
+        {{- if get $auth $field -}}
+            {{- fail (printf "'secretStore.vault.auth.%s' does not apply to the token auth method" $field) -}}
+        {{- end -}}
     {{- end -}}
 {{- else -}}
     {{- if not (get $auth "role") -}}
@@ -856,7 +887,7 @@ Silo env vars
 - name: SILO_HC_VAULT_CA_CERT
   value: {{ . | quote }}
     {{- end }}
-    {{- with (dig "vault" "timeout" "" .Values.secretStore) }}
+    {{- with (include "hush-am.siloVaultTimeout" .) }}
 - name: SILO_HC_VAULT_TIMEOUT
   value: {{ . | quote }}
     {{- end }}

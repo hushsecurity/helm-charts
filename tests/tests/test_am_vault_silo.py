@@ -1,29 +1,13 @@
-import base64
-import os
 import subprocess
 import pytest
-from yaml import CSafeLoader as Loader
-from yaml import load_all
-from common.process import bash
+from common.chart import template as _template
 
-TOP_DIR = os.environ["TOP_DIR"]
-CHART = os.path.join(TOP_DIR, "charts", "hush-am")
-
-DUMMY_TOKEN = base64.b64encode(b"d1:zone:realm:org-id:deployment-id").decode()
 VAULT_BASE = (
     "--set secretStore.kind=hc_vault "
     "--set secretStore.vault.address=https://vault.example.com:8200"
 )
 SA_TOKEN_PATH = "/var/run/secrets/hush.vault.projection/sa-token"
 SA_TOKEN_VOLUME = "vault-sa-token"
-
-
-def _template(extra_args="", trace_err=True):
-    args = (
-        f"--set hushDeployment.token={DUMMY_TOKEN} --set hushDeployment.password=dummy"
-    )
-    out = bash(f"helm template {args} {extra_args} {CHART}", traceErr=trace_err)
-    return [doc for doc in load_all(out, Loader=Loader) if doc]
 
 
 def _template_error(extra_args):
@@ -38,8 +22,18 @@ def _pod_specs(docs):
             yield doc["spec"]["template"]["spec"]
 
 
-# SILO_KIND reaches four containers across two workloads, so find them by the
-# variable rather than by name.
+# The containers the silo config reaches. Asserted by name rather than by
+# count alone: every test here iterates over what this returns, so a container
+# losing `include "hush-am.siloEnvs"` would otherwise narrow the whole suite
+# silently instead of failing it.
+SILO_CONTAINERS = {
+    "access-manager-init",
+    "spire-server",
+    "access-manager",
+    "diag",
+}
+
+
 def _silo_containers(docs):
     found = []
     for spec in _pod_specs(docs):
@@ -47,7 +41,10 @@ def _silo_containers(docs):
             env = {var["name"]: var for var in container.get("env", [])}
             if "SILO_KIND" in env:
                 found.append((spec, container, env))
-    assert found, "no container carries SILO_KIND"
+    names = {container["name"] for _, container, _ in found}
+    assert names == SILO_CONTAINERS, (
+        f"containers carrying SILO_KIND changed: {sorted(names)}"
+    )
     return found
 
 
@@ -224,6 +221,32 @@ def test_the_optional_settings_are_passed_when_given():
             ),
             "'secretStore.vault.auth.tokenSecret.key' must be defined",
         ),
+        # a field belonging to another method is refused, not ignored: it
+        # usually means the wrong method was named
+        (
+            (
+                f"{VAULT_BASE} --set secretStore.vault.auth.method=token "
+                "--set secretStore.vault.auth.token=hvs.example "
+                "--set secretStore.vault.auth.role=hush-am"
+            ),
+            "'secretStore.vault.auth.role' does not apply to the token auth method",
+        ),
+        (
+            (
+                f"{VAULT_BASE} --set secretStore.vault.auth.method=token "
+                "--set secretStore.vault.auth.token=hvs.example "
+                "--set secretStore.vault.auth.mount=kubernetes"
+            ),
+            "'secretStore.vault.auth.mount' does not apply to the token auth method",
+        ),
+        (
+            (
+                f"{VAULT_BASE} --set secretStore.vault.auth.method=token "
+                "--set secretStore.vault.auth.token=hvs.example "
+                "--set secretStore.vault.auth.audience=vault"
+            ),
+            "'secretStore.vault.auth.audience' does not apply to the token auth method",
+        ),
     ],
 )
 def test_a_misconfigured_vault_store_fails_the_install(extra_args, message):
@@ -239,6 +262,10 @@ def test_a_misconfigured_vault_store_fails_the_install(extra_args, message):
         ("acme/", "must not end with '/'"),
         ("acme//prod", "must not repeat '/'"),
         ("acme+prod", "is invalid for kind hc_vault"),
+        # the "dot" rule mirrors midgard's _validate_segment; without a case
+        # here, dropping `"dot" true` from the kind's rules leaves this suite
+        # green while the chart starts accepting a prefix the API refuses
+        ("acme..prod", "must not repeat '.'"),
         ("a" * 81, "exceeds 80 characters"),
     ],
 )

@@ -338,7 +338,9 @@ secretStore:
 
       # Audience to request in the projected service account token, for the
       # kubernetes and jwt methods. When empty the cluster's default is used;
-      # set it to the role's bound_audiences (commonly "vault") if it names one.
+      # set it to the audience the Vault role binds when it names one. The two
+      # methods spell that field differently: an auth/kubernetes role calls it
+      # "audience", an auth/jwt role calls it "bound_audiences".
       audience: ""
 
       # A Vault token, for the token method; testing only. Mutually exclusive

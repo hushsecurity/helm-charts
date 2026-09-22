@@ -1,25 +1,9 @@
-import base64
-import os
 import subprocess
 import pytest
-from yaml import CSafeLoader as Loader
-from yaml import load_all
-from common.process import bash
+from common.chart import template as _template
 
-TOP_DIR = os.environ["TOP_DIR"]
-CHART = os.path.join(TOP_DIR, "charts", "hush-am")
-
-DUMMY_TOKEN = base64.b64encode(b"d1:zone:realm:org-id:deployment-id").decode()
 NAMES_ENV = "ZAZU_WEBHOOK_NAMES"
 CONFIG_NAME_ENV = "ZAZU_WEBHOOK_CONFIG_NAME"
-
-
-def _template(extra_args="", trace_err=True):
-    args = (
-        f"--set hushDeployment.token={DUMMY_TOKEN} --set hushDeployment.password=dummy"
-    )
-    out = bash(f"helm template {args} {extra_args} {CHART}", traceErr=trace_err)
-    return [doc for doc in load_all(out, Loader=Loader) if doc]
 
 
 def _webhook_config(docs):
