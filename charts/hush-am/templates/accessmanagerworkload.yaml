@@ -70,7 +70,7 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
-            {{- with (include "hush-am.siloVaultSaTokenVolumeMount" .) }}
+            {{- with (include "hush-am.siloVolumeMounts" .) }}
               {{- . | nindent 12 }}
             {{- end }}
             {{- if .Values.accessManager.logConfig }}
@@ -131,7 +131,7 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
-            {{- with (include "hush-am.siloVaultSaTokenVolumeMount" .) }}
+            {{- with (include "hush-am.siloVolumeMounts" .) }}
               {{- . | nindent 12 }}
             {{- end }}
           env:
@@ -189,7 +189,7 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
-            {{- with (include "hush-am.siloVaultSaTokenVolumeMount" .) }}
+            {{- with (include "hush-am.siloVolumeMounts" .) }}
               {{- . | nindent 12 }}
             {{- end }}
             {{- if .Values.accessManager.logConfig }}
@@ -356,7 +356,7 @@ spec:
         {{- with (include "hush-am.awsWebIdentityVolume" .) }}
         {{- . | nindent 8 }}
         {{- end }}
-        {{- with (include "hush-am.siloVaultSaTokenVolume" .) }}
+        {{- with (include "hush-am.siloVolumes" .) }}
           {{- . | nindent 8 }}
         {{- end }}
         {{- if .Values.accessManager.logConfig }}

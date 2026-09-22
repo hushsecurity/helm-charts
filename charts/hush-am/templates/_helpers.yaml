@@ -730,6 +730,26 @@ it.
 {{- end }}
 
 {{/*
+The volumes and volume mounts the configured silo kind needs, dispatched on
+the kind exactly as siloEnvs is. Workload templates include these rather than
+naming a kind, so a kind needing a file on disk is added here alone and the
+mount cannot drift away from the env that points at it.
+*/}}
+{{- define "hush-am.siloVolumes" -}}
+{{- $siloKind := and .Values.secretStore .Values.secretStore.kind -}}
+{{- if eq (toString $siloKind) "hc_vault" -}}
+{{- include "hush-am.siloVaultSaTokenVolume" . -}}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-am.siloVolumeMounts" -}}
+{{- $siloKind := and .Values.secretStore .Values.secretStore.kind -}}
+{{- if eq (toString $siloKind) "hc_vault" -}}
+{{- include "hush-am.siloVaultSaTokenVolumeMount" . -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Volume mount for the Vault service account token.
 */}}
 {{- define "hush-am.siloVaultSaTokenVolumeMount" -}}
