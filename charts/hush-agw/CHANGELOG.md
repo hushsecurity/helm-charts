@@ -4,6 +4,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-agw 0.6.0 - 2026-09-22
+
+### Changed
+
+- bump the app version to v0.7.0. The release asks nothing of the chart.
+
+  `hush_connect` and `hush_disconnect`, each taking the app as an argument,
+  replace the per-application `hush_<app>_connect` and `hush_<app>_disconnect`
+  tools. The rest of the release is internal improvements.
+
 ## hush-agw 0.5.0 - 2026-09-18
 
 ### Changed
