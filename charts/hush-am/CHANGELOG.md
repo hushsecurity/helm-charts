@@ -4,6 +4,110 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- `secretStore.kind` accepts `azure_kv`, storing secrets in an Azure Key Vault.
+  Configure it under `secretStore.azure`:
+
+      secretStore:
+        kind: "azure_kv"
+        prefix: "acme-prod"
+        azure:
+          vaultUrl: "https://acme-prod.vault.azure.net"
+          auth:
+            method: "default"
+            tenantId: "<entra-tenant-id>"
+
+  Two auth methods. `default` uses the pod's own identity, which on AKS means
+  workload identity: set `accessManager.workloadIdentity.azure.clientId` and
+  nothing secret is configured in the chart. `client_secret` uses a service
+  principal, taking the secret inline or from a Secret that already exists.
+
+  The vault must **not** have purge protection enabled. The access manager
+  deletes a secret by purging it so the name can be reused; a vault that
+  forbids purging leaves every deleted name unusable for its retention period
+  and the store never becomes ready. The identity needs four permissions on
+  the vault's secrets -- get, set, delete and purge -- in whichever permission
+  model the vault uses; `Key Vault Secrets Officer` covers all four.
+
+  The prefix cap for this kind is **32 characters**, not the 80 the others
+  carry: a Key Vault secret name is limited to 127, and the namespace and key
+  take the rest. Its alphabet allows no punctuation but `-`.
+
+  Note that `secretStore.azure` configures the access manager's own store. A
+  store created through the Hush API carries its own config, but the access
+  manager still reads a `client_secret` from this deployment's environment,
+  which the chart sets only when `secretStore.kind` is `azure_kv`. Use
+  `default` for API-created stores, or configure a chart-level `azure_kv` silo
+  as well. `hc_vault`'s `token` method has the same shape.
+
+- `secretStore.kind` accepts `hc_vault`, storing secrets in a HashiCorp Vault
+  KV version 2 mount. Configure it under `secretStore.vault`:
+
+      secretStore:
+        kind: "hc_vault"
+        prefix: "acme/prod"
+        vault:
+          address: "https://vault.example.com:8200"
+          mount: "hush-kv"
+          auth:
+            method: "kubernetes"
+            role: "hush-access-manager"
+
+  `address` is required and must be https; a plaintext address is refused at
+  install. `mount` defaults to `secret` and must be KV version 2, which the
+  access manager checks at startup and refuses version 1. `namespace` names
+  a Vault Enterprise namespace and stays empty on Community Edition.
+  `caCert` takes the PEM bundle of a private CA, and is not needed for a
+  certificate that chains to a CA the container already trusts.
+
+  `auth.method` is one of three:
+
+  - `kubernetes` (the default) presents the pod's service account token, which
+    Vault validates by calling the cluster's TokenReview API. Vault must be
+    able to reach the API server.
+  - `jwt` presents the same token, which Vault validates against keys it
+    already holds. For a Vault that cannot reach the API server.
+  - `token` uses a token given in `auth.token`, or taken from a pre-existing
+    Kubernetes Secret named by `auth.tokenSecret`. Nothing renews it, so it
+    stops working when it expires; intended for testing.
+
+  `kubernetes` and `jwt` need `auth.role`, and mount a service account token
+  projected for Vault alone, separate from the one the Hush OIDC assertion
+  uses -- the audience a Vault role accepts is the operator's choice and has no
+  reason to match the one Hush issues against. Set `auth.audience` to the
+  audience the role binds when it names one -- an `auth/kubernetes` role calls
+  that field `audience`, an `auth/jwt` role calls it `bound_audiences` -- and
+  leave it empty for the cluster default, which a role binding none accepts.
+
+  The Vault role must bind the access manager's service account and the
+  namespace the chart is installed in, and grant a policy carrying at least:
+
+      path "<mount>/data/<prefix>/*"     { capabilities = ["create", "update", "read"] }
+      path "<mount>/metadata/<prefix>/*" { capabilities = ["read", "delete"] }
+
+  No `list` is needed. A policy missing the metadata grants yields a store
+  that reads and writes but can never delete.
+
+  Set `max_versions=1` on a mount holding dynamic credentials. A dynamic
+  credential is refreshed in place at the same key, so every refresh leaves the
+  one it replaced as a retained version, readable under the same `read` this
+  policy grants: a policy matches a path, and the version is a query parameter.
+
+  Leave the role's default policy in place too: `renew-self`
+  rides on it, so a role with `token_no_default_policy=true` cannot renew its
+  token and falls back to logging in again whenever a request is denied.
+
+  This needs an access manager that carries the `hc_vault` silo. An older
+  image installs and then fails to start, reporting an unknown secret store
+  kind.
+
+  `secretStore.prefix` takes the same per-kind treatment the other kinds
+  got in 0.27.0. For `hc_vault` the punctuation is `- _ .` with `/`
+  separating segments, since the prefix is a KV v2 path under the mount.
+
 ## hush-am 0.27.0 - 2026-09-20
 
 ### Added

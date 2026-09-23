@@ -184,19 +184,27 @@ secretStore:
   # - awsssm: AWS SSM Parameter Store
   # - gcpsm: GCP Secret Manager
   # - kubesecrets: K8S Secrets
+  # - hc_vault: HashiCorp Vault KV v2
+  # - azure_kv: Azure Key Vault
   kind: "kubesecrets"
 
   # A prefix used to distinguish secrets created by hush-am platform, and to
-  # place them under a path of your choosing. At most 80 characters, lowercase,
-  # starting and ending with a letter or digit, and fixed once secrets exist
-  # under it. An invalid prefix fails the install. '.' may not repeat.
+  # place them under a path of your choosing. Lowercase, starting and ending
+  # with a letter or digit, and fixed once secrets exist under it. An invalid
+  # prefix fails the install. '.' may not repeat.
   #
-  #   kind         punctuation      notes
-  #   awssm        - _ . + = @ /
-  #   awsssm       - _ . /          at most 9 '/'-separated segments in the
-  #                                 prefix; may not start with "aws" or "ssm"
-  #   gcpsm        - _
-  #   kubesecrets  - .              a Kubernetes Secret name
+  #   kind         max  punctuation      notes
+  #   awssm         80  - _ . + = @ /
+  #   awsssm        80  - _ . /          at most 9 '/'-separated segments in
+  #                                      the prefix; may not start with "aws"
+  #                                      or "ssm"
+  #   gcpsm         80  - _
+  #   kubesecrets   80  - .              a Kubernetes Secret name
+  #   hc_vault      80  - _ . /          a KV v2 path under the mount
+  #   azure_kv      32  -                a Key Vault secret name, which allows
+  #                                      no other punctuation and is capped at
+  #                                      127 characters -- the only kind whose
+  #                                      limit binds the prefix
   #
   # Check the access manager's credential before choosing a prefix outside the
   # path it was provisioned with -- for AWS an IRSA policy naming
@@ -287,6 +295,146 @@ secretStore:
     # is granted write access only in these namespaces (a scoped RoleBinding
     # each), never cluster-wide.
     additionalNamespaces: []
+
+  # HashiCorp Vault secret store configuration (used by hc_vault)
+  vault:
+    # Vault address, e.g. "https://vault.example.com:8200". Must be https: a
+    # login and every request afterwards carry a credential.
+    address: ""
+
+    # The KV version 2 mount to store secrets in. When empty, "secret" is used.
+    # It must exist and be version 2; version 1 is refused at startup.
+    mount: ""
+
+    # Vault Enterprise namespace the mount lives in, e.g. "admin/team-a".
+    # Leave empty on Vault Community Edition, which has no namespaces.
+    namespace: ""
+
+    # PEM bundle of the CA that signed the Vault server certificate. Needed
+    # only for a private CA.
+    caCert: ""
+
+    # Per-request timeout, e.g. "30s". When empty, 30s is used.
+    timeout: ""
+
+    # How the access manager authenticates to Vault.
+    auth:
+      # - kubernetes: the pod's service account token, validated by Vault
+      #   calling the cluster's TokenReview API. Needs Vault to reach it.
+      # - jwt: the same token, validated against keys Vault already holds.
+      #   For a Vault that cannot reach the API server.
+      # - token: a token supplied here. Nothing renews it; for testing.
+      method: "kubernetes"
+
+      # The auth mount to log in against. When empty, the method's
+      # conventional path is used: "kubernetes" or "jwt".
+      mount: ""
+
+      # The Vault role to log in as. Required for the kubernetes and jwt
+      # methods. It must bind this chart's service account and namespace, and
+      # grant at least:
+      #
+      #   path "<mount>/data/<prefix>/*"     { capabilities = ["create", "update", "read"] }
+      #   path "<mount>/metadata/<prefix>/*" { capabilities = ["read", "delete"] }
+      #
+      # Without the metadata grants the store reads and writes but can never
+      # delete. Leave the role's default policy in place; 'renew-self' rides
+      # on it.
+      role: ""
+
+      # Audience to request in the projected service account token, for the
+      # kubernetes and jwt methods. When empty the cluster's default is used;
+      # set it to the audience the Vault role binds when it names one. The two
+      # methods spell that field differently: an auth/kubernetes role calls it
+      # "audience", an auth/jwt role calls it "bound_audiences".
+      audience: ""
+
+      # A Vault token, for the token method; testing only. Mutually exclusive
+      # with 'tokenSecret'.
+      token: ""
+
+      # A pre-existing Kubernetes Secret holding the Vault token, for the
+      # token method. Keeps the token out of the release manifest.
+      tokenSecret:
+        # Name of the Secret, in the namespace the chart is installed in.
+        name: ""
+        # Key within the Secret.
+        key: ""
+
+  # Azure Key Vault secret store configuration (used by azure_kv)
+  azure:
+    # The vault URL, e.g. "https://acme.vault.azure.net". Required, and must
+    # be https.
+    vaultUrl: ""
+
+    # The Azure cloud the vault and its authority live in: "public" (the
+    # default), "china" or "usgov". It selects the Entra ID authority as well
+    # as the data plane audience, so it cannot be inferred from the URL.
+    cloud: ""
+
+    # Per-request timeout, e.g. "30s". When empty, 30s is used.
+    timeout: ""
+
+    # The vault must not have purge protection enabled. The access manager
+    # deletes a secret by purging it, so that a name can be reused; a vault
+    # that forbids purging leaves every deleted name unusable for its whole
+    # retention period, and the store never becomes ready.
+    #
+    # The identity below needs four permissions on the vault's secrets, and
+    # the two permission models line up one for one:
+    #
+    #   Azure RBAC data action                                access policy
+    #   Microsoft.KeyVault/vaults/secrets/getSecret/action     get
+    #   Microsoft.KeyVault/vaults/secrets/setSecret/action     set
+    #   Microsoft.KeyVault/vaults/secrets/delete               delete
+    #   Microsoft.KeyVault/vaults/secrets/purge/action         purge
+    #
+    # "Key Vault Secrets Officer" is a superset that works in either model.
+    # Omitting 'purge' is the trap: everything works until a delete, and then
+    # a deleted name can never be reused.
+    auth:
+      # How the access manager authenticates to Key Vault:
+      #   default        the pod's own identity. On AKS that is workload
+      #                  identity, which needs
+      #                  'accessManager.workloadIdentity.azure.clientId' set
+      #                  -- this chart then labels the pod and annotates the
+      #                  service account, and Azure's webhook injects the
+      #                  token and the environment the SDK reads. Nothing
+      #                  secret is configured here.
+      #   client_secret  a service principal, for a cluster without workload
+      #                  identity.
+      #
+      # This block configures the access manager's own store, the one named by
+      # 'secretStore.kind' above. A secret store created through the Hush API
+      # instead carries its own config, and the access manager reads the
+      # client secret for it from this same environment -- which the chart
+      # sets only when 'secretStore.kind' is azure_kv. So an API-created
+      # azure_kv store using client_secret needs a chart-level azure_kv silo
+      # as well, purely to carry the secret; use "default" for those instead.
+      # The same is true of hc_vault's token method.
+      method: "default"
+
+      # The Entra ID tenant. Required by both methods.
+      tenantId: ""
+
+      # The service principal's application id, for the client_secret method.
+      # The default method takes none: a user-assigned managed identity is
+      # pinned through 'accessManager.workloadIdentity.azure.clientId', which
+      # reaches the SDK as AZURE_CLIENT_ID, and a client id here is refused
+      # rather than silently ignored.
+      clientId: ""
+
+      # The client secret, for the client_secret method; testing only.
+      # Mutually exclusive with 'clientSecretSecret'.
+      clientSecret: ""
+
+      # A pre-existing Kubernetes Secret holding the client secret, for the
+      # client_secret method. Keeps it out of the release manifest.
+      clientSecretSecret:
+        # Name of the Secret, in the namespace the chart is installed in.
+        name: ""
+        # Key within the Secret.
+        key: ""
 
 # Container registry configuration.
 # This affects the way Hush Access Management platform accesses workload container images'

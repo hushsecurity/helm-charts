@@ -332,26 +332,55 @@ Empty by default, which keeps the cluster default audience.
 {{- end }}
 
 {{/*
-Projected volume mounting the K8S SA token used as the Hush OIDC assertion.
+A projected service account token volume, and the mount for one.
+
+Takes a dict rather than the root context, so a chart with more than one such
+token -- one for the Hush OIDC assertion, one for a secret store backend --
+describes each by its values instead of copying the shape. expirationSeconds
+is optional and left to the kubelet default when absent.
+
+    include "hush-common.saTokenProjectedVolume"
+        (dict "name" "x" "fileName" "sa-token" "audience" "" "expirationSeconds" "")
+    include "hush-common.saTokenVolumeMount"
+        (dict "name" "x" "mountPath" "/var/run/secrets/...")
 */}}
-{{- define "hush-common.k8sSecretsProjectionVolume" -}}
-- name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+{{- define "hush-common.saTokenProjectedVolume" -}}
+- name: {{ .name }}
   projected:
     sources:
       - serviceAccountToken:
-          path: {{ include "hush-common.k8sSaTokenFileName" . }}
-          {{- with (include "hush-common.k8sSaTokenAudience" .) }}
+          path: {{ .fileName }}
+          {{- with .audience }}
           audience: {{ . | quote }}
           {{- end }}
+          {{- with .expirationSeconds }}
+          expirationSeconds: {{ . }}
+          {{- end }}
+{{- end }}
+
+{{- define "hush-common.saTokenVolumeMount" -}}
+- name: {{ .name }}
+  mountPath: {{ .mountPath }}
+  readOnly: true
+{{- end }}
+
+{{/*
+Projected volume mounting the K8S SA token used as the Hush OIDC assertion.
+*/}}
+{{- define "hush-common.k8sSecretsProjectionVolume" -}}
+{{- include "hush-common.saTokenProjectedVolume" (dict
+    "name" (include "hush-common.k8sSecretsProjectionVolumeName" .)
+    "fileName" (include "hush-common.k8sSaTokenFileName" .)
+    "audience" (include "hush-common.k8sSaTokenAudience" .)) -}}
 {{- end }}
 
 {{/*
 Volume mount for the projected K8S SA token.
 */}}
 {{- define "hush-common.k8sSecretsProjectionVolumeMount" -}}
-- name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-  mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-  readOnly: true
+{{- include "hush-common.saTokenVolumeMount" (dict
+    "name" (include "hush-common.k8sSecretsProjectionVolumeName" .)
+    "mountPath" (include "hush-common.k8sSecretsProjectionVolumePath" .)) -}}
 {{- end }}
 
 {{/*
