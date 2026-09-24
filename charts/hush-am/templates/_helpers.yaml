@@ -524,6 +524,7 @@ charset instead. RE2: no lookaheads.
     "awsssm"      (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "segments" 9 "reserved" (list "aws" "ssm") "dot" true)
     "gcpsm"       (dict "sep" "-" "pattern" "^[a-z0-9]+((_+|-)[a-z0-9]+)*$"         "max" $maxPrefix)
     "kubesecrets" (dict "sep" "-" "pattern" "^[a-z0-9]+([-.][a-z0-9]+)*$"           "max" $maxPrefix "dot" true)
+    "hc_vault"    (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "dot" true)
 -}}
 {{- $rule := get $rules (toString $kind) -}}
 {{/* every caller is already inside a branch that rejects an unknown kind */}}
@@ -586,6 +587,198 @@ GCP Secret Manager project
     {{- fail "'secretStore.gcp.projectId' must be defined for GCP secret store" -}}
 {{- end -}}
 {{ $project }}
+{{- end }}
+
+{{/*
+HashiCorp Vault address. https is required: every request carries the Vault
+token in a header, and a kubernetes or jwt login posts the pod's service
+account token in the body, so plaintext would put a live credential on the
+wire. The access manager allows plaintext on this path, where its own tests
+talk to a dev-mode Vault; a chart install is not that, so it is refused here.
+*/}}
+{{- define "hush-am.hcVaultSiloAddress" -}}
+{{- $address := dig "hcVault" "address" "" .Values.secretStore -}}
+{{- if not $address -}}
+    {{- fail "'secretStore.hcVault.address' must be defined for the hc_vault secret store" -}}
+{{- end -}}
+{{/* the scheme is matched lowercased and a host is required, so that this
+     answers exactly as the access manager's url.Parse does: it lowercases the
+     scheme itself, and refuses an empty host. */}}
+{{- if not (regexMatch "^https://[^/]+" (lower $address)) -}}
+    {{- fail (printf "'secretStore.hcVault.address' must be an https URL with a host, got %q" $address) -}}
+{{- end -}}
+{{ $address }}
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloMountPattern" -}}
+^[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*$
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloMount" -}}
+{{- $mount := toString (dig "hcVault" "mount" "" .Values.secretStore) -}}
+{{- if and $mount (not (regexMatch (include "hush-am.hcVaultSiloMountPattern" .) $mount)) -}}
+    {{- fail (printf "'secretStore.hcVault.mount' must be letters, digits, '-', '_' and '/', got %q" $mount) -}}
+{{- end -}}
+{{ $mount }}
+{{- end }}
+
+{{/*
+HashiCorp Vault request timeout, validated where the mistake is cheap.
+
+The access manager parses this with time.ParseDuration and refuses a
+non-positive result, so a bare number -- which the values comment's "e.g. 30s"
+invites -- renders cleanly and then fails the silo build in every container
+that carries it. A unit is required here instead.
+*/}}
+{{- define "hush-am.hcVaultSiloTimeout" -}}
+{{- $timeout := toString (dig "hcVault" "timeout" "" (.Values.secretStore | default dict)) -}}
+{{- if $timeout -}}
+    {{- if not (regexMatch `^([0-9]+(\.[0-9]+)?(ns|us|ms|s|m|h))+$` $timeout) -}}
+        {{- fail (printf "'secretStore.hcVault.timeout' must be a duration with a unit, e.g. \"30s\", got %q" $timeout) -}}
+    {{- end -}}
+    {{- if regexMatch `^0+(\.0+)?(ns|us|ms|s|m|h)$` $timeout -}}
+        {{- fail (printf "'secretStore.hcVault.timeout' must be positive, got %q" $timeout) -}}
+    {{- end -}}
+{{- end -}}
+{{ $timeout }}
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloToken" -}}
+{{- $auth := dig "hcVault" "auth" dict (.Values.secretStore | default dict) -}}
+{{- $secretRef := get $auth "tokenSecretRef" | default dict -}}
+{{- if and (get $auth "token") (get $secretRef "name") -}}
+    {{- fail "'secretStore.hcVault.auth.token' and 'secretStore.hcVault.auth.tokenSecretRef.name' are mutually exclusive" -}}
+{{- end -}}
+{{- if get $secretRef "name" -}}
+    {{- if not (get $secretRef "key") -}}
+        {{- fail "'secretStore.hcVault.auth.tokenSecretRef.key' must be defined beside 'tokenSecretRef.name'" -}}
+    {{- end -}}
+secretRef
+{{- else if get $auth "token" -}}
+value
+{{- end -}}
+{{- end }}
+
+{{/*
+HashiCorp Vault auth method, validated together with what it requires.
+
+kubernetes and jwt are the same login request and differ only in how Vault
+validates the service account token it is given: kubernetes asks the cluster's
+TokenReview API, jwt checks the signature against keys it already holds. Both
+need a role. token presents a token the environment holds and renews nothing,
+so it is for testing rather than a deployment.
+*/}}
+{{- define "hush-am.hcVaultSiloAuthMethod" -}}
+{{- $auth := dig "hcVault" "auth" dict .Values.secretStore -}}
+{{- $method := get $auth "method" | default "kubernetes" -}}
+{{- $validMethods := list "kubernetes" "jwt" "token" -}}
+{{- if not (has $method $validMethods) -}}
+    {{- fail (printf "'secretStore.hcVault.auth.method' must be one of %v, got %q" $validMethods $method) -}}
+{{- end -}}
+{{- if eq $method "token" -}}
+    {{- if not (include "hush-am.hcVaultSiloToken" .) -}}
+        {{- fail "'secretStore.hcVault.auth.token' or 'secretStore.hcVault.auth.tokenSecretRef' must be defined for the token auth method" -}}
+    {{- end -}}
+    {{/* a field belonging to another method is refused rather than ignored,
+         because the mistake it usually represents is naming the wrong one */}}
+    {{- range $field := list "role" "mount" -}}
+        {{- if get $auth $field -}}
+            {{- fail (printf "'secretStore.hcVault.auth.%s' does not apply to the token auth method" $field) -}}
+        {{- end -}}
+    {{- end -}}
+{{- else -}}
+    {{- if not (get $auth "role") -}}
+        {{- fail (printf "'secretStore.hcVault.auth.role' must be defined for the %s auth method" $method) -}}
+    {{- end -}}
+    {{- $mount := toString (get $auth "mount") -}}
+    {{- if and $mount (not (regexMatch (include "hush-am.hcVaultSiloMountPattern" .) $mount)) -}}
+        {{- fail (printf "'secretStore.hcVault.auth.mount' must be letters, digits, '-', '_' and '/', got %q" $mount) -}}
+    {{- end -}}
+{{- end -}}
+{{ $method }}
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloUsesSaToken" -}}
+{{- $store := .Values.secretStore | default dict -}}
+{{- $uses := dig "hcVault" "auth" "audience" "" $store -}}
+{{- if eq (toString (get $store "kind")) "hc_vault" -}}
+    {{- if ne (include "hush-am.hcVaultSiloAuthMethod" .) "token" -}}
+        {{- $uses = true -}}
+    {{- end -}}
+{{- end -}}
+{{- if $uses -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Volume name, mount path and file name of the service account token projected
+for Vault. It is projected separately from the token the Hush OIDC assertion
+uses: the audience a Vault role accepts is the operator's choice and has no
+reason to match the one Hush issues against.
+*/}}
+{{- define "hush-am.hcVaultSiloSaTokenVolumeName" -}}
+hc-vault-token-projection
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloSaTokenVolumePath" -}}
+/var/run/secrets/hush.k8s.hc_vault.projection
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloSaTokenFileName" -}}
+sa-token
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloSaTokenPath" -}}
+{{ include "hush-am.hcVaultSiloSaTokenVolumePath" . }}/{{ include "hush-am.hcVaultSiloSaTokenFileName" . }}
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloSaTokenVolume" -}}
+{{- if include "hush-am.hcVaultSiloUsesSaToken" . -}}
+{{- include "hush-common.saTokenProjectedVolume" (dict
+    "name" (include "hush-am.hcVaultSiloSaTokenVolumeName" .)
+    "fileName" (include "hush-am.hcVaultSiloSaTokenFileName" .)
+    "audience" (dig "hcVault" "auth" "audience" "" .Values.secretStore)) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Volume mount for the Vault service account token.
+*/}}
+{{- define "hush-am.hcVaultSiloSaTokenVolumeMount" -}}
+{{- if include "hush-am.hcVaultSiloUsesSaToken" . -}}
+{{- include "hush-common.saTokenVolumeMount" (dict
+    "name" (include "hush-am.hcVaultSiloSaTokenVolumeName" .)
+    "mountPath" (include "hush-am.hcVaultSiloSaTokenVolumePath" .)) -}}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-am.hcVaultSiloProcessEnvs" -}}
+{{- $store := .Values.secretStore | default dict -}}
+{{- with (dig "hcVault" "caCert" "" $store) }}
+- name: SILO_HC_VAULT_CA_CERT
+  value: {{ . | quote }}
+{{- end }}
+{{- with (include "hush-am.hcVaultSiloTimeout" .) }}
+- name: SILO_HC_VAULT_TIMEOUT
+  value: {{ . | quote }}
+{{- end }}
+{{- $token := include "hush-am.hcVaultSiloToken" . }}
+{{- if eq $token "secretRef" }}
+    {{- $secretRef := dig "hcVault" "auth" "tokenSecretRef" dict $store }}
+- name: SILO_HC_VAULT_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ get $secretRef "name" | quote }}
+      key: {{ get $secretRef "key" | quote }}
+{{- else if eq $token "value" }}
+- name: SILO_HC_VAULT_TOKEN
+  value: {{ dig "hcVault" "auth" "token" "" $store | quote }}
+{{- end }}
+{{- if include "hush-am.hcVaultSiloUsesSaToken" . }}
+- name: SILO_HC_VAULT_SA_TOKEN_FILE
+  value: {{ include "hush-am.hcVaultSiloSaTokenPath" . | quote }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -716,9 +909,36 @@ Silo env vars
   value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
 - name: SILO_K8S_NAMESPACE
   value: {{ include "hush-am.kubeSiloNamespace" . | quote }}
+{{- else if eq $siloKind "hc_vault" -}}
+- name: SILO_KIND
+  value: "hc_vault"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
+- name: SILO_HC_VAULT_ADDRESS
+  value: {{ include "hush-am.hcVaultSiloAddress" . | quote }}
+    {{- with (include "hush-am.hcVaultSiloMount" .) }}
+- name: SILO_HC_VAULT_MOUNT
+  value: {{ . | quote }}
+    {{- end }}
+    {{- with (dig "hcVault" "namespace" "" .Values.secretStore) }}
+- name: SILO_HC_VAULT_ENTERPRISE_NAMESPACE
+  value: {{ . | quote }}
+    {{- end }}
+    {{- $method := include "hush-am.hcVaultSiloAuthMethod" . }}
+- name: SILO_HC_VAULT_AUTH_METHOD
+  value: {{ $method | quote }}
+    {{- if ne $method "token" }}
+- name: SILO_HC_VAULT_ROLE
+  value: {{ dig "hcVault" "auth" "role" "" .Values.secretStore | quote }}
+        {{- with (dig "hcVault" "auth" "mount" "" .Values.secretStore) }}
+- name: SILO_HC_VAULT_AUTH_MOUNT
+  value: {{ . | quote }}
+        {{- end }}
+    {{- end }}
 {{- else -}}
     {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
 {{- end -}}
+{{- include "hush-am.hcVaultSiloProcessEnvs" . }}
 {{- end }}
 
 {{/*

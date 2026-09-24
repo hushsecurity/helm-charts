@@ -4,6 +4,91 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- `secretStore.kind` accepts `hc_vault`, storing secrets in a HashiCorp Vault
+  KV version 2 mount. Configure it under `secretStore.hcVault`:
+
+      secretStore:
+        kind: "hc_vault"
+        prefix: "hush"
+        hcVault:
+          address: "https://vault.example.com:8200"
+          mount: "hush-kv"
+          auth:
+            method: "kubernetes"
+            role: "hush-access-manager"
+
+  `address` is required and must be https; a plaintext address is refused at
+  install. `mount` defaults to `secret` and must be KV version 2, which the
+  access manager checks at startup and refuses version 1. `namespace` names
+  a Vault Enterprise namespace and stays empty on Community Edition.
+  `caCert` takes the PEM bundle of a private CA, and is not needed for a
+  certificate that chains to a CA the container already trusts.
+
+  `auth.method` is one of three:
+
+  - `kubernetes` (the default) presents the pod's service account token, which
+    Vault validates by calling the cluster's TokenReview API. Vault must be
+    able to reach the API server.
+  - `jwt` presents the same token, whose signature Vault verifies against the
+    cluster's public keys, set on its jwt auth mount either as static keys or
+    as the cluster's OIDC discovery or JWKS URL. With static keys Vault needs
+    no network access to the cluster, but the keys must be updated when the
+    cluster rotates them.
+  - `token` uses a token given in `auth.token`, or taken from a pre-existing
+    Kubernetes Secret named by `auth.tokenSecretRef`. Nothing renews it, so it
+    stops working when it expires; intended for testing.
+
+  `kubernetes` and `jwt` need `auth.role`, and mount a service account token
+  projected for Vault alone, separate from the one the Hush OIDC assertion
+  uses -- the audience a Vault role accepts is the operator's choice and has no
+  reason to match the one Hush issues against. Set `auth.audience` to an
+  audience the role binds: `audience` on an `auth/kubernetes` role,
+  `bound_audiences` on an `auth/jwt` role. Left empty, the token carries the
+  cluster's default audience, and a `jwt` role must bind that default: it
+  refuses every token when it binds none.
+
+  The Vault role must bind the access manager's service account and the
+  namespace the chart is installed in, and grant a policy carrying at least:
+
+      path "<mount>/data/<prefix>/*"     { capabilities = ["create", "update", "read"] }
+      path "<mount>/metadata/<prefix>/*" { capabilities = ["read", "delete"] }
+
+  No `list` is needed. A policy missing the metadata grants yields a store
+  that reads and writes but can never delete.
+
+  Set `max_versions=1` on a mount holding dynamic credentials. A dynamic
+  credential is refreshed in place at the same key, so every refresh leaves the
+  one it replaced as a retained version, readable under the same `read` this
+  policy grants: a policy matches a path, and the version is a query parameter.
+
+  Leave the role's default policy in place too: `renew-self`
+  rides on it, so a role with `token_no_default_policy=true` cannot renew its
+  token and falls back to logging in again whenever a request is denied.
+
+  `caCert`, `timeout`, `auth.audience`, `auth.token` and `auth.tokenSecretRef`
+  also apply to the `hc_vault` secret stores created through the Hush
+  platform, whatever `secretStore.kind` is, and are shared by all of them. A
+  deployment keeping its default store in Kubernetes Secrets can still serve a
+  Vault store whose role binds the `vault` audience:
+
+      secretStore:
+        kind: "kubesecrets"
+        hcVault:
+          auth:
+            audience: "vault"
+
+  This needs an access manager that supports the `hc_vault` secret store. An
+  older image installs and then fails to start, reporting an unknown secret
+  store kind.
+
+  `secretStore.prefix` takes the same per-kind treatment the other kinds
+  got in 0.27.0. For `hc_vault` the punctuation is `- _ .` with `/`
+  separating segments, since the prefix is a KV v2 path under the mount.
+
 ## hush-am 0.27.0 - 2026-09-20
 
 ### Added

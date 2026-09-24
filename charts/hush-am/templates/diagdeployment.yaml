@@ -79,6 +79,9 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
+            {{- with (include "hush-am.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- if .Values.diagnostics.logConfig }}
             - name: diag-log-config
               mountPath: /opt/diag
@@ -100,6 +103,9 @@ spec:
             type: DirectoryOrCreate
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- with (include "hush-am.awsWebIdentityVolume" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}
+        {{- with (include "hush-am.hcVaultSiloSaTokenVolume" .) }}
         {{- . | nindent 8 }}
         {{- end }}
         {{- if .Values.diagnostics.logConfig }}
