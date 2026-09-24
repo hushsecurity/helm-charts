@@ -70,6 +70,9 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
+            {{- with (include "hush-am.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- if .Values.accessManager.logConfig }}
             - name: access-manager-log-config
               mountPath: /opt/mufasa
@@ -128,6 +131,9 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
+            {{- with (include "hush-am.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             {{- include "hush-am.siloEnvs" . | nindent 12 }}
@@ -181,6 +187,9 @@ spec:
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
+            {{- with (include "hush-am.hcVaultSiloSaTokenVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- if .Values.accessManager.logConfig }}
@@ -345,6 +354,9 @@ spec:
           emptyDir: {}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- with (include "hush-am.awsWebIdentityVolume" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}
+        {{- with (include "hush-am.hcVaultSiloSaTokenVolume" .) }}
         {{- . | nindent 8 }}
         {{- end }}
         {{- if .Values.accessManager.logConfig }}
