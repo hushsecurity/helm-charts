@@ -1,29 +1,13 @@
-import base64
-import os
 import subprocess
 import pytest
-from yaml import CSafeLoader as Loader
-from yaml import load_all
-from common.process import bash
+from common.chart import template as _template
 
-TOP_DIR = os.environ["TOP_DIR"]
-CHART = os.path.join(TOP_DIR, "charts", "hush-am")
-
-DUMMY_TOKEN = base64.b64encode(b"d1:zone:realm:org-id:deployment-id").decode()
 ROLE = "arn:aws:iam::000000000000:role/access-manager"
 OIDC_ROLE = f"--set accessManager.workloadIdentity.aws.oidc.role={ROLE}"
 AWS_SILO = "--set secretStore.kind=awssm --set secretStore.aws.region=eu-central-1"
 TOKEN_FILE = "/var/run/secrets/hush.k8s.aws.projection/sa-token"
 TOKEN_VOLUME = "aws-token-projection"
 DEFAULT_AUDIENCE = "sts.amazonaws.com"
-
-
-def _template(extra_args="", trace_err=True):
-    args = (
-        f"--set hushDeployment.token={DUMMY_TOKEN} --set hushDeployment.password=dummy"
-    )
-    out = bash(f"helm template {args} {extra_args} {CHART}", traceErr=trace_err)
-    return [doc for doc in load_all(out, Loader=Loader) if doc]
 
 
 def _pod_specs(docs):
