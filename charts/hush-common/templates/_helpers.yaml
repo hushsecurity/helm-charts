@@ -332,26 +332,45 @@ Empty by default, which keeps the cluster default audience.
 {{- end }}
 
 {{/*
-Projected volume mounting the K8S SA token used as the Hush OIDC assertion.
+Projected SA token volume and its mount, each taking a dict of its values.
 */}}
-{{- define "hush-common.k8sSecretsProjectionVolume" -}}
-- name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
+{{- define "hush-common.saTokenProjectedVolume" -}}
+- name: {{ .name }}
   projected:
     sources:
       - serviceAccountToken:
-          path: {{ include "hush-common.k8sSaTokenFileName" . }}
-          {{- with (include "hush-common.k8sSaTokenAudience" .) }}
+          path: {{ .fileName }}
+          {{- with .audience }}
           audience: {{ . | quote }}
           {{- end }}
+          {{- with .expirationSeconds }}
+          expirationSeconds: {{ . }}
+          {{- end }}
+{{- end }}
+
+{{- define "hush-common.saTokenVolumeMount" -}}
+- name: {{ .name }}
+  mountPath: {{ .mountPath }}
+  readOnly: true
+{{- end }}
+
+{{/*
+Projected volume mounting the K8S SA token used as the Hush OIDC assertion.
+*/}}
+{{- define "hush-common.k8sSecretsProjectionVolume" -}}
+{{- include "hush-common.saTokenProjectedVolume" (dict
+    "name" (include "hush-common.k8sSecretsProjectionVolumeName" .)
+    "fileName" (include "hush-common.k8sSaTokenFileName" .)
+    "audience" (include "hush-common.k8sSaTokenAudience" .)) -}}
 {{- end }}
 
 {{/*
 Volume mount for the projected K8S SA token.
 */}}
 {{- define "hush-common.k8sSecretsProjectionVolumeMount" -}}
-- name: {{ include "hush-common.k8sSecretsProjectionVolumeName" . }}
-  mountPath: {{ include "hush-common.k8sSecretsProjectionVolumePath" . }}
-  readOnly: true
+{{- include "hush-common.saTokenVolumeMount" (dict
+    "name" (include "hush-common.k8sSecretsProjectionVolumeName" .)
+    "mountPath" (include "hush-common.k8sSecretsProjectionVolumePath" .)) -}}
 {{- end }}
 
 {{/*
