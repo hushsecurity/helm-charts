@@ -89,6 +89,16 @@ All notable changes to this project will be documented in this file.
   got in 0.27.0. For `hc_vault` the punctuation is `- _ .` with `/`
   separating segments, since the prefix is a KV v2 path under the mount.
 
+### Changed
+
+- bump the app version to `v0.23.0`, which supports the `hc_vault` secret
+  store and applies access policies granting Snowflake `IMPORTED PRIVILEGES`,
+  which failed before.
+
+- bump the default spire-agent image to `v0.23.0`, which brings security
+  fixes. The first upgrade after this restarts spire-agent pods once to roll
+  out the new image.
+
 ## hush-am 0.27.0 - 2026-09-20
 
 ### Added
