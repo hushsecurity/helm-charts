@@ -1,0 +1,16 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+secretStore:
+  kind: "hc_vault"
+  # a KV v2 path, three '/'-separated segments
+  prefix: "acme/prod/eu"
+  hcVault:
+    address: "https://vault.example.com:8200"
+    mount: "hush-kv"
+    auth:
+      method: "kubernetes"
+      role: "hush-access-manager"
+      audience: "vault"

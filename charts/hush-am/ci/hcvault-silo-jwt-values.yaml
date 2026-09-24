@@ -1,0 +1,21 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+secretStore:
+  kind: "hc_vault"
+  hcVault:
+    address: "https://vault.example.com:8200"
+    namespace: "admin/team-a"
+    caCert: |
+      -----BEGIN CERTIFICATE-----
+      MIIBkTCB+wIJAJ2cfaKJGdPEMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBmNh
+      LXRlc3QwHhcNMjUwMTAxMDAwMDAwWhcNMzUwMTAxMDAwMDAwWjARMQ8wDQYDVQQD
+      DAZjYS10ZXN0
+      -----END CERTIFICATE-----
+    timeout: "10s"
+    auth:
+      method: "jwt"
+      mount: "jwt-hush"
+      role: "hush-access-manager"
