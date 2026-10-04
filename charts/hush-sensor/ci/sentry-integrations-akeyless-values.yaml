@@ -1,0 +1,15 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+sentry:
+  integrations:
+    akeyless:
+      auth:
+        api_key:
+          access_id: "p-abc123"
+          accessKey:
+            secretKeyRef:
+              name: "akeyless-api-key"
+              key: "access-key"

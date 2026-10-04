@@ -35,3 +35,6 @@ data:
     {{- with (include "hush-sensor.sentryAzureKvIntegration" .) }}
     {{- . | nindent 6 -}}
     {{- end }}
+    {{- with (include "hush-sensor.sentryAkeylessIntegration" .) }}
+    {{- . | nindent 6 -}}
+    {{- end }}

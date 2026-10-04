@@ -328,6 +328,117 @@ azure:
 {{- end }}
 
 {{/*
+Akeyless CA cert mount path
+*/}}
+{{- define "hush-sensor.sentryAkeylessCACertMountPath" -}}
+/tmp/akeyless-cacert
+{{- end }}
+
+{{/*
+Check if Sentry Akeyless integration is enabled.
+Enabled when auth.api_key.access_id is set. The rest is validated separately.
+*/}}
+{{- define "hush-sensor.sentryAkeylessEnabled" -}}
+{{- if dig "integrations" "akeyless" "auth" "api_key" "access_id" "" .Values.sentry -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Check if Sentry Akeyless CA cert is configured
+*/}}
+{{- define "hush-sensor.hasSentryAkeylessCACert" -}}
+{{- $akl := .Values.sentry.integrations.akeyless -}}
+{{- if and (include "hush-sensor.sentryAkeylessEnabled" .)
+    (dig "caCert" "secretKeyRef" "name" "" $akl)
+    (dig "caCert" "secretKeyRef" "key" "" $akl) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Validate the Akeyless configuration: api_key auth is required, and a CA cert
+needs both name and key.
+*/}}
+{{- define "hush-sensor.validateAkeyless" -}}
+{{- $akl := .Values.sentry.integrations.akeyless -}}
+{{- if not (and (dig "auth" "api_key" "access_id" "" $akl)
+    (dig "auth" "api_key" "accessKey" "secretKeyRef" "name" "" $akl)
+    (dig "auth" "api_key" "accessKey" "secretKeyRef" "key" "" $akl)) -}}
+    {{- fail "sentry.integrations.akeyless.auth.api_key: access_id and accessKey.secretKeyRef.name and key are required" -}}
+{{- end -}}
+{{- $caName := dig "caCert" "secretKeyRef" "name" "" $akl -}}
+{{- $caKey := dig "caCert" "secretKeyRef" "key" "" $akl -}}
+{{- if or (and $caName (not $caKey)) (and $caKey (not $caName)) -}}
+    {{- fail "sentry.integrations.akeyless.caCert.secretKeyRef: both name and key are required" -}}
+{{- end -}}
+{{- with $akl.base_url -}}
+{{- if not (regexMatch "^(?i)https?://[^/:]" .) -}}
+    {{- fail "sentry.integrations.akeyless.base_url: must be a full URL with http:// or https:// and a host" -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry Akeyless access key secret ref
+*/}}
+{{- define "hush-sensor.sentryAkeylessAccessKeySecretRef" -}}
+{{- if (include "hush-sensor.sentryAkeylessEnabled" .) -}}
+    {{- include "hush-sensor.validateAkeyless" . -}}
+    {{- $ref := dig "auth" "api_key" "accessKey" "secretKeyRef" dict .Values.sentry.integrations.akeyless -}}
+    {{- dict "name" $ref.name "key" $ref.key | toYaml -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry Akeyless integration configuration, matching the Go config struct
+*/}}
+{{- define "hush-sensor.sentryAkeylessIntegration" -}}
+{{- if (include "hush-sensor.sentryAkeylessEnabled" .) -}}
+  {{- include "hush-sensor.validateAkeyless" . -}}
+  {{- $akl := .Values.sentry.integrations.akeyless -}}
+akeyless:
+  enabled: true
+  {{- if $akl.base_url }}
+  base_url: {{ $akl.base_url | quote }}
+  {{- end }}
+  {{- if (include "hush-sensor.hasSentryAkeylessCACert" .) }}
+  ca_cert: "{{ include "hush-sensor.sentryAkeylessCACertMountPath" . }}/{{ dig "caCert" "secretKeyRef" "key" "" $akl }}"
+  {{- end }}
+  auth:
+    api_key:
+      access_id: {{ dig "auth" "api_key" "access_id" "" $akl | quote }}
+      access_key_env: "SENTRY_AKEYLESS_ACCESS_KEY"
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry Akeyless CA cert volume
+*/}}
+{{- define "hush-sensor.sentryAkeylessCACertVolume" -}}
+{{- if (include "hush-sensor.hasSentryAkeylessCACert" .) -}}
+{{- $ca := dig "caCert" "secretKeyRef" dict .Values.sentry.integrations.akeyless -}}
+- name: akeyless-ca
+  secret:
+    secretName: {{ $ca.name }}
+    items:
+      - key: {{ $ca.key }}
+        path: {{ $ca.key }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry Akeyless CA cert volume mount
+*/}}
+{{- define "hush-sensor.sentryAkeylessCACertVolumeMount" -}}
+{{- if (include "hush-sensor.hasSentryAkeylessCACert" .) -}}
+- name: akeyless-ca
+  mountPath: {{ include "hush-sensor.sentryAkeylessCACertMountPath" . }}
+  readOnly: true
+{{- end -}}
+{{- end }}
+
+{{/*
 Kubernetes version, reduced to its numeric part.
 EKS reports 'v1.31.4-eks-2d5f260' and GKE 'v1.31.1-gke.1146000'; both are semver
 pre-releases, which semverCompare excludes from every constraint, so a version
