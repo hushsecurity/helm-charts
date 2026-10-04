@@ -4,6 +4,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- `sentry.integrations.akeyless` to crawl Akeyless static secrets. It is
+  enabled when `auth.api_key.access_id` is set. It authenticates with an API
+  key whose access key is read from a pre-created Secret. `base_url` defaults
+  to the Akeyless SaaS; for a Gateway it is the full URL with scheme, port and
+  API path. `caCert` adds a private Gateway CA to the system roots. Example:
+
+  ```yaml
+  sentry:
+    integrations:
+      akeyless:
+        base_url: https://akeyless-gw.akeyless.svc:8000/api/v2
+        caCert:
+          secretKeyRef:
+            name: akeyless-gw-tls
+            key: ca.crt
+        auth:
+          api_key:
+            access_id: p-abc123
+            accessKey:
+              secretKeyRef:
+                name: akeyless-api-key
+                key: access-key
+  ```
+
 ## hush-sensor 0.31.0 - 2026-08-09
 
 ### Added

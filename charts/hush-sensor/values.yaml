@@ -481,6 +481,38 @@ sentry:
         workload_identity:
           client_id: ""
 
+    akeyless:
+      # Akeyless API URL. Empty means the Akeyless SaaS, https://api.akeyless.io.
+      # For a Gateway, give the full URL with scheme, port and API path, e.g.
+      # https://akeyless-gw.akeyless.svc:8000/api/v2. The scheme cannot be
+      # derived from the port: a Gateway serves the same port as http or https.
+      base_url: ""
+
+      # CA certificate (PEM) of a Gateway with a private CA. It is added to the
+      # system roots, so public certificates still verify.
+      caCert:
+        secretKeyRef:
+          # Secret name
+          name: ""
+          # ca crt key
+          key: ""
+
+      auth:
+        # API key authentication.
+        api_key:
+          # Access ID of the API key auth method
+          access_id: ""
+
+          # Reference to a pre-created K8s Secret containing the access key.
+          # The value is injected as env var SENTRY_AKEYLESS_ACCESS_KEY.
+          accessKey:
+            secretKeyRef:
+              # Secret name
+              name: ""
+
+              # Key within the secret
+              key: ""
+
 vermon:
   # Hush Security Vermon keeps hush sensor channel images up to date.
   # Hush Sensor containers must be deployed with image pull policy "Always"
