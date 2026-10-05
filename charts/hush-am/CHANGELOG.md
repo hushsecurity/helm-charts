@@ -4,6 +4,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- add `spec.priority` to the `AccessPolicy` CRD, to decide which policy wins
+  when several deliver the same environment variable, file or cloud identity
+  to a workload: the higher priority wins. It takes a value from 0 to 1000
+  and defaults to 0, so existing policies behave as before until one is
+  given a priority.
+
+  ```yaml
+  apiVersion: am.hush.security/v1alpha1
+  kind: AccessPolicy
+  spec:
+    priority: 10
+  ```
+
+  As with `enabled`, a manifest that omits `priority` leaves the value set in
+  Hush UAM unchanged, so removing it from a manifest does not reset it to 0.
+
+  **Apply the CRDs before upgrading**, as described under Upgrading in this
+  chart's README -- `helm upgrade` never updates them. Until they are
+  applied, `kubectl apply` refuses a manifest that sets `priority`, and a
+  client that skips field validation stores the manifest without it.
+
+  **Add `priority` to a manifest only after the upgrade has finished.** A
+  priority set earlier can be dropped from the stored policy, or never reach
+  Hush UAM, and nothing reports it. To recover one, re-apply the manifest
+  after the upgrade together with another change to the policy's spec, such
+  as its `description`.
+
 ## hush-am 0.28.0 - 2026-09-25
 
 ### Added
