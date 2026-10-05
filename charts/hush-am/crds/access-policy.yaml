@@ -63,6 +63,17 @@ spec:
                     Whether this policy is active. If omitted, the
                     api-controller leaves the value managed in Hush UAM
                     untouched (defaults to true on initial create).
+                priority:
+                  type: integer
+                  format: int32
+                  minimum: 0
+                  maximum: 1000
+                  description: >
+                    Which policy wins when several deliver the same
+                    environment variable, file or cloud identity to a
+                    workload: the higher priority wins. If omitted, the
+                    api-controller leaves the value managed in Hush UAM
+                    untouched (defaults to 0 on initial create).
                 accessCredentialRef:
                   type: object
                   description: >
