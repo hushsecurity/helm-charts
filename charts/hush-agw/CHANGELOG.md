@@ -4,6 +4,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## hush-agw 0.6.1 - 2026-10-05
+
+### Changed
+
+- bump the app version to v0.8.0. The release asks nothing of the chart.
+
+  The Kiro CLI, the Kiro IDE and Amazon Quick Suite are now recognised as the
+  agent types `kiro` and `amazon-quick` instead of appearing under the raw
+  names they report, so they can be named in an application's allowed agent
+  types and show as themselves in the activity log. Upgrading is required
+  before those agent types can be used.
+
+  Consent status messages no longer name an empty tool. A status poll used to
+  read like a broken request to the agent relaying it to the user.
+
+  `hush_list_apps` reports a `user_required` state, and `hush_connect`, the
+  connect-start endpoint and token exchange refuse with that reason rather
+  than handing a service agent a sign-in link whose tokens would land under
+  the agent. A service agent can still use these apps when acting for a user.
+
+  An upstream that answers with an empty tool list is no longer cached as
+  authoritative. Before, if a user's first listing of an app came back empty
+  because they could not see its tools, that app stayed empty for them until
+  the gateway restarted.
+
+  The rest of the release is internal improvements.
+
 ## hush-agw 0.6.0 - 2026-09-22
 
 ### Changed
