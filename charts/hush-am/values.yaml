@@ -347,11 +347,12 @@ secretStore:
       role: ""
 
       # Audience to request in the projected service account token, for the
-      # kubernetes and jwt methods. It must be an audience the Vault role
-      # binds: "audience" on an auth/kubernetes role, "bound_audiences" on an
-      # auth/jwt role. When empty, the token carries the cluster's default
-      # audience; a jwt role must then bind that default, since it refuses a
-      # token when it binds none.
+      # kubernetes and jwt methods. Set it, and bind the same name on the
+      # Vault role: "audience" on an auth/kubernetes role, "bound_audiences"
+      # on an auth/jwt role. Empty keeps the cluster's default audience, a
+      # token the api server accepts, and the login posts it to whatever
+      # address the store names. Setting it also projects the token on a
+      # deployment whose own store is not hc_vault.
       audience: ""
 
       # A Vault token, for the token method; testing only. Mutually exclusive
