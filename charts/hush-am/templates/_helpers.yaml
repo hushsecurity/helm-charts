@@ -703,24 +703,12 @@ so it is for testing rather than a deployment.
 {{ $method }}
 {{- end }}
 
-{{- define "hush-am.hcVaultSiloUsesSaToken" -}}
-{{- $store := .Values.secretStore | default dict -}}
-{{- $uses := dig "hcVault" "auth" "audience" "" $store -}}
-{{- if eq (toString (get $store "kind")) "hc_vault" -}}
-    {{- if ne (include "hush-am.hcVaultSiloAuthMethod" .) "token" -}}
-        {{- $uses = true -}}
-    {{- end -}}
-{{- end -}}
-{{- if $uses -}}
-true
-{{- end -}}
-{{- end }}
-
 {{/*
 Volume name, mount path and file name of the service account token projected
 for Vault. It is projected separately from the token the Hush OIDC assertion
-uses: the audience a Vault role accepts is the operator's choice and has no
-reason to match the one Hush issues against.
+uses, because the two carry different audiences: this one is scoped to Vault,
+so a login that reaches the wrong address hands over nothing that works
+anywhere else.
 */}}
 {{- define "hush-am.hcVaultSiloSaTokenVolumeName" -}}
 hc-vault-token-projection
@@ -739,23 +727,19 @@ sa-token
 {{- end }}
 
 {{- define "hush-am.hcVaultSiloSaTokenVolume" -}}
-{{- if include "hush-am.hcVaultSiloUsesSaToken" . -}}
 {{- include "hush-common.saTokenProjectedVolume" (dict
     "name" (include "hush-am.hcVaultSiloSaTokenVolumeName" .)
     "fileName" (include "hush-am.hcVaultSiloSaTokenFileName" .)
     "audience" (dig "hcVault" "auth" "audience" "" .Values.secretStore)) -}}
-{{- end -}}
 {{- end }}
 
 {{/*
 Volume mount for the Vault service account token.
 */}}
 {{- define "hush-am.hcVaultSiloSaTokenVolumeMount" -}}
-{{- if include "hush-am.hcVaultSiloUsesSaToken" . -}}
 {{- include "hush-common.saTokenVolumeMount" (dict
     "name" (include "hush-am.hcVaultSiloSaTokenVolumeName" .)
     "mountPath" (include "hush-am.hcVaultSiloSaTokenVolumePath" .)) -}}
-{{- end -}}
 {{- end }}
 
 {{- define "hush-am.hcVaultSiloProcessEnvs" -}}
@@ -780,10 +764,8 @@ Volume mount for the Vault service account token.
 - name: SILO_HC_VAULT_TOKEN
   value: {{ dig "hcVault" "auth" "token" "" $store | quote }}
 {{- end }}
-{{- if include "hush-am.hcVaultSiloUsesSaToken" . }}
 - name: SILO_HC_VAULT_SA_TOKEN_FILE
   value: {{ include "hush-am.hcVaultSiloSaTokenPath" . | quote }}
-{{- end }}
 {{- end }}
 
 {{/*
