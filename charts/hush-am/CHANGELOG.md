@@ -35,6 +35,18 @@ All notable changes to this project will be documented in this file.
   after the upgrade together with another change to the policy's spec, such
   as its `description`.
 
+### Changed
+
+- bump the app version to `v0.24.0`, which applies `spec.priority` and fixes
+  concurrent requests to a Vault secret store failing when its token expires.
+
+  A `kubernetes` or `jwt` login to Vault now needs the token this chart
+  projects for Vault, and no longer falls back to the access manager's own
+  service account token. The chart projects it when `secretStore.kind` is
+  `hc_vault` with one of those methods, or when
+  `secretStore.hcVault.auth.audience` is set to an audience the Vault role
+  binds. Without either, such a store stops working.
+
 ## hush-am 0.28.0 - 2026-09-25
 
 ### Added
