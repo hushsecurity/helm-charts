@@ -782,6 +782,17 @@ Volume mount for the Vault service account token.
 {{- end }}
 
 {{/*
+Read by the access manager for every gcp_sm store it serves, including those
+created through the Hush API, so emitted whatever 'secretStore.kind' is.
+*/}}
+{{- define "hush-am.gcpSmSiloProcessEnvs" -}}
+{{- with (dig "gcp" "credentials_json" "" .Values.secretStore) }}
+- name: SILO_GCP_SM_CREDENTIALS_JSON
+  value: {{ . | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 K8S Secrets Silo namespace to use
 */}}
 {{- define "hush-am.kubeSiloNamespace" -}}
@@ -898,10 +909,6 @@ Silo env vars
   value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
 - name: SILO_GCP_SM_PROJECT
   value: {{ include "hush-am.siloGcpProject" . | quote }}
-    {{- with (dig "gcp" "credentials_json" "" .Values.secretStore) }}
-- name: SILO_GCP_SM_CREDENTIALS_JSON
-  value: {{ . | quote }}
-    {{- end }}
 {{- else if eq $siloKind "kubesecrets" -}}
 - name: SILO_KIND
   value: "kubesecrets"
@@ -939,6 +946,7 @@ Silo env vars
     {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
 {{- end -}}
 {{- include "hush-am.hcVaultSiloProcessEnvs" . }}
+{{- include "hush-am.gcpSmSiloProcessEnvs" . }}
 {{- end }}
 
 {{/*
