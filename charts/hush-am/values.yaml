@@ -266,7 +266,9 @@ secretStore:
     #                               WithDecryption=true
     kmsKeyId: ""
 
-  # GCP secret store configuration
+  # GCP secret store configuration (used by gcpsm). credentials_json also
+  # applies to the gcpsm secret stores created through the Hush platform,
+  # whatever 'kind' is.
   gcp:
     # GCP project ID
     projectId: ""

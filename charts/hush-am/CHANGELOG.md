@@ -4,6 +4,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- `secretStore.gcp.credentials_json` now applies whatever `secretStore.kind`
+  is, so a `gcpsm` store created through the Hush API can use the key from a
+  deployment of any kind. Before, it was used only under `kind: gcpsm`; a
+  deployment that set it under another kind had it ignored, and uses it from
+  this version.
+
 ## hush-am 0.29.0 - 2026-10-08
 
 ### Added
