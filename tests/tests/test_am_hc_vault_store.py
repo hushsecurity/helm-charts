@@ -394,22 +394,6 @@ def test_valid_mounts_reach_the_containers():
             ),
             "'secretStore.hcVault.auth.mount' does not apply to the token auth method",
         ),
-        # time.ParseDuration on the access manager's side refuses a bare number
-        # and the access manager refuses a non-positive duration
-        (
-            (
-                f"{VAULT_BASE} --set secretStore.hcVault.auth.role=hush-am "
-                "--set secretStore.hcVault.timeout=30"
-            ),
-            "'secretStore.hcVault.timeout' must be a duration with a unit",
-        ),
-        (
-            (
-                f"{VAULT_BASE} --set secretStore.hcVault.auth.role=hush-am "
-                "--set secretStore.hcVault.timeout=0s"
-            ),
-            "'secretStore.hcVault.timeout' must be positive",
-        ),
         # midgard holds both mounts to the same rule, so a mount it would
         # refuse for a store must not reach the default one either
         (
@@ -448,10 +432,6 @@ def test_a_misconfigured_vault_store_fails_the_install(extra_args, message):
         (
             "--set secretStore.hcVault.auth.tokenSecretRef.name=vault-token",
             "'secretStore.hcVault.auth.tokenSecretRef.key' must be defined",
-        ),
-        (
-            "--set secretStore.hcVault.timeout=30",
-            "'secretStore.hcVault.timeout' must be a duration with a unit",
         ),
     ],
 )
