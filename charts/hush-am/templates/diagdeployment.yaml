@@ -20,6 +20,7 @@ spec:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: diag
+        {{- with (include "hush-am.azureWorkloadIdentityPodLabel" .) }}{{ . | nindent 8 }}{{- end }}
     spec:
       {{- with (include "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" .) }}
       imagePullSecrets: {{- . | nindent 8 }}

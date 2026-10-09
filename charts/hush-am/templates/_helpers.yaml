@@ -399,9 +399,23 @@ how the failurePolicy guard decides whether a selector would match this Pod.
 {{- define "hush-am.accessManagerPodLabels" -}}
 {{ include "hush-common.labels" . }}
 app.kubernetes.io/component: access-manager
-{{- if or .Values.accessManager.workloadIdentity.azure.clientId .Values.containerRegistry.azure.clientId }}
-azure.workload.identity/use: "true"
+{{- with (include "hush-am.azureWorkloadIdentityPodLabel" .) }}
+{{ . }}
 {{- end }}
+{{- end }}
+
+{{/*
+What makes the Azure workload identity webhook inject a federated token into a
+Pod. It takes the client id from the service account annotation, which is the
+same one for both settings below, but acts only on a Pod carrying this label --
+so every Pod that needs an Azure identity needs it, not just the access
+manager. Without it DefaultAzureCredential falls through to IMDS and the node's
+identity, which is a different principal and usually succeeds quietly.
+*/}}
+{{- define "hush-am.azureWorkloadIdentityPodLabel" -}}
+{{- if or .Values.accessManager.workloadIdentity.azure.clientId .Values.containerRegistry.azure.clientId -}}
+azure.workload.identity/use: "true"
+{{- end -}}
 {{- end }}
 
 {{/*
