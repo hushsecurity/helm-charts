@@ -6,6 +6,45 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `secretStore.kind` accepts `azure_kv`, storing secrets in an Azure Key Vault.
+  Configure it under `secretStore.azureKv`:
+
+      secretStore:
+        kind: "azure_kv"
+        prefix: "acme-prod"
+        azureKv:
+          vaultUrl: "https://acme-prod.vault.azure.net"
+          auth:
+            method: "default"
+            tenantId: "<entra-tenant-id>"
+
+  Two auth methods. `default` uses the pod's own identity, which on AKS means
+  workload identity: set `accessManager.workloadIdentity.azure.clientId` and
+  nothing secret is configured in the chart. `client_secret` uses a service
+  principal, taking the secret inline or from a Secret that already exists.
+
+  The vault must **not** have purge protection enabled. A deleted Key Vault
+  secret keeps its name reserved for the vault's retention period, 7 to 90
+  days, and a write to that name is refused until it is purged, so the access
+  manager purges on delete. This is not housekeeping: relocating a secret
+  deletes a name and creates it again in the same operation, and a reserved
+  name refuses the create. A vault that forbids purging leaves every deleted
+  name unusable for the retention period and the store never becomes ready.
+
+  The identity needs four permissions on the vault's secrets -- get, set,
+  delete and purge -- in whichever permission model the vault uses;
+  `Key Vault Secrets Officer` covers all four.
+
+  The prefix cap for this kind is **32 characters**, not the 80 the others
+  carry: a Key Vault secret name is limited to 127, and the namespace and key
+  take the rest. Its alphabet allows no punctuation but `-`.
+
+  `azureKv.auth.clientSecret` and `azureKv.timeout` are carried whatever
+  `secretStore.kind` is, so a store created through the Hush API takes them
+  from this deployment as well.
+
 ### Changed
 
 - `secretStore.gcp.credentials_json` now applies whatever `secretStore.kind`
@@ -13,6 +52,31 @@ All notable changes to this project will be documented in this file.
   deployment of any kind. Before, it was used only under `kind: gcpsm`; a
   deployment that set it under another kind had it ignored, and uses it from
   this version.
+- `secretStore.hcVault.auth.audience` defaults to `"vault"`, and the service
+  account token it names is now projected on every deployment rather than only
+  on one whose own `secretStore.kind` is `hc_vault`.
+
+  **This breaks an existing `hc_vault` install whose Vault role binds no
+  audience.** Such a role accepts the cluster's default audience today; after
+  this upgrade the access manager presents `aud: vault` and every login fails
+  with `permission denied` on `403 invalid audience (aud) claim`. Bind the
+  audience before upgrading -- `vault write auth/kubernetes/role/<role>
+  audience=vault`, or `bound_audiences` on an `auth/jwt` role -- or set
+  `secretStore.hcVault.auth.audience` to `""` to keep the old behaviour.
+
+  A store created through the Hush API is served by whichever deployment it is
+  attached to. Before, a deployment configured for another kind projected no
+  token, and the access manager fell back to the automounted
+  `/var/run/secrets/kubernetes.io/serviceaccount/token` -- which carries the
+  cluster's default audience, so the login posted a token valid against the
+  api server to whatever `address` the store named. The access manager now
+  refuses such a login instead, and this chart always provides a token scoped
+  to Vault.
+
+  **The Vault role must bind the audience**: `audience` on an `auth/kubernetes`
+  role, `bound_audiences` on an `auth/jwt` role. A role already bound to the
+  cluster's default audience keeps working if you set
+  `secretStore.hcVault.auth.audience` to `""`, but move it off that audience.
 
 ## hush-am 0.29.0 - 2026-10-08
 

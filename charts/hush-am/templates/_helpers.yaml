@@ -399,9 +399,23 @@ how the failurePolicy guard decides whether a selector would match this Pod.
 {{- define "hush-am.accessManagerPodLabels" -}}
 {{ include "hush-common.labels" . }}
 app.kubernetes.io/component: access-manager
-{{- if or .Values.accessManager.workloadIdentity.azure.clientId .Values.containerRegistry.azure.clientId }}
-azure.workload.identity/use: "true"
+{{- with (include "hush-am.azureWorkloadIdentityPodLabel" .) }}
+{{ . }}
 {{- end }}
+{{- end }}
+
+{{/*
+What makes the Azure workload identity webhook inject a federated token into a
+Pod. It takes the client id from the service account annotation, which is the
+same one for both settings below, but acts only on a Pod carrying this label --
+so every Pod that needs an Azure identity needs it, not just the access
+manager. Without it DefaultAzureCredential falls through to IMDS and the node's
+identity, which is a different principal and usually succeeds quietly.
+*/}}
+{{- define "hush-am.azureWorkloadIdentityPodLabel" -}}
+{{- if or .Values.accessManager.workloadIdentity.azure.clientId .Values.containerRegistry.azure.clientId -}}
+azure.workload.identity/use: "true"
+{{- end -}}
 {{- end }}
 
 {{/*
@@ -517,6 +531,11 @@ pattern so each malformation names itself -- "." is checked there too, since
 the patterns let a punctuation run repeat and "." is the one that may not, and
 only for the kinds whose charset carries it, so a kind without "." reports the
 charset instead. RE2: no lookaheads.
+
+azure_kv is the one kind whose backend limit binds the prefix: a Key Vault
+secret name is 127 characters, and a maximum key plus the namespace leaves 32.
+Its alphabet admits no punctuation but the separator, so it carries no "dot".
+Both maxima mirror am's KindLimits.MaxUserPrefix(), which derives them.
 */}}
 {{- $maxPrefix := 80 -}}
 {{- $rules := dict
@@ -525,6 +544,7 @@ charset instead. RE2: no lookaheads.
     "gcpsm"       (dict "sep" "-" "pattern" "^[a-z0-9]+((_+|-)[a-z0-9]+)*$"         "max" $maxPrefix)
     "kubesecrets" (dict "sep" "-" "pattern" "^[a-z0-9]+([-.][a-z0-9]+)*$"           "max" $maxPrefix "dot" true)
     "hc_vault"    (dict "sep" "/" "pattern" "^[a-z0-9]+(([-_.]+|/)[a-z0-9]+)*$"     "max" $maxPrefix "dot" true)
+    "azure_kv"    (dict "sep" "-" "pattern" "^[a-z0-9]+(-[a-z0-9]+)*$"              "max" 32)
 -}}
 {{- $rule := get $rules (toString $kind) -}}
 {{/* every caller is already inside a branch that rejects an unknown kind */}}
@@ -590,6 +610,59 @@ GCP Secret Manager project
 {{- end }}
 
 {{/*
+Azure Key Vault URL
+*/}}
+{{- define "hush-am.azureKvSiloVaultUrl" -}}
+{{- $url := dig "azureKv" "vaultUrl" "" .Values.secretStore -}}
+{{- if not $url -}}
+    {{- fail "'secretStore.azureKv.vaultUrl' must be defined for the azure_kv secret store" -}}
+{{- end -}}
+{{- if not (regexMatch "^https://[^/?#]+/?$" (lower $url)) -}}
+    {{- fail (printf "'secretStore.azureKv.vaultUrl' must be an https URL naming a vault, with no path, query or fragment, got %q" $url) -}}
+{{- end -}}
+{{ $url }}
+{{- end }}
+
+{{/*
+How the access manager authenticates to Key Vault.
+
+"default" needs nothing here: on AKS the identity comes from workload identity,
+which 'accessManager.workloadIdentity.azure.clientId' turns on. "client_secret"
+needs a client id and exactly one of the two secret forms.
+*/}}
+{{- define "hush-am.azureKvSiloAuthMethod" -}}
+{{- $method := dig "azureKv" "auth" "method" "default" .Values.secretStore -}}
+{{- if not (has $method (list "default" "client_secret")) -}}
+    {{- fail (printf "'secretStore.azureKv.auth.method' is invalid: %s" $method) -}}
+{{- end -}}
+{{- if not (dig "azureKv" "auth" "tenantId" "" .Values.secretStore) -}}
+    {{- fail "'secretStore.azureKv.auth.tenantId' must be defined for the azure_kv secret store" -}}
+{{- end -}}
+{{- $clientId := dig "azureKv" "auth" "clientId" "" .Values.secretStore -}}
+{{- $secret := dig "azureKv" "auth" "clientSecret" "" .Values.secretStore -}}
+{{- $secretRef := dig "azureKv" "auth" "clientSecretRef" dict .Values.secretStore -}}
+{{- if eq $method "client_secret" -}}
+    {{- if not $clientId -}}
+        {{- fail "'secretStore.azureKv.auth.clientId' must be defined for the client_secret method" -}}
+    {{- end -}}
+    {{- if and $secret (get $secretRef "name") -}}
+        {{- fail "set only one of 'secretStore.azureKv.auth.clientSecret' and '.clientSecretRef'" -}}
+    {{- end -}}
+    {{- if and (not $secret) (not (get $secretRef "name")) -}}
+        {{- fail "'secretStore.azureKv.auth.clientSecret' or '.clientSecretRef' must be defined for the client_secret method" -}}
+    {{- end -}}
+    {{- if and (get $secretRef "name") (not (get $secretRef "key")) -}}
+        {{- fail "'secretStore.azureKv.auth.clientSecretRef.key' must be defined with '.name'" -}}
+    {{- end -}}
+{{- else -}}
+    {{- if $clientId -}}
+        {{- fail "'secretStore.azureKv.auth.clientId' is not used by the default method; set 'accessManager.workloadIdentity.azure.clientId'" -}}
+    {{- end -}}
+{{- end -}}
+{{ $method }}
+{{- end }}
+
+{{/*
 HashiCorp Vault address. https is required: every request carries the Vault
 token in a header, and a kubernetes or jwt login posts the pod's service
 account token in the body, so plaintext would put a live credential on the
@@ -631,16 +704,7 @@ invites -- renders cleanly and then fails the silo build in every container
 that carries it. A unit is required here instead.
 */}}
 {{- define "hush-am.hcVaultSiloTimeout" -}}
-{{- $timeout := toString (dig "hcVault" "timeout" "" (.Values.secretStore | default dict)) -}}
-{{- if $timeout -}}
-    {{- if not (regexMatch `^([0-9]+(\.[0-9]+)?(ns|us|ms|s|m|h))+$` $timeout) -}}
-        {{- fail (printf "'secretStore.hcVault.timeout' must be a duration with a unit, e.g. \"30s\", got %q" $timeout) -}}
-    {{- end -}}
-    {{- if regexMatch `^0+(\.0+)?(ns|us|ms|s|m|h)$` $timeout -}}
-        {{- fail (printf "'secretStore.hcVault.timeout' must be positive, got %q" $timeout) -}}
-    {{- end -}}
-{{- end -}}
-{{ $timeout }}
+{{ toString (dig "hcVault" "timeout" "" (.Values.secretStore | default dict)) }}
 {{- end }}
 
 {{- define "hush-am.hcVaultSiloToken" -}}
@@ -698,24 +762,12 @@ so it is for testing rather than a deployment.
 {{ $method }}
 {{- end }}
 
-{{- define "hush-am.hcVaultSiloUsesSaToken" -}}
-{{- $store := .Values.secretStore | default dict -}}
-{{- $uses := dig "hcVault" "auth" "audience" "" $store -}}
-{{- if eq (toString (get $store "kind")) "hc_vault" -}}
-    {{- if ne (include "hush-am.hcVaultSiloAuthMethod" .) "token" -}}
-        {{- $uses = true -}}
-    {{- end -}}
-{{- end -}}
-{{- if $uses -}}
-true
-{{- end -}}
-{{- end }}
-
 {{/*
 Volume name, mount path and file name of the service account token projected
 for Vault. It is projected separately from the token the Hush OIDC assertion
-uses: the audience a Vault role accepts is the operator's choice and has no
-reason to match the one Hush issues against.
+uses, because the two carry different audiences: this one is scoped to Vault,
+so a login that reaches the wrong address hands over nothing that works
+anywhere else.
 */}}
 {{- define "hush-am.hcVaultSiloSaTokenVolumeName" -}}
 hc-vault-token-projection
@@ -734,23 +786,19 @@ sa-token
 {{- end }}
 
 {{- define "hush-am.hcVaultSiloSaTokenVolume" -}}
-{{- if include "hush-am.hcVaultSiloUsesSaToken" . -}}
 {{- include "hush-common.saTokenProjectedVolume" (dict
     "name" (include "hush-am.hcVaultSiloSaTokenVolumeName" .)
     "fileName" (include "hush-am.hcVaultSiloSaTokenFileName" .)
     "audience" (dig "hcVault" "auth" "audience" "" .Values.secretStore)) -}}
-{{- end -}}
 {{- end }}
 
 {{/*
 Volume mount for the Vault service account token.
 */}}
 {{- define "hush-am.hcVaultSiloSaTokenVolumeMount" -}}
-{{- if include "hush-am.hcVaultSiloUsesSaToken" . -}}
 {{- include "hush-common.saTokenVolumeMount" (dict
     "name" (include "hush-am.hcVaultSiloSaTokenVolumeName" .)
     "mountPath" (include "hush-am.hcVaultSiloSaTokenVolumePath" .)) -}}
-{{- end -}}
 {{- end }}
 
 {{- define "hush-am.hcVaultSiloProcessEnvs" -}}
@@ -775,10 +823,8 @@ Volume mount for the Vault service account token.
 - name: SILO_HC_VAULT_TOKEN
   value: {{ dig "hcVault" "auth" "token" "" $store | quote }}
 {{- end }}
-{{- if include "hush-am.hcVaultSiloUsesSaToken" . }}
 - name: SILO_HC_VAULT_SA_TOKEN_FILE
   value: {{ include "hush-am.hcVaultSiloSaTokenPath" . | quote }}
-{{- end }}
 {{- end }}
 
 {{/*
@@ -789,6 +835,44 @@ created through the Hush API, so emitted whatever 'secretStore.kind' is.
 {{- with (dig "gcp" "credentials_json" "" .Values.secretStore) }}
 - name: SILO_GCP_SM_CREDENTIALS_JSON
   value: {{ . | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Azure Key Vault settings the access manager reads for every store it serves,
+not only the one this chart configures: a store created through the Hush API
+carries its own addressing but takes the client secret and the timeout from
+the process. Emitted whatever 'secretStore.kind' is, as the vault ones are.
+*/}}
+{{- define "hush-am.azureKvSiloProcessEnvs" -}}
+{{- $store := .Values.secretStore | default dict -}}
+{{- with (dig "azureKv" "timeout" "" $store) }}
+- name: SILO_AZURE_KV_TIMEOUT
+  value: {{ . | quote }}
+{{- end }}
+{{- $secretRef := dig "azureKv" "auth" "clientSecretRef" dict $store }}
+{{- $secret := dig "azureKv" "auth" "clientSecret" "" $store }}
+{{/*
+Checked here rather than in azureKvSiloAuthMethod: this renders for every kind,
+so a client secret given under 'default' or 'kubesecrets' never reaches that
+branch and would emit an empty 'key', which the api server refuses at install.
+*/}}
+{{- if and $secret (get $secretRef "name") -}}
+    {{- fail "set only one of 'secretStore.azureKv.auth.clientSecret' and '.clientSecretRef'" -}}
+{{- end -}}
+{{- if and (get $secretRef "name") (not (get $secretRef "key")) -}}
+    {{- fail "'secretStore.azureKv.auth.clientSecretRef.key' must be defined with '.name'" -}}
+{{- end -}}
+{{- if or (get $secretRef "name") $secret }}
+- name: SILO_AZURE_KV_CLIENT_SECRET
+{{- if get $secretRef "name" }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ get $secretRef "name" | quote }}
+      key: {{ get $secretRef "key" | quote }}
+{{- else }}
+  value: {{ $secret | quote }}
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -942,11 +1026,35 @@ Silo env vars
   value: {{ . | quote }}
         {{- end }}
     {{- end }}
+{{- else if eq $siloKind "azure_kv" -}}
+- name: SILO_KIND
+  value: "azure_kv"
+- name: SILO_NAMESPACE_PREFIX
+  value: {{ include "hush-am.siloNamespacePrefix" . | quote }}
+- name: SILO_AZURE_KV_VAULT_URL
+  value: {{ include "hush-am.azureKvSiloVaultUrl" . | quote }}
+    {{- with (dig "azureKv" "cloud" "" .Values.secretStore) }}
+        {{- if not (has . (list "public" "china" "usgov")) }}
+            {{- fail (printf "'secretStore.azureKv.cloud' must be one of public, china, usgov, got %q" .) }}
+        {{- end }}
+- name: SILO_AZURE_KV_CLOUD
+  value: {{ . | quote }}
+    {{- end }}
+    {{- $method := include "hush-am.azureKvSiloAuthMethod" . }}
+- name: SILO_AZURE_KV_AUTH_METHOD
+  value: {{ $method | quote }}
+- name: SILO_AZURE_KV_TENANT_ID
+  value: {{ dig "azureKv" "auth" "tenantId" "" .Values.secretStore | quote }}
+    {{- if eq $method "client_secret" }}
+- name: SILO_AZURE_KV_CLIENT_ID
+  value: {{ dig "azureKv" "auth" "clientId" "" .Values.secretStore | quote }}
+    {{- end }}
 {{- else -}}
     {{- fail (printf "invalid secret store kind: %q" $siloKind) -}}
 {{- end -}}
 {{- include "hush-am.hcVaultSiloProcessEnvs" . }}
 {{- include "hush-am.gcpSmSiloProcessEnvs" . }}
+{{- include "hush-am.azureKvSiloProcessEnvs" . }}
 {{- end }}
 
 {{/*

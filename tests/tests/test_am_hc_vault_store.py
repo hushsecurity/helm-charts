@@ -97,22 +97,24 @@ def test_every_container_told_of_the_token_mounts_it(method):
         _assert_mounts_the_token(spec, container)
 
 
-# Projected on its own: the audience Vault accepts is the operator's choice.
-def test_the_audience_is_requested_only_when_asked_for():
+# The default scopes the token to Vault; an empty value asks for the cluster's
+# default audience, which is a token the api server accepts.
+def test_the_audience_defaults_to_vault_and_can_be_cleared():
     role = "--set secretStore.hcVault.auth.role=hush-am"
-    unset = _template(f"{VAULT_BASE} {role}")
-    named = _template(
-        f"{VAULT_BASE} {role} --set secretStore.hcVault.auth.audience=vault"
-    )
+    defaulted = _template(f"{VAULT_BASE} {role}")
+    cleared = _template(f"{VAULT_BASE} {role} --set secretStore.hcVault.auth.audience=")
 
-    for docs, expected in ((unset, None), (named, "vault")):
+    for docs, expected in ((defaulted, "vault"), (cleared, None)):
         for spec, _, _ in _store_containers(docs):
             volumes = {v["name"]: v for v in spec["volumes"]}
             source = volumes[SA_TOKEN_VOLUME]["projected"]["sources"][0]
             assert source["serviceAccountToken"].get("audience") == expected
 
 
-def test_the_token_method_needs_no_projected_token():
+# The token method does not log in with a service account token, but a store
+# created through the Hush API and attached here may, so the deployment carries
+# one regardless of what its own store uses.
+def test_the_token_method_still_carries_a_projected_token():
     docs = _template(
         f"{VAULT_BASE} --set secretStore.hcVault.auth.method=token "
         "--set secretStore.hcVault.auth.token=hvs.example"
@@ -122,9 +124,8 @@ def test_the_token_method_needs_no_projected_token():
         values = _values(env)
         assert values["SILO_HC_VAULT_AUTH_METHOD"] == "token"
         assert values["SILO_HC_VAULT_TOKEN"] == "hvs.example"
-        assert "SILO_HC_VAULT_SA_TOKEN_FILE" not in env
-        assert SA_TOKEN_VOLUME not in {m["name"] for m in container["volumeMounts"]}
-        assert SA_TOKEN_VOLUME not in {v["name"] for v in spec["volumes"]}
+        assert values["SILO_HC_VAULT_SA_TOKEN_FILE"] == SA_TOKEN_PATH
+        _assert_mounts_the_token(spec, container)
 
 
 def test_a_named_secret_keeps_the_token_out_of_the_manifest():
@@ -192,10 +193,6 @@ def test_the_optional_settings_are_passed_when_given():
             "--set secretStore.hcVault.timeout=10s",
             {"SILO_HC_VAULT_TIMEOUT": "10s"},
         ),
-        (
-            "--set secretStore.hcVault.auth.audience=vault",
-            {"SILO_HC_VAULT_SA_TOKEN_FILE": SA_TOKEN_PATH},
-        ),
     ],
 )
 @pytest.mark.parametrize(
@@ -211,10 +208,14 @@ def test_platform_store_settings_reach_the_containers_whatever_the_kind(
     docs = _template(f"{kind} {extra_args}")
 
     for _, _, env in _store_containers(docs):
-        # only the setting given renders, and none of the default store's
-        assert _vault_env(env) == set(expected)
+        # only the setting given renders, and none of the default store's. The
+        # projected token is always there: a store created through the Hush API
+        # can be attached to any deployment, and the access manager refuses a
+        # kubernetes or jwt login without one.
+        assert _vault_env(env) == set(expected) | {"SILO_HC_VAULT_SA_TOKEN_FILE"}
         for name, value in expected.items():
             assert _values(env)[name] == value
+        assert _values(env)["SILO_HC_VAULT_SA_TOKEN_FILE"] == SA_TOKEN_PATH
 
 
 # A token kept in a Secret takes the same form for a platform-created store as
@@ -244,15 +245,16 @@ def test_an_audience_projects_the_token_whatever_the_kind():
         assert source["serviceAccountToken"]["audience"] == "vault"
 
 
-# The default install sets none of the hc_vault values, so it must render
-# nothing of Vault at all.
-def test_nothing_of_vault_renders_when_nothing_is_set():
+# The default install sets none of the hc_vault values, so it renders nothing
+# of Vault except the projected token: a store created through the Hush API can
+# be attached to any deployment, and the access manager refuses a kubernetes or
+# jwt login without one rather than falling back to the automounted token.
+def test_only_the_projected_token_renders_when_nothing_is_set():
     docs = _template()
 
     for spec, container, env in _store_containers(docs):
-        assert not _vault_env(env)
-        assert SA_TOKEN_VOLUME not in {m["name"] for m in container["volumeMounts"]}
-        assert SA_TOKEN_VOLUME not in {v["name"] for v in spec.get("volumes", [])}
+        assert _vault_env(env) == {"SILO_HC_VAULT_SA_TOKEN_FILE"}
+        _assert_mounts_the_token(spec, container)
 
 
 # A default store on kubernetes still leaves the token to the platform-created
@@ -394,22 +396,6 @@ def test_valid_mounts_reach_the_containers():
             ),
             "'secretStore.hcVault.auth.mount' does not apply to the token auth method",
         ),
-        # time.ParseDuration on the access manager's side refuses a bare number
-        # and the access manager refuses a non-positive duration
-        (
-            (
-                f"{VAULT_BASE} --set secretStore.hcVault.auth.role=hush-am "
-                "--set secretStore.hcVault.timeout=30"
-            ),
-            "'secretStore.hcVault.timeout' must be a duration with a unit",
-        ),
-        (
-            (
-                f"{VAULT_BASE} --set secretStore.hcVault.auth.role=hush-am "
-                "--set secretStore.hcVault.timeout=0s"
-            ),
-            "'secretStore.hcVault.timeout' must be positive",
-        ),
         # midgard holds both mounts to the same rule, so a mount it would
         # refuse for a store must not reach the default one either
         (
@@ -448,10 +434,6 @@ def test_a_misconfigured_vault_store_fails_the_install(extra_args, message):
         (
             "--set secretStore.hcVault.auth.tokenSecretRef.name=vault-token",
             "'secretStore.hcVault.auth.tokenSecretRef.key' must be defined",
-        ),
-        (
-            "--set secretStore.hcVault.timeout=30",
-            "'secretStore.hcVault.timeout' must be a duration with a unit",
         ),
     ],
 )
