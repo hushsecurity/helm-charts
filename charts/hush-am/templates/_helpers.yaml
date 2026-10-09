@@ -631,16 +631,7 @@ invites -- renders cleanly and then fails the silo build in every container
 that carries it. A unit is required here instead.
 */}}
 {{- define "hush-am.hcVaultSiloTimeout" -}}
-{{- $timeout := toString (dig "hcVault" "timeout" "" (.Values.secretStore | default dict)) -}}
-{{- if $timeout -}}
-    {{- if not (regexMatch `^([0-9]+(\.[0-9]+)?(ns|us|ms|s|m|h))+$` $timeout) -}}
-        {{- fail (printf "'secretStore.hcVault.timeout' must be a duration with a unit, e.g. \"30s\", got %q" $timeout) -}}
-    {{- end -}}
-    {{- if regexMatch `^0+(\.0+)?(ns|us|ms|s|m|h)$` $timeout -}}
-        {{- fail (printf "'secretStore.hcVault.timeout' must be positive, got %q" $timeout) -}}
-    {{- end -}}
-{{- end -}}
-{{ $timeout }}
+{{ toString (dig "hcVault" "timeout" "" (.Values.secretStore | default dict)) }}
 {{- end }}
 
 {{- define "hush-am.hcVaultSiloToken" -}}
