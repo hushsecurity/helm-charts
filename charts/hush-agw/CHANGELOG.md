@@ -4,6 +4,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to v0.9.1. The release asks nothing of the chart.
+
+  - a service agent can call the gateway with its own platform token, such as
+    a Foundry agent's Entra token.
+  - a tool call on an app whose connection has expired or was revoked asks the
+    agent to reconnect instead of asking the user for consent.
+  - an expired or answered consent request is no longer reported as pending.
+  - `hush_search_tools` takes an optional `app` argument.
+
 ## hush-agw 0.7.0 - 2026-10-08
 
 ### Added
