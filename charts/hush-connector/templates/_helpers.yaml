@@ -1,0 +1,50 @@
+{{/*
+Image path for the connector-client container.
+*/}}
+{{- define "hush-connector.clientImagePath" -}}
+{{- include "hush-common.verifyConnectorMinimumSupportedVersion" . -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.connectorClientRepository
+    "tag" .Values.image.connectorTag
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Image path for the connector-forwarder container.
+*/}}
+{{- define "hush-connector.forwarderImagePath" -}}
+{{- include "hush-common.verifyConnectorMinimumSupportedVersion" . -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.connectorForwarderRepository
+    "tag" .Values.image.connectorTag
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Image path for the vector sidecar.
+*/}}
+{{- define "hush-connector.vectorImagePath" -}}
+{{- include "hush-common.verifySensorMinimumSupportedVersion" . -}}
+{{- $ctx := dict
+    "registry" (include "hush-common.imageRegistry" .)
+    "repository" .Values.image.sensorVectorRepository
+    "tag" .Values.image.sensorTag
+-}}
+{{- include "hush-common.buildImagePath" $ctx -}}
+{{- end }}
+
+{{/*
+Deployment identity environment shared by every container in the pod. The
+Secret references resolve as in hush-sensor: a pre-created Secret, else the
+chart's own, which requires the inline token and password.
+*/}}
+{{- define "hush-connector.deploymentEnv" -}}
+{{- include "hush-common.deploymentIdentityEnv" (dict
+    "root" .
+    "tokenRef" (include "hush-common.effectiveDeploymentTokenKubeSecretRef" .)
+    "passwordRef" (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" .)) -}}
+{{- end }}
