@@ -12,6 +12,7 @@ on:
           - hush-sensor
           - hush-am
           - hush-agw
+          - hush-connector
 
 jobs:
   release:
