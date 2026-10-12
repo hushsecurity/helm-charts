@@ -7,12 +7,14 @@ Hush Security Ltd. helm charts.
 - [hush-am](./charts/hush-am/README.md) - Hush Access Manager (includes CRD upgrade notes).
 - hush-sensor - Hush Sensor.
 - [hush-agw](./charts/hush-agw/README.md) - Hush Agent Gateway.
+- [hush-connector](./charts/hush-connector/README.md) - Hush Connector, on its own.
 
 ## Changelog
 
 - [hush-am](./charts/hush-am/CHANGELOG.md)
 - [hush-sensor](./charts/hush-sensor/CHANGELOG.md)
 - [hush-agw](./charts/hush-agw/CHANGELOG.md)
+- [hush-connector](./charts/hush-connector/CHANGELOG.md)
 
 ## Download
 
