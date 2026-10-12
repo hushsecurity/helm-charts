@@ -33,6 +33,9 @@ SENSOR_SUPPORTED_VERSIONS = [
     "v0.25.1",
     "v0.26.0-rc1",
     "v0.26.0",
+    "v1",
+    "v1.0",  # a two-part tag with the major above the minimum's
+    "rc1.0",
     "965353344f",  # such tag should be skipped by the version check
 ]
 CONNECTOR_UNSUPPORTED_VERSIONS = [
@@ -50,6 +53,9 @@ CONNECTOR_SUPPORTED_VERSIONS = [
     CONNECTOR_MSV,
     "v0.6.0-rc1",
     "v0.6.0",
+    "v1",
+    "v1.0",  # a two-part tag with the major above the minimum's
+    "rc1.0",
     "965353344f",  # such tag should be skipped by the version check
 ]
 
