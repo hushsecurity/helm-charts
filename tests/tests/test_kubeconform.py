@@ -33,6 +33,9 @@ SENSOR_SUPPORTED_VERSIONS = [
     "v0.25.1",
     "v0.26.0-rc1",
     "v0.26.0",
+    "v1",
+    "v1.0",  # a two-part tag with the major above the minimum's
+    "rc1.0",
     "965353344f",  # such tag should be skipped by the version check
 ]
 CONNECTOR_UNSUPPORTED_VERSIONS = [
@@ -50,6 +53,9 @@ CONNECTOR_SUPPORTED_VERSIONS = [
     CONNECTOR_MSV,
     "v0.6.0-rc1",
     "v0.6.0",
+    "v1",
+    "v1.0",  # a two-part tag with the major above the minimum's
+    "rc1.0",
     "965353344f",  # such tag should be skipped by the version check
 ]
 
@@ -109,7 +115,28 @@ HUSH_SENSOR_VALUES = [
         }
     },
 ]
-CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
+HUSH_CONNECTOR_VALUES = [
+    {
+        "image": {
+            "pullSecret": {"username": "dummy-username", "password": "dummy-password"}
+        }
+    },
+    {"hushDeployment": {"authMode": "oidc", "oidc": {"audience": "aud"}}},
+    {
+        "hushDeployment": {
+            "secretKeyRef": {
+                "name": "pre-created-deployment-secret-name",
+                "key": "pre-created-deployment-secret-key",
+                "tokenKey": "pre-created-deployment-secret-token-key",
+            }
+        }
+    },
+    {"connector": {"tolerations": [{"operator": "Exists"}], "extraVolumes": []}},
+]
+CHART_VALUES = {
+    "hush-sensor": HUSH_SENSOR_VALUES,
+    "hush-connector": HUSH_CONNECTOR_VALUES,
+}
 
 # ci value files whose scenario needs cluster capabilities that 'helm template'
 # does not advertise by default (e.g. OpenShift-only resources gated on their API

@@ -802,9 +802,9 @@ Input: {
 */}}
 {{- define "hush-sensor.verifyMinimumSupportedVersion" -}}
 {{- $msg := printf "Version %s in %s is below the minimum supported version %s" .version .valueName .minVersion -}}
-{{- $versionParts := splitList "." .version -}}
 {{- $version := trimPrefix "v" .version -}}
 {{- $version = trimPrefix "rc" $version -}}
+{{- $versionParts := splitList "." $version -}}
 {{- $minVersionAtoms := semver .minVersion -}}
 {{- if not (or (hasPrefix "v" .version) (hasPrefix "rc" .version)) -}}
     {{/* looks like unofficial version - skip verification */}}
