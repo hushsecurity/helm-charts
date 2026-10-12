@@ -1,0 +1,30 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+eventReportingConsole: "no"
+
+connector:
+  priorityClassName: "system-cluster-critical"
+  nodeSelector:
+    kubernetes.io/os: linux
+  annotations:
+    example.com/owner: "platform"
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::000000000000:role/connector"
+  forwarderTimeout: "777"
+  connectorClientRetryMaxBackoff: "3m"
+  extraVolumes:
+    - name: ca-bundle
+      configMap:
+        name: private-ca-bundle
+  clientExtraVolumeMounts:
+    - name: ca-bundle
+      mountPath: /etc/ssl/private-ca
+      readOnly: true
+  forwarderExtraVolumeMounts:
+    - name: ca-bundle
+      mountPath: /etc/ssl/private-ca
+      readOnly: true

@@ -14,6 +14,7 @@ TOP_DIR = os.environ["TOP_DIR"]
 AM_CHART = os.path.join(TOP_DIR, "charts", "hush-am")
 AGW_CHART = os.path.join(TOP_DIR, "charts", "hush-agw")
 SENSOR_CHART = os.path.join(TOP_DIR, "charts", "hush-sensor")
+CONNECTOR_CHART = os.path.join(TOP_DIR, "charts", "hush-connector")
 
 DUMMY_TOKEN = base64.b64encode(b"d1:zone:realm:org-id:deployment-id").decode()
 
