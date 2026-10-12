@@ -115,7 +115,28 @@ HUSH_SENSOR_VALUES = [
         }
     },
 ]
-CHART_VALUES = {"hush-sensor": HUSH_SENSOR_VALUES}
+HUSH_CONNECTOR_VALUES = [
+    {
+        "image": {
+            "pullSecret": {"username": "dummy-username", "password": "dummy-password"}
+        }
+    },
+    {"hushDeployment": {"authMode": "oidc", "oidc": {"audience": "aud"}}},
+    {
+        "hushDeployment": {
+            "secretKeyRef": {
+                "name": "pre-created-deployment-secret-name",
+                "key": "pre-created-deployment-secret-key",
+                "tokenKey": "pre-created-deployment-secret-token-key",
+            }
+        }
+    },
+    {"connector": {"tolerations": [{"operator": "Exists"}], "extraVolumes": []}},
+]
+CHART_VALUES = {
+    "hush-sensor": HUSH_SENSOR_VALUES,
+    "hush-connector": HUSH_CONNECTOR_VALUES,
+}
 
 # ci value files whose scenario needs cluster capabilities that 'helm template'
 # does not advertise by default (e.g. OpenShift-only resources gated on their API

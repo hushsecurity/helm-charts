@@ -1,0 +1,17 @@
+{{- /*
+The vector sidecar reads the UID of the 'kube-system' namespace, which the
+platform uses as the cluster identifier.
+*/ -}}
+{{- if .Values.connector.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: connector
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    resourceNames: ["kube-system"]
+    verbs: ["get"]
+{{- end }}

@@ -1,0 +1,15 @@
+{{- /*
+OpenShift: bind the connector service account to the 'anyuid' SCC. The
+connector runs as root with no host access. Rendered only on OpenShift
+('security.openshift.io/v1') when 'openshift.createSCCBindings' is set; a
+no-op on vanilla Kubernetes.
+*/ -}}
+{{- if .Values.connector.enabled -}}
+{{- if and .Values.openshift .Values.openshift.createSCCBindings (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
+{{- include "hush-common.sccRoleBinding" (dict
+    "root" .
+    "name" (include "hush-common.fullName" .)
+    "scc" "anyuid"
+    "serviceAccount" (include "hush-common.fullName" .)) }}
+{{- end }}
+{{- end }}
