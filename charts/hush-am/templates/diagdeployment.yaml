@@ -1,4 +1,5 @@
 {{- if .Values.diagnostics.enabled -}}
+{{- $secretStoreCtx := dict "store" .Values.secretStore "path" "secretStore" "root" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -80,7 +81,7 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
-            {{- with (include "hush-am.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- if .Values.diagnostics.logConfig }}
@@ -106,7 +107,7 @@ spec:
         {{- with (include "hush-am.awsWebIdentityVolume" .) }}
         {{- . | nindent 8 }}
         {{- end }}
-        {{- with (include "hush-am.hcVaultSiloSaTokenVolume" .) }}
+        {{- with (include "hush-common.hcVaultSiloSaTokenVolume" $secretStoreCtx) }}
         {{- . | nindent 8 }}
         {{- end }}
         {{- if .Values.diagnostics.logConfig }}
