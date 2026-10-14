@@ -1,0 +1,22 @@
+---
+# Pod annotations on each workload: maps on three, a block string on the
+# fourth, since that form rendered before the map handling was fixed.
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+daemonSet:
+  annotations:
+    example.com/owner: "platform"
+
+connector:
+  annotations: |
+    example.com/owner: platform
+
+sentry:
+  annotations:
+    example.com/owner: "platform"
+
+vermon:
+  annotations:
+    example.com/owner: "platform"

@@ -17,8 +17,8 @@ spec:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: vermon
-      {{ with .Values.vermon.annotations -}}
-      annotations: {{- . | nindent 8 }}
+      {{- with .Values.vermon.annotations }}
+      annotations: {{- include "hush-common.annotations" . | nindent 8 }}
       {{- end }}
 
     spec:
