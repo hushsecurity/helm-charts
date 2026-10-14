@@ -1,0 +1,8 @@
+agw:
+  hostname: gw.example.com
+  workloadIdentity:
+    azure:
+      clientId: "35e9cbbc-45ee-4ec6-8500-3799c3ffbc8e"
+hushDeployment:
+  token: dummy-token
+  password: dummy-password

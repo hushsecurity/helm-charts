@@ -1,3 +1,4 @@
+{{- $wiCtx := include "hush-agw.workloadIdentityContext" . | fromYaml -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,8 +17,9 @@ spec:
     metadata:
       labels: {{- include "hush-common.podLabels" . | nindent 8 }}
         app.kubernetes.io/component: gateway
-      {{- with .Values.agw.annotations }}
-      annotations: {{- toYaml . | nindent 8 }}
+        {{- with (include "hush-common.azureWorkloadIdentityPodLabel" $wiCtx) }}{{ . | nindent 8 }}{{- end }}
+      {{- with (include "hush-agw.podAnnotations" .) }}
+      annotations: {{- . | nindent 8 }}
       {{- end }}
     spec:
       serviceAccountName: {{ include "hush-common.fullName" . }}
@@ -50,6 +52,9 @@ spec:
             - name: genai-toolbox-config
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
       containers:
         - name: agw-agentgateway
@@ -107,6 +112,9 @@ spec:
             - name: genai-toolbox-config
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -156,3 +164,6 @@ spec:
           {{- end }}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- include "hush-common.saTokenMaskVolume" . | nindent 8 }}
+        {{- with (include "hush-common.awsWebIdentityVolume" $wiCtx) }}
+        {{- . | nindent 8 }}
+        {{- end }}

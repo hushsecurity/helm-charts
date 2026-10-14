@@ -111,6 +111,9 @@ Shared environment for the agw-controller (init + server).
   value: /etc/toolbox/tools.yaml
 - name: TOOLBOX_URL
   value: http://localhost:5000
+{{- with (include "hush-common.awsWebIdentityEnvs" (include "hush-agw.workloadIdentityContext" . | fromYaml)) }}
+{{ . }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -145,4 +148,42 @@ Environment for the agw-vector container.
   value: {{ include "hush-common.namespace" . }}
 - name: HELM_CHART_VERSION
   value: {{ .Chart.Version | quote }}
+{{- end }}
+
+{{/*
+The gateway's workload identity, in the context the hush-common helpers take
+*/}}
+{{- define "hush-agw.workloadIdentityContext" -}}
+{{- include "hush-common.workloadIdentityContext" (dict "identity" .Values.agw.workloadIdentity "path" "agw.workloadIdentity") -}}
+{{- end }}
+
+{{/*
+Annotations of the gateway service account
+*/}}
+{{- define "hush-agw.serviceAccountAnnotations" -}}
+{{- $identity := include "hush-common.workloadIdentityServiceAccountAnnotations" (include "hush-agw.workloadIdentityContext" . | fromYaml) | fromYaml -}}
+{{- $annotations := merge (deepCopy (.Values.agw.serviceAccount.annotations | default dict)) $identity -}}
+{{- with $annotations -}}
+{{ toYaml . }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Annotations of the gateway pod. With irsa or an Azure client id, the EKS or
+the Azure webhook hands the identity to the containers that reach the secret
+store only.
+*/}}
+{{- define "hush-agw.podAnnotations" -}}
+{{- $identity := dict -}}
+{{- $skipped := list "agw-agentgateway" "agw-vector" "agw-genai-toolbox" -}}
+{{- if .Values.agw.workloadIdentity.aws.irsa -}}
+  {{- $_ := set $identity "eks.amazonaws.com/skip-containers" (join "," $skipped) -}}
+{{- end -}}
+{{- if .Values.agw.workloadIdentity.azure.clientId -}}
+  {{- $_ := set $identity "azure.workload.identity/skip-containers" (join ";" $skipped) -}}
+{{- end -}}
+{{- $annotations := merge (deepCopy (.Values.agw.annotations | default dict)) $identity -}}
+{{- with $annotations -}}
+{{ toYaml . }}
+{{- end -}}
 {{- end }}

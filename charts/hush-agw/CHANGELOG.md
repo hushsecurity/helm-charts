@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- the new `agw.workloadIdentity` values give the gateway the cloud identity an
+  `awssm`, `awsssm`, `gcpsm` or `az_key_vault` secret store is reached with,
+  as hush-am's `accessManager.workloadIdentity` does: `aws.irsa` on EKS,
+  `aws.oidc.role` to assume an AWS role with the gateway's service account
+  token outside EKS, `gcp.sa` on GKE, or `azure.clientId` on AKS. Only the
+  gateway's controller containers get the AWS role or the Azure identity.
+  Annotations set by hand in `agw.serviceAccount.annotations` and
+  `agw.annotations` win over the ones these set. For example:
+
+  ```yaml
+  agw:
+    workloadIdentity:
+      aws:
+        irsa: arn:aws:iam::123456789012:role/hush-agw
+  ```
+
 ### Changed
 
 - the Kubernetes API token is mounted only into the gateway containers that
