@@ -533,28 +533,6 @@ emptiness check.
 {{- end }}
 
 {{/*
-Verify hushDeployment.token was defined
-*/}}
-{{- define "hush-sensor.getDeploymentTokenValue" -}}
-{{- $token := and .Values.hushDeployment .Values.hushDeployment.token -}}
-{{- if not $token -}}
-    {{- fail "'hushDeployment.token' is undefined" -}}
-{{- end -}}
-{{- printf "%s" $token -}}
-{{- end }}
-
-{{/*
-Verify hushDeployment.password was defined
-*/}}
-{{- define "hush-sensor.getDeploymentPasswordValue" -}}
-{{- $password := and .Values.hushDeployment .Values.hushDeployment.password -}}
-{{- if not $password -}}
-    {{- fail "'hushDeployment.password' is undefined" -}}
-{{- end -}}
-{{- printf "%s" $password -}}
-{{- end }}
-
-{{/*
 Should we create the daemon set?
 */}}
 {{- define "hush-sensor.shouldCreateDaemonSet" -}}
@@ -565,87 +543,10 @@ true
 {{- end }}
 
 {{/*
-Should we create the deployment token K8S Secret?
-*/}}
-{{- define "hush-sensor.shouldCreateDeploymentTokenKubeSecret" -}}
-{{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
-{{- $name := and $keyRef $keyRef.name -}}
-{{- $tokenKey := and $keyRef $keyRef.tokenKey -}}
-{{- if not (and $name $tokenKey) -}}
-true
-{{- end }}
-{{- end }}
-
-{{/*
-Should we create the deployment password K8S Secret?
-*/}}
-{{- define "hush-sensor.shouldCreateDeploymentPasswordKubeSecret" -}}
-{{- if include "hush-common.isPasswordAuthMode" . -}}
-{{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
-{{- $name := and $keyRef $keyRef.name -}}
-{{- $key := and $keyRef $keyRef.key -}}
-{{- if not (and $name $key) -}}
-true
-{{- end }}
-{{- end }}
-{{- end }}
-
-{{/*
-Should we create deployment K8S Secret?
-*/}}
-{{- define "hush-sensor.shouldCreateDeploymentKubeSecret" -}}
-{{- if or
-    (include "hush-sensor.shouldCreateDeploymentTokenKubeSecret" .)
-    (include "hush-sensor.shouldCreateDeploymentPasswordKubeSecret" .) -}}
-true
-{{- end -}}
-{{- end }}
-
-{{/*
-Effective deployment token secret ref
-*/}}
-{{- define "hush-sensor.effectiveDeploymentTokenKubeSecretRef" -}}
-{{- if (include "hush-sensor.shouldCreateDeploymentTokenKubeSecret" .) -}}
-    {{- dict
-        "name" (include "hush-common.deploymentKubeSecretName" .)
-        "key" "deployment-token"
-        | toYaml
-    -}}
-{{- else -}}
-    {{- dict
-        "name" .Values.hushDeployment.secretKeyRef.name
-        "key" .Values.hushDeployment.secretKeyRef.tokenKey
-        | toYaml
-    -}}
-{{- end }}
-{{- end }}
-
-{{/*
-Effective deployment password secret ref
-*/}}
-{{- define "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" -}}
-{{- if include "hush-common.isPasswordAuthMode" . -}}
-  {{- if (include "hush-sensor.shouldCreateDeploymentPasswordKubeSecret" .) -}}
-      {{- dict
-          "name" (include "hush-common.deploymentKubeSecretName" .)
-          "key" "deployment-password"
-          | toYaml
-      -}}
-  {{- else -}}
-      {{- dict
-          "name" .Values.hushDeployment.secretKeyRef.name
-          "key" .Values.hushDeployment.secretKeyRef.key
-          | toYaml
-      -}}
-  {{- end }}
-{{- end }}
-{{- end }}
-
-{{/*
 Sensor image path
 */}}
 {{- define "hush-sensor.sensorImagePath" -}}
-{{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
+{{- include "hush-common.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.sensorRepository
@@ -658,7 +559,7 @@ Sensor image path
 Vector image path
 */}}
 {{- define "hush-sensor.sensorVectorImagePath" -}}
-{{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
+{{- include "hush-common.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.sensorVectorRepository
@@ -671,7 +572,7 @@ Vector image path
 Sentry image path
 */}}
 {{- define "hush-sensor.sentryImagePath" -}}
-{{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
+{{- include "hush-common.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.sentryRepository
@@ -684,7 +585,7 @@ Sentry image path
 Connector Client image path
 */}}
 {{- define "hush-sensor.connectorClientImagePath" -}}
-{{- include "hush-sensor.verifyConnectorMinimumSupportedVersion" . -}}
+{{- include "hush-common.verifyConnectorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.connectorClientRepository
@@ -697,7 +598,7 @@ Connector Client image path
 Connector Forwarder image path
 */}}
 {{- define "hush-sensor.connectorForwarderImagePath" -}}
-{{- include "hush-sensor.verifyConnectorMinimumSupportedVersion" . -}}
+{{- include "hush-common.verifyConnectorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.connectorForwarderRepository
@@ -710,7 +611,7 @@ Connector Forwarder image path
 Vermon image path
 */}}
 {{- define "hush-sensor.vermonImagePath" -}}
-{{- include "hush-sensor.verifySensorMinimumSupportedVersion" . -}}
+{{- include "hush-common.verifySensorMinimumSupportedVersion" . -}}
 {{- $ctx := dict
     "registry" (include "hush-common.imageRegistry" .)
     "repository" .Values.image.vermonRepository
@@ -791,65 +692,11 @@ Sentry service account annotations with AWS IAM role handling
 {{- end -}}
 
 {{/*
-Verify that minimum supported version holds for a Hush version tag.
-Exit with an error message if version constraint doesn't hold.
-Don't verify versions that look unofficial (do not start with "v" or "rc").
-Input: {
-  .version = <the version to check>,
-  .valueName = <the name of the checked value>,
-  .minVersion = <the minimum allowed version>,
-}
+Deployment identity environment shared by every container the chart runs.
 */}}
-{{- define "hush-sensor.verifyMinimumSupportedVersion" -}}
-{{- $msg := printf "Version %s in %s is below the minimum supported version %s" .version .valueName .minVersion -}}
-{{- $versionParts := splitList "." .version -}}
-{{- $version := trimPrefix "v" .version -}}
-{{- $version = trimPrefix "rc" $version -}}
-{{- $minVersionAtoms := semver .minVersion -}}
-{{- if not (or (hasPrefix "v" .version) (hasPrefix "rc" .version)) -}}
-    {{/* looks like unofficial version - skip verification */}}
-{{- else if eq (len $versionParts) 1 -}}
-    {{- $major := atoi (index $versionParts 0) -}}
-    {{- if lt $major $minVersionAtoms.Major -}}
-        {{- fail $msg -}}
-    {{- end -}}
-{{- else if eq (len $versionParts) 2 -}}
-    {{- $major := atoi (index $versionParts 0) -}}
-    {{- $minor := atoi (index $versionParts 1) -}}
-    {{- if lt $major $minVersionAtoms.Major -}}
-        {{- fail $msg -}}
-    {{- else if and (eq $major $minVersionAtoms.Major) (lt $minor $minVersionAtoms.Minor) -}}
-        {{- fail $msg -}}
-    {{- end -}}
-{{- else -}}
-    {{- $minVer := semver .minVersion -}}
-    {{- $ver := semver $version -}}
-    {{- if eq ($ver | $minVer.Compare) 1 -}}
-        {{- fail $msg -}}
-    {{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Verify sensor minimum supported version.
-*/}}
-{{- define "hush-sensor.verifySensorMinimumSupportedVersion" -}}
-{{- $ctx := dict
-    "valueName" "'image.sensorTag'"
-    "version" .Values.image.sensorTag
-    "minVersion" "v0.25.0"
--}}
-{{- include "hush-sensor.verifyMinimumSupportedVersion" $ctx -}}
-{{- end -}}
-
-{{/*
-Verify connector minimum supported version.
-*/}}
-{{- define "hush-sensor.verifyConnectorMinimumSupportedVersion" -}}
-{{- $ctx := dict
-    "valueName" "'image.connectorTag'"
-    "version" .Values.image.connectorTag
-    "minVersion" "v0.5.0"
--}}
-{{- include "hush-sensor.verifyMinimumSupportedVersion" $ctx -}}
-{{- end -}}
+{{- define "hush-sensor.deploymentIdentityEnv" -}}
+{{- include "hush-common.deploymentIdentityEnv" (dict
+    "root" .
+    "tokenRef" (include "hush-common.effectiveDeploymentTokenKubeSecretRef" .)
+    "passwordRef" (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" .)) -}}
+{{- end }}

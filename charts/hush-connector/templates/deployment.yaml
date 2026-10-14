@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: connector
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  selector:
+    matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: connector
+  {{- with .Values.connector.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels: {{- include "hush-common.podLabels" . | nindent 8 }}
+        app.kubernetes.io/component: connector
+      {{- with .Values.connector.annotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.connector.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.connector.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.connector.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.connector.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      {{- with (include "hush-common.kubeImagePullSecretEffectiveList" .) }}
+      imagePullSecrets: {{- . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.connector.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "hush-common.fullName" . }}
+      volumes:
+        - name: vector-socket
+          emptyDir:
+            sizeLimit: 1Mi
+        - name: tokengen-state
+          emptyDir:
+            sizeLimit: 1Mi
+        {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
+        {{- with .Values.connector.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      containers:
+        - name: hush-connector-client
+          image: {{ include "hush-connector.clientImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.connector.clientResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+            - name: tokengen-state
+              mountPath: /var/run/tokengen
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with .Values.connector.clientExtraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env: {{- include "hush-connector.deploymentEnv" . | nindent 12 }}
+            {{- with .Values.connector.connectorClientRetryMaxBackoff }}
+            - name: RETRY_MAX_BACKOFF
+              value: {{ . | quote }}
+            {{- end }}
+        - name: hush-connector-forwarder
+          image: {{ include "hush-connector.forwarderImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.connector.forwarderResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- with .Values.connector.forwarderExtraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env: {{- include "hush-connector.deploymentEnv" . | nindent 12 }}
+            {{- with .Values.connector.forwarderTimeout }}
+            - name: FORWARDER_TIMEOUT
+              value: {{ . | quote }}
+            {{- end }}
+        - name: hush-connector-vector
+          image: {{ include "hush-connector.vectorImagePath" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.connector.vectorResources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: vector-socket
+              mountPath: /tmp/vector
+            {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+          env: {{- include "hush-connector.deploymentEnv" . | nindent 12 }}
+            {{- with .Values.eventReportingConsole }}
+            - name: EVENT_REPORTING_CONSOLE
+              value: {{ . | quote }}
+            {{- end }}
+            - name: HELM_RELEASE
+              value: {{ .Release.Name }}
+            - name: HELM_NAMESPACE
+              value: {{ include "hush-common.namespace" . }}
+            - name: HELM_CHART_VERSION
+              value: {{ .Chart.Version | quote }}

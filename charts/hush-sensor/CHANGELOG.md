@@ -4,6 +4,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- `connector.annotations`, `sentry.annotations` and `vermon.annotations`
+  failed to render when set ("wrong type for value; expected string").
+
 ## hush-sensor 0.32.0 - 2026-10-10
 
 ### Added

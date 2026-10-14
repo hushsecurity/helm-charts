@@ -1,0 +1,239 @@
+# Default values for hush-connector.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This is to override the chart name.
+nameOverride: ""
+
+# This is to override the chart fullname.
+fullnameOverride: ""
+
+# Labels applied to all resources.
+# For more information see
+# https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+commonLabels: {}
+
+# Override the namespace used for all objects.
+# If not specified '.Release.Namespace' is used.
+namespaceOverride: ""
+
+# Mode of event logging:
+# - "yes"       - log everything (may be high volume)
+# - "no"        - log nothing
+# - "heartbeat" - log heartbeat events only (low volume)
+eventReportingConsole: "heartbeat"
+
+# OpenShift-specific settings. Detected via the 'security.openshift.io/v1' API
+# group; a no-op on vanilla Kubernetes.
+openshift:
+  # Grant the connector service account the 'anyuid' SCC by creating an RBAC
+  # RoleBinding to the built-in 'system:openshift:scc:anyuid' ClusterRole (the
+  # declarative equivalent of 'oc adm policy add-scc-to-user').
+  # Change the default (set to false) to assign the SCC yourself, e.g. via a
+  # separately-reviewed cluster policy, or when the installer is not permitted to
+  # grant the referenced SCC (creating the binding requires that permission,
+  # e.g. cluster-admin/kubeadmin).
+  createSCCBindings: true
+
+# Hush deployment configuration
+hushDeployment:
+  # Authentication mode for Hush API token exchange.
+  # Allowed values:
+  # - password - use deployment password (default)
+  # - oidc - use K8S SA token (oidc_provider must be configured in deployment)
+  authMode: "password"
+
+  # OIDC authentication settings. Used only when 'hushDeployment.authMode' is "oidc".
+  oidc:
+    # Audience ('aud' claim) requested for the projected K8S service account
+    # token sent as the OIDC assertion. It must match the audience configured in
+    # the deployment's oidc_provider.
+    #
+    # Empty (the default) requests no explicit audience, keeping the cluster
+    # default for backward compatibility. On EKS the platform default is
+    # "https://kubernetes.default.svc".
+    audience: ""
+
+  # The deployment token as received from API/UI.
+  # When 'hushDeployment.secretKeyRef.{name,tokenKey}' are defined this value is ignored.
+  # Otherwise this value is required.
+  token: ""
+
+  # The deployment password as received from API/UI.
+  # Only used when 'hushDeployment.authMode' is "password"; ignored when
+  # 'hushDeployment.secretKeyRef.{name,key}' are defined.
+  # Otherwise this value is required.
+  password: ""
+
+  # A reference to an existing Secret with deployment password and token.
+  #
+  # The secret must be defined in the same namespace where the chart is installed.
+  #
+  # If deployment token is stored this way updating its value in the Secret
+  # must be followed by chart recompilation (helm upgrade/template) or
+  # fresh installation (helm install).
+  secretKeyRef:
+    # Secret name
+    name: ""
+
+    # Password secret key
+    # Only used when 'hushDeployment.authMode' is "password".
+    # Takes precedence over 'hushDeployment.password'.
+    key: ""
+
+    # Token secret key
+    # Takes precedence over 'hushDeployment.token'.
+    tokenKey: ""
+
+# Values related to Hush Security container images
+image:
+  # Image pull token contains registry information and credentials
+  pullToken: ""
+
+  # Container registry to pull images from
+  #
+  # This value is ignored when 'image.pullToken' is defined.
+  registry: hushsecurity.azurecr.io
+
+  # Overrides the image tag for the sensor-vector image, which the connector
+  # pod runs as its event-reporting sidecar.
+  sensorTag: "v0"
+
+  # Overrides the image tag for connector* images.
+  connectorTag: "v0"
+
+  # A list of pre-created image pull secrets of the form:
+  #
+  # pullSecretList:
+  #   - name: "<secret-name-here>"
+  #
+  # Secrets must be pre-created in the same namespace where the chart is installed.
+  #
+  # When this list is empty 'image.pullSecret' can be used to create a secret
+  # automatically.
+  #
+  # More information can be found here:
+  # https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  pullSecretList: []
+
+  # Creates a Secret for pulling images
+  #
+  # When 'image.pullToken' is defined the credentials for the Secret are taken
+  # from there. Otherwise both 'username' and 'password' must be defined.
+  #
+  # When 'image.pullSecretList' is non-empty the created secret is not used.
+  pullSecret:
+    # Custom pull secret name.
+    # When not defined chart's full name is used with '-imagepullsecret' suffix.
+    name: ""
+
+    # Pull secret username
+    #
+    # This value is ignored when 'image.pullToken' is defined.
+    username: ""
+
+    # Pull secret password
+    #
+    # This value is ignored when 'image.pullToken' is defined.
+    password: ""
+
+  # The pull policy for images.
+  pullPolicy: Always
+
+  # The repository used for the sensor-vector sidecar
+  sensorVectorRepository: sensor-vector
+
+  # The repository used for connector-client
+  connectorClientRepository: connector-client
+
+  # The repository used for connector-forwarder
+  connectorForwarderRepository: connector-forwarder
+
+# Connector workload. The keys mirror the 'connector' section of the
+# hush-sensor chart, so a values block carries over.
+connector:
+  # Custom priority class
+  priorityClassName: ""
+
+  # Custom node selector
+  nodeSelector: {}
+
+  # Additional annotations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  annotations: {}
+
+  # Annotations for the ServiceAccount (e.g. cloud workload-identity bindings).
+  serviceAccount:
+    annotations: {}
+
+  # Termination grace period
+  terminationGracePeriodSeconds: 30
+
+  # An update strategy
+  strategy:
+    type: RollingUpdate
+
+  # Node affinity.
+  # Choose the node types by OS and Arch.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+                - arm64
+
+  # A list of tolerations.
+  # For more information see
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: []
+
+  # An additional set of mounts for connector-client
+  clientExtraVolumeMounts: []
+
+  # An additional set of mounts for connector-forwarder
+  forwarderExtraVolumeMounts: []
+
+  # An additional set of volumes for the connector pod
+  extraVolumes: []
+
+  # Override forwarder timeout
+  forwarderTimeout: ""
+
+  # Override max delay for connector-client reconnect attempts
+  connectorClientRetryMaxBackoff: ""
+
+  # Default resource requests/limits for connector-client
+  clientResources:
+    limits:
+      cpu: "400m"
+      memory: "256Mi"
+    requests:
+      cpu: "40m"
+      memory: "32Mi"
+
+  # Default resource requests/limits for connector-forwarder
+  forwarderResources:
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+    requests:
+      cpu: "40m"
+      memory: "32Mi"
+
+  # Default resource requests/limits for connector-vector
+  vectorResources:
+    limits:
+      cpu: "330m"
+      memory: "256Mi"
+    requests:
+      cpu: "10m"
+      memory: "64Mi"
