@@ -1,0 +1,67 @@
+{{/*
+Name of the projected volume carrying the AWS web identity token
+*/}}
+{{- define "hush-common.awsWebIdentityVolumeName" -}}
+aws-token-projection
+{{- end }}
+
+{{/*
+Mount path of the projected volume carrying the AWS web identity token
+*/}}
+{{- define "hush-common.awsWebIdentityVolumePath" -}}
+/var/run/secrets/hush.k8s.aws.projection
+{{- end }}
+
+{{/*
+File name of the AWS web identity token
+*/}}
+{{- define "hush-common.awsWebIdentityTokenFileName" -}}
+sa-token
+{{- end }}
+
+{{/*
+Path of the AWS web identity token
+*/}}
+{{- define "hush-common.awsWebIdentityTokenPath" -}}
+{{ include "hush-common.awsWebIdentityVolumePath" . }}/{{ include "hush-common.awsWebIdentityTokenFileName" . }}
+{{- end }}
+
+{{/*
+Projected volume carrying the K8S SA token AWS STS exchanges for credentials.
+Takes a dict of "role", the IAM role to assume, and "audience".
+*/}}
+{{- define "hush-common.awsWebIdentityVolume" -}}
+{{- if .role -}}
+- name: {{ include "hush-common.awsWebIdentityVolumeName" . }}
+  projected:
+    sources:
+      - serviceAccountToken:
+          path: {{ include "hush-common.awsWebIdentityTokenFileName" . }}
+          audience: {{ .audience | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Volume mount for the projected AWS web identity token.
+Takes a dict of "role", the IAM role to assume.
+*/}}
+{{- define "hush-common.awsWebIdentityVolumeMount" -}}
+{{- if .role -}}
+- name: {{ include "hush-common.awsWebIdentityVolumeName" . }}
+  mountPath: {{ include "hush-common.awsWebIdentityVolumePath" . }}
+  readOnly: true
+{{- end }}
+{{- end }}
+
+{{/*
+Envs directing the AWS SDK to assume a role with the projected K8S SA token.
+Takes a dict of "role", the IAM role to assume.
+*/}}
+{{- define "hush-common.awsWebIdentityEnvs" -}}
+{{- with .role -}}
+- name: AWS_ROLE_ARN
+  value: {{ . | quote }}
+- name: AWS_WEB_IDENTITY_TOKEN_FILE
+  value: {{ include "hush-common.awsWebIdentityTokenPath" $ | quote }}
+{{- end }}
+{{- end }}
