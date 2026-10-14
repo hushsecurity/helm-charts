@@ -355,6 +355,25 @@ Projected SA token volume and its mount, each taking a dict of its values.
 {{- end }}
 
 {{/*
+Empty volume masking the K8S SA token in a container that mounts it at the
+token's path: Kubernetes does not mount the token into such a container.
+*/}}
+{{- define "hush-common.saTokenMaskVolumeName" -}}
+sa-token-mask
+{{- end }}
+
+{{- define "hush-common.saTokenMaskVolume" -}}
+- name: {{ include "hush-common.saTokenMaskVolumeName" . }}
+  emptyDir: {}
+{{- end }}
+
+{{- define "hush-common.saTokenMaskVolumeMount" -}}
+{{- include "hush-common.saTokenVolumeMount" (dict
+    "name" (include "hush-common.saTokenMaskVolumeName" .)
+    "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount") -}}
+{{- end }}
+
+{{/*
 Projected volume mounting the K8S SA token used as the Hush OIDC assertion.
 */}}
 {{- define "hush-common.k8sSecretsProjectionVolume" -}}

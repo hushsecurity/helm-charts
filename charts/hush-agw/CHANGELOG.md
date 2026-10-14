@@ -4,6 +4,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- the Kubernetes API token is mounted only into the gateway containers that
+  call the API, no longer into the client-facing gateway container or the
+  toolbox.
+
 ## hush-agw 0.8.0 - 2026-10-18
 
 ### Changed
