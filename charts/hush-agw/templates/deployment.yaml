@@ -16,8 +16,8 @@ spec:
     metadata:
       labels: {{- include "hush-common.podLabels" . | nindent 8 }}
         app.kubernetes.io/component: gateway
-      {{- with .Values.agw.annotations }}
-      annotations: {{- toYaml . | nindent 8 }}
+      {{- with (include "hush-agw.podAnnotations" .) }}
+      annotations: {{- . | nindent 8 }}
       {{- end }}
     spec:
       serviceAccountName: {{ include "hush-common.fullName" . }}
@@ -52,6 +52,9 @@ spec:
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-agw.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
@@ -112,6 +115,9 @@ spec:
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-agw.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
             {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
@@ -164,6 +170,9 @@ spec:
           {{- end }}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- include "hush-agw.kubeApiTokenVolume" . | nindent 8 }}
+        {{- with (include "hush-agw.awsWebIdentityVolume" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}
         {{- with (include "hush-common.hcVaultSiloSaTokenVolume" .) }}
         {{- . | nindent 8 }}
         {{- end }}

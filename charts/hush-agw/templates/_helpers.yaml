@@ -112,6 +112,9 @@ Shared environment for the agw-controller (init + server).
 - name: TOOLBOX_URL
   value: http://localhost:5000
 {{ include "hush-common.siloEnvs" . }}
+{{- with (include "hush-agw.awsWebIdentityEnvs" .) }}
+{{ . }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -171,4 +174,85 @@ Environment for the agw-vector container.
 - name: kube-api-access
   mountPath: /var/run/secrets/kubernetes.io/serviceaccount
   readOnly: true
+{{- end }}
+
+{{/*
+AWS IAM role the gateway assumes with its projected K8S SA token
+*/}}
+{{- define "hush-agw.awsOidcRole" -}}
+{{- $aws := .Values.agw.workloadIdentity.aws -}}
+{{- $role := dig "oidc" "role" "" $aws -}}
+{{- if $role -}}
+  {{- if $aws.irsa -}}
+      {{- fail "'agw.workloadIdentity.aws.oidc.role' must not be combined with 'agw.workloadIdentity.aws.irsa'" -}}
+  {{- end -}}
+  {{- if (include "hush-common.siloAwsAccessToken" .) -}}
+      {{- fail "'agw.workloadIdentity.aws.oidc.role' must not be combined with 'secretStore.aws.access_key'" -}}
+  {{- end -}}
+{{- end -}}
+{{ $role }}
+{{- end }}
+
+{{/*
+Audience of the K8S SA token the gateway presents to AWS STS
+*/}}
+{{- define "hush-agw.awsOidcAudience" -}}
+{{- dig "oidc" "audience" "" .Values.agw.workloadIdentity.aws | default "sts.amazonaws.com" -}}
+{{- end }}
+
+{{/*
+Projected volume carrying the K8S SA token AWS STS exchanges for credentials
+*/}}
+{{- define "hush-agw.awsWebIdentityVolume" -}}
+{{- include "hush-common.awsWebIdentityVolume" (dict
+    "role" (include "hush-agw.awsOidcRole" .)
+    "audience" (include "hush-agw.awsOidcAudience" .)) -}}
+{{- end }}
+
+{{/*
+Volume mount for the projected AWS web identity token
+*/}}
+{{- define "hush-agw.awsWebIdentityVolumeMount" -}}
+{{- include "hush-common.awsWebIdentityVolumeMount" (dict
+    "role" (include "hush-agw.awsOidcRole" .)) -}}
+{{- end }}
+
+{{/*
+Envs directing the AWS SDK to assume a role with the projected K8S SA token
+*/}}
+{{- define "hush-agw.awsWebIdentityEnvs" -}}
+{{- include "hush-common.awsWebIdentityEnvs" (dict
+    "role" (include "hush-agw.awsOidcRole" .)) -}}
+{{- end }}
+
+{{/*
+Annotations of the gateway service account
+*/}}
+{{- define "hush-agw.serviceAccountAnnotations" -}}
+{{- $identity := dict -}}
+{{- with .Values.agw.workloadIdentity.aws.irsa -}}
+  {{- $_ := set $identity "eks.amazonaws.com/role-arn" . -}}
+{{- end -}}
+{{- with .Values.agw.workloadIdentity.gcp.sa -}}
+  {{- $_ := set $identity "iam.gke.io/gcp-service-account" . -}}
+{{- end -}}
+{{- $annotations := merge (deepCopy (.Values.agw.serviceAccount.annotations | default dict)) $identity -}}
+{{- with $annotations -}}
+{{ toYaml . }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Annotations of the gateway pod. With irsa, the EKS webhook hands the role to
+the containers that reach the secret store only.
+*/}}
+{{- define "hush-agw.podAnnotations" -}}
+{{- $identity := dict -}}
+{{- if .Values.agw.workloadIdentity.aws.irsa -}}
+  {{- $_ := set $identity "eks.amazonaws.com/skip-containers" "agw-agentgateway,agw-vector,agw-genai-toolbox" -}}
+{{- end -}}
+{{- $annotations := merge (deepCopy (.Values.agw.annotations | default dict)) $identity -}}
+{{- with $annotations -}}
+{{ toYaml . }}
+{{- end -}}
 {{- end }}

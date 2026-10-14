@@ -27,6 +27,21 @@ All notable changes to this project will be documented in this file.
   drops the new chart's defaults; upgrade with explicit values or
   `--reset-then-reuse-values` (Helm 3.14+) instead.
 
+- the new `agw.workloadIdentity` values give the gateway the cloud identity an
+  `awssm`, `awsssm` or `gcpsm` secret store is reached with, as hush-am's
+  `accessManager.workloadIdentity` does: `aws.irsa` on EKS, `aws.oidc.role`
+  to assume an AWS role with the gateway's service account token outside EKS,
+  or `gcp.sa` on GKE. Only the gateway's controller containers get the AWS
+  role. Annotations set by hand in `agw.serviceAccount.annotations` and
+  `agw.annotations` win over the ones these set. For example:
+
+  ```yaml
+  agw:
+    workloadIdentity:
+      aws:
+        irsa: arn:aws:iam::123456789012:role/hush-agw
+  ```
+
 ### Changed
 
 - the Kubernetes API token is mounted only into the gateway containers that
