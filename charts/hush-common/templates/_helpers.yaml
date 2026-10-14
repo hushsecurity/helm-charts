@@ -296,6 +296,19 @@ Which deployment-password secret to use (password auth mode), with fallback to t
 {{- end }}
 
 {{/*
+Pod annotations from a values entry that is a map, or a block string: the
+string form was the only one the workload templates rendered before the map
+handling was fixed, so it stays accepted. Use inside 'with'.
+*/}}
+{{- define "hush-common.annotations" -}}
+{{- if kindIs "string" . -}}
+{{ . | trim }}
+{{- else -}}
+{{ toYaml . }}
+{{- end -}}
+{{- end }}
+
+{{/*
 K8S secrets projection volume name
 */}}
 {{- define "hush-common.k8sSecretsProjectionVolumeName" -}}

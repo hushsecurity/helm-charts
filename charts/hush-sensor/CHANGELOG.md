@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file.
 
 - the image tag version gate rejected a two-part channel tag whose major is
   above the minimum's and whose minor is below it, such as `v1.0`.
+- `connector.annotations`, `sentry.annotations` and `vermon.annotations`
+  failed to render when set ("wrong type for value; expected string"). A
+  block string, the one form that did render, still does.
 
 ## hush-sensor 0.32.0 - 2026-10-10
 

@@ -20,8 +20,8 @@ spec:
       {{- if dig "integrations" "azure" "auth" "workload_identity" "client_id" "" .Values.sentry }}
         azure.workload.identity/use: "true"
       {{- end }}
-      {{ with .Values.sentry.annotations -}}
-      annotations: {{- . | nindent 8 }}
+      {{- with .Values.sentry.annotations }}
+      annotations: {{- include "hush-common.annotations" . | nindent 8 }}
       {{- end }}
 
     spec:
