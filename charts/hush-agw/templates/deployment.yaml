@@ -79,6 +79,7 @@ spec:
           volumeMounts:
             - name: vector-sockets
               mountPath: /tmp/vector
+            {{- include "hush-common.saTokenMaskVolumeMount" . | nindent 12 }}
           readinessProbe:
             httpGet:
               path: /healthz/ready
@@ -137,6 +138,7 @@ spec:
             - name: genai-toolbox-config
               mountPath: /etc/toolbox
               readOnly: true
+            {{- include "hush-common.saTokenMaskVolumeMount" . | nindent 12 }}
           resources: {{- toYaml .Values.agw.genaiToolbox.resources | nindent 12 }}
       volumes:
         - name: vector-sockets
@@ -153,3 +155,4 @@ spec:
           emptyDir: {}
           {{- end }}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
+        {{- include "hush-common.saTokenMaskVolume" . | nindent 8 }}
