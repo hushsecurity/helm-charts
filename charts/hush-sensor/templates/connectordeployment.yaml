@@ -17,8 +17,8 @@ spec:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: connector
-      {{ with .Values.connector.annotations -}}
-      annotations: {{- . | nindent 8 }}
+      {{- with .Values.connector.annotations }}
+      annotations: {{- toYaml . | nindent 8 }}
       {{- end }}
 
     spec:

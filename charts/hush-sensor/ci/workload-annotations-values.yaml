@@ -1,0 +1,18 @@
+---
+# Pod annotations on each Deployment workload; the DaemonSet's are covered by
+# the AppArmor annotation it sets itself.
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+connector:
+  annotations:
+    example.com/owner: "platform"
+
+sentry:
+  annotations:
+    example.com/owner: "platform"
+
+vermon:
+  annotations:
+    example.com/owner: "platform"
