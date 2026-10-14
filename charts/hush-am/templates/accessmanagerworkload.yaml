@@ -1,4 +1,5 @@
 {{- $kind := (include "hush-am.accessManagerKind" .) -}}
+{{- $secretStoreCtx := dict "store" .Values.secretStore "path" "secretStore" "root" . "azureClientIdPath" "accessManager.workloadIdentity.azure.clientId" -}}
 ---
 apiVersion: apps/v1
 {{- if eq $kind "statefulset" }}
@@ -70,7 +71,7 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
-            {{- with (include "hush-am.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- if .Values.accessManager.logConfig }}
@@ -131,12 +132,12 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
-            {{- with (include "hush-am.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
-            {{- include "hush-am.siloEnvs" . | nindent 12 }}
+            {{- include "hush-common.siloEnvs" $secretStoreCtx | nindent 12 }}
             {{- with (include "hush-am.awsWebIdentityEnvs" .) }}
             {{- . | nindent 12 }}
             {{- end }}
@@ -189,7 +190,7 @@ spec:
             {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
             {{- . | nindent 12 }}
             {{- end }}
-            {{- with (include "hush-am.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- if .Values.accessManager.logConfig }}
@@ -356,7 +357,7 @@ spec:
         {{- with (include "hush-am.awsWebIdentityVolume" .) }}
         {{- . | nindent 8 }}
         {{- end }}
-        {{- with (include "hush-am.hcVaultSiloSaTokenVolume" .) }}
+        {{- with (include "hush-common.hcVaultSiloSaTokenVolume" $secretStoreCtx) }}
         {{- . | nindent 8 }}
         {{- end }}
         {{- if .Values.accessManager.logConfig }}
