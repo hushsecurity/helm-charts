@@ -6,6 +6,27 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- the new `secretStore` values choose where the gateway keeps its private
+  keys, with the same settings as hush-am's `secretStore`: `kubesecrets` (the
+  default), `awssm`, `awsssm`, `gcpsm` or `hc_vault`. With the default, the
+  gateway keeps them as Secrets in its own namespace, and the chart lets it
+  manage Secrets there. A gateway that shares its Hush deployment with hush-am
+  must use the same secret store as hush-am. For example:
+
+  ```yaml
+  secretStore:
+    kind: awssm
+    prefix: hush
+    aws:
+      region: eu-central-1
+  ```
+
+  Upgrading an existing release with `--reuse-values` fails, because that flag
+  drops the new chart's defaults; upgrade with explicit values or
+  `--reset-then-reuse-values` (Helm 3.14+) instead.
+
 ### Changed
 
 - the Kubernetes API token is mounted only into the gateway containers that

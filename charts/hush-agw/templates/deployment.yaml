@@ -52,6 +52,9 @@ spec:
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
       containers:
         - name: agw-agentgateway
@@ -109,6 +112,9 @@ spec:
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -158,3 +164,6 @@ spec:
           {{- end }}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- include "hush-agw.kubeApiTokenVolume" . | nindent 8 }}
+        {{- with (include "hush-common.hcVaultSiloSaTokenVolume" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}

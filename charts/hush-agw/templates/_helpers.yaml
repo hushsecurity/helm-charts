@@ -111,6 +111,7 @@ Shared environment for the agw-controller (init + server).
   value: /etc/toolbox/tools.yaml
 - name: TOOLBOX_URL
   value: http://localhost:5000
+{{ include "hush-common.siloEnvs" . }}
 {{- end }}
 
 {{/*
