@@ -4,6 +4,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- raise the default `agw.genaiToolbox.configSizeLimit` from `2Mi` to `16Mi`.
+  Gateways that support TLS for mongodb applications also keep each
+  application's CA bundle on this volume, up to 200 KiB apiece. The volume is
+  in memory, so the higher limit uses memory only for what is written.
+
 ## hush-agw 0.7.1 - 2026-10-09
 
 ### Changed
