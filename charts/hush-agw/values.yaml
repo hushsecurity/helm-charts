@@ -279,8 +279,9 @@ agw:
 
   # The agw-genai-toolbox container.
   genaiToolbox:
-    # Size of the in-memory volume holding the rendered toolbox config.
-    configSizeLimit: 2Mi
+    # Size of the in-memory volume holding the rendered toolbox config and
+    # the mongodb CA files warden writes beside it.
+    configSizeLimit: 16Mi
 
     # Default resource requests/limits.
     resources:
