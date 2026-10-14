@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- the Kubernetes API token is mounted only into the gateway containers that
+  call the API, no longer into the client-facing gateway container or the
+  toolbox.
+
 - raise the default `agw.genaiToolbox.configSizeLimit` from `2Mi` to `16Mi`.
   Gateways that support TLS for mongodb applications also keep each
   application's CA bundle on this volume, up to 200 KiB apiece. The volume is

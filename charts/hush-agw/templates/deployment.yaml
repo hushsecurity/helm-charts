@@ -21,6 +21,7 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ include "hush-common.fullName" . }}
+      automountServiceAccountToken: false
       securityContext: {{- toYaml .Values.agw.podSecurityContext | nindent 8 }}
       {{- with .Values.agw.priorityClassName }}
       priorityClassName: {{ . }}
@@ -50,6 +51,7 @@ spec:
             - name: genai-toolbox-config
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
           resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
       containers:
         - name: agw-agentgateway
@@ -106,6 +108,7 @@ spec:
             - name: genai-toolbox-config
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -120,6 +123,7 @@ spec:
             - name: vector-sockets
               mountPath: /tmp/vector
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
           startupProbe:
             exec:
               command: ["test", "-S", "/tmp/vector/audit.sock"]
@@ -153,3 +157,4 @@ spec:
           emptyDir: {}
           {{- end }}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
+        {{- include "hush-agw.kubeApiTokenVolume" . | nindent 8 }}

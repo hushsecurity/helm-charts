@@ -146,3 +146,28 @@ Environment for the agw-vector container.
 - name: HELM_CHART_VERSION
   value: {{ .Chart.Version | quote }}
 {{- end }}
+
+{{- define "hush-agw.kubeApiTokenVolume" -}}
+- name: kube-api-access
+  projected:
+    sources:
+      - serviceAccountToken:
+          path: token
+          expirationSeconds: 3607
+      - configMap:
+          name: kube-root-ca.crt
+          items:
+            - key: ca.crt
+              path: ca.crt
+      - downwardAPI:
+          items:
+            - path: namespace
+              fieldRef:
+                fieldPath: metadata.namespace
+{{- end }}
+
+{{- define "hush-agw.kubeApiTokenVolumeMount" -}}
+- name: kube-api-access
+  mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+  readOnly: true
+{{- end }}
