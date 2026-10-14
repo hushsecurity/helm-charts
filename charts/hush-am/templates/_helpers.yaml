@@ -585,68 +585,28 @@ true
 {{- end }}
 
 {{/*
-Name of the projected volume carrying the AWS web identity token
-*/}}
-{{- define "hush-am.awsWebIdentityVolumeName" -}}
-aws-token-projection
-{{- end }}
-
-{{/*
-Mount path of the projected volume carrying the AWS web identity token
-*/}}
-{{- define "hush-am.awsWebIdentityVolumePath" -}}
-/var/run/secrets/hush.k8s.aws.projection
-{{- end }}
-
-{{/*
-File name of the AWS web identity token
-*/}}
-{{- define "hush-am.awsWebIdentityTokenFileName" -}}
-sa-token
-{{- end }}
-
-{{/*
-Path of the AWS web identity token
-*/}}
-{{- define "hush-am.awsWebIdentityTokenPath" -}}
-{{ include "hush-am.awsWebIdentityVolumePath" . }}/{{ include "hush-am.awsWebIdentityTokenFileName" . }}
-{{- end }}
-
-{{/*
 Projected volume carrying the K8S SA token AWS STS exchanges for credentials
 */}}
 {{- define "hush-am.awsWebIdentityVolume" -}}
-{{- if (include "hush-am.awsOidcRole" .) -}}
-- name: {{ include "hush-am.awsWebIdentityVolumeName" . }}
-  projected:
-    sources:
-      - serviceAccountToken:
-          path: {{ include "hush-am.awsWebIdentityTokenFileName" . }}
-          audience: {{ include "hush-am.awsOidcAudience" . | quote }}
-{{- end }}
+{{- include "hush-common.awsWebIdentityVolume" (dict
+    "role" (include "hush-am.awsOidcRole" .)
+    "audience" (include "hush-am.awsOidcAudience" .)) -}}
 {{- end }}
 
 {{/*
 Volume mount for the projected AWS web identity token
 */}}
 {{- define "hush-am.awsWebIdentityVolumeMount" -}}
-{{- if (include "hush-am.awsOidcRole" .) -}}
-- name: {{ include "hush-am.awsWebIdentityVolumeName" . }}
-  mountPath: {{ include "hush-am.awsWebIdentityVolumePath" . }}
-  readOnly: true
-{{- end }}
+{{- include "hush-common.awsWebIdentityVolumeMount" (dict
+    "role" (include "hush-am.awsOidcRole" .)) -}}
 {{- end }}
 
 {{/*
 Envs directing the AWS SDK to assume a role with the projected K8S SA token
 */}}
 {{- define "hush-am.awsWebIdentityEnvs" -}}
-{{- with (include "hush-am.awsOidcRole" .) -}}
-- name: AWS_ROLE_ARN
-  value: {{ . | quote }}
-- name: AWS_WEB_IDENTITY_TOKEN_FILE
-  value: {{ include "hush-am.awsWebIdentityTokenPath" $ | quote }}
-{{- end }}
+{{- include "hush-common.awsWebIdentityEnvs" (dict
+    "role" (include "hush-am.awsOidcRole" .)) -}}
 {{- end }}
 
 {{/*
