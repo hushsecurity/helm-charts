@@ -139,6 +139,139 @@ image:
   # The pull policy for images.
   pullPolicy: Always
 
+# Secret store the gateway keeps the private halves of its access manager keys
+# in. The same settings as hush-am's 'secretStore'.
+#
+# A gateway that shares its Hush deployment with hush-am must use hush-am's
+# secret store: the same kind, prefix and location. Either of them may create
+# the deployment's next key, and the other reads it from there.
+secretStore:
+  # The secret store kind
+  # Allowed values are:
+  # - awssm: AWS Secrets Manager
+  # - awsssm: AWS SSM Parameter Store
+  # - gcpsm: GCP Secret Manager
+  # - kubesecrets: K8S Secrets
+  # - hc_vault: HashiCorp Vault KV v2
+  kind: "kubesecrets"
+
+  # A prefix used to distinguish the secrets the gateway creates, and to place
+  # them under a path of your choosing. At most 80 characters, lowercase,
+  # starting and ending with a letter or digit, and fixed once secrets exist
+  # under it. An invalid prefix fails the install. '.' may not repeat.
+  #
+  #   kind         punctuation      notes
+  #   awssm        - _ . + = @ /
+  #   awsssm       - _ . /          at most 9 '/'-separated segments in the
+  #                                 prefix; may not start with "aws" or "ssm"
+  #   gcpsm        - _
+  #   kubesecrets  - .              a Kubernetes Secret name
+  #   hc_vault     - _ . /          a KV v2 path under the mount
+  #
+  # Check the gateway's credential before choosing a prefix outside the path it
+  # was provisioned with -- for AWS an IRSA policy naming 'secret:<prefix>/*'
+  # -- or the gateway installs and then fails every write.
+  prefix: "hush"
+
+  # AWS secret store configuration (used by awssm and awsssm)
+  aws:
+    # AWS access key (not recommended in production environments; used for testing)
+    access_key:
+      # AWS_SECRET_ACCESS_KEY value
+      secret_access_key: ""
+      # AWS_ACCESS_KEY_ID value
+      access_key_id: ""
+      # AWS_SESSION_TOKEN value (for temporary credentials)
+      session_token: ""
+
+    # AWS region name, e.g. "us-east-1"
+    region: ""
+
+    # Optional customer-managed KMS key used to encrypt the secret values.
+    #
+    # Accepts a KMS key ID, key ARN, alias name, or alias ARN. When empty, AWS
+    # uses the default account-managed key: aws/secretsmanager for 'awssm',
+    # aws/ssm for 'awsssm'. The KMS permissions it needs are listed beside
+    # hush-am's 'secretStore.aws.kmsKeyId'.
+    kmsKeyId: ""
+
+  # GCP secret store configuration (used by gcpsm)
+  gcp:
+    # GCP project ID
+    projectId: ""
+
+    # GCP service account key JSON (not recommended in production environments; used for testing)
+    #
+    # For more information see:
+    # https://cloud.google.com/iam/docs/keys-create-delete
+    credentials_json: ""
+
+  # Kubernetes secret store configuration
+  k8s:
+    # K8S namespace to store secrets in. It must already exist.
+    # If not specified, the namespace where the chart is installed is used.
+    namespace: ""
+
+  # HashiCorp Vault secret store configuration (used by hc_vault)
+  hcVault:
+    # Vault address, e.g. "https://vault.example.com:8200". Must be https: a
+    # login and every request afterwards carry a credential.
+    address: ""
+
+    # The KV version 2 mount to store secrets in. When empty, "secret" is used.
+    # It must exist and be version 2; version 1 is refused at startup.
+    mount: ""
+
+    # Vault Enterprise namespace the mount lives in, e.g. "admin/team-a".
+    # Leave empty on Vault Community Edition, which has no namespaces.
+    namespace: ""
+
+    # PEM bundle of the CA that signed the Vault server certificate. Needed
+    # only for a private CA.
+    caCert: ""
+
+    # Per-request timeout, e.g. "30s". When empty, 30s is used.
+    timeout: ""
+
+    # How the gateway authenticates to Vault.
+    auth:
+      # - kubernetes: the pod's service account token, validated by Vault
+      #   calling the cluster's TokenReview API. Needs Vault to reach it.
+      # - jwt: the same token, whose signature Vault verifies against the
+      #   cluster's public keys, set on its jwt auth mount as static keys or as
+      #   the cluster's OIDC discovery or JWKS URL.
+      # - token: a token supplied here. Nothing renews it; for testing.
+      method: "kubernetes"
+
+      # The auth mount to log in against. When empty, the method's
+      # conventional path is used: "kubernetes" or "jwt".
+      mount: ""
+
+      # The Vault role to log in as. Required for the kubernetes and jwt
+      # methods. It must bind this chart's service account and namespace, and
+      # grant at least:
+      #
+      #   path "<mount>/data/<prefix>/*"     { capabilities = ["create", "update", "read"] }
+      #   path "<mount>/metadata/<prefix>/*" { capabilities = ["read", "delete"] }
+      role: ""
+
+      # Audience to request in the projected service account token, for the
+      # kubernetes and jwt methods. It must be an audience the Vault role
+      # binds. When empty, the token carries the cluster's default audience.
+      audience: ""
+
+      # A Vault token, for the token method; testing only. Mutually exclusive
+      # with 'tokenSecretRef'.
+      token: ""
+
+      # A pre-existing Kubernetes Secret holding the Vault token, for the
+      # token method. Keeps the token out of the release manifest.
+      tokenSecretRef:
+        # Name of the Secret, in the namespace the chart is installed in.
+        name: ""
+        # Key within the Secret.
+        key: ""
+
 # Agent gateway workload. All values specific to the agent gateway live here.
 agw:
   # External hostname (FQDN) where clients and the OAuth browser flow reach the
@@ -231,9 +364,53 @@ agw:
   # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
   annotations: {}
 
-  # Annotations for the ServiceAccount (e.g. cloud workload-identity bindings).
+  # Annotations for the ServiceAccount. They win over the ones
+  # 'agw.workloadIdentity' sets.
   serviceAccount:
     annotations: {}
+
+  # Workload Identity configuration for the gateway service account: the
+  # identity an awssm, awsssm or gcpsm secret store is reached with.
+  workloadIdentity:
+    # AWS configuration
+    aws:
+      # AWS IAM role ARN to configure with irsa annotations
+      #
+      # For more information see:
+      # https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
+      irsa: ""
+
+      # OIDC configuration for clusters outside EKS.
+      #
+      # The gateway presents its Kubernetes service account token and assumes
+      # the role with it, the way irsa works on EKS. Register the cluster OIDC
+      # issuer as an IAM OIDC identity provider, and let the role be assumed
+      # over that provider by the gateway service account. Its subject is
+      # 'system:serviceaccount:<namespace>:<account>', where <account> is the
+      # gateway service account name the chart derives from the release:
+      # 'hush-agw' for a release named 'hush-agw'.
+      #
+      # Mutually exclusive with every other AWS credential: 'irsa' here and
+      # 'secretStore.aws.access_key'.
+      #
+      # For more information see:
+      # https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
+      oidc:
+        # AWS IAM role ARN to assume
+        role: ""
+
+        # Audience the token is minted for, and the one the IAM OIDC identity
+        # provider is registered with. "sts.amazonaws.com" is the audience IRSA
+        # uses on EKS, and is used when this value is empty.
+        audience: "sts.amazonaws.com"
+
+    # GCP configuration
+    gcp:
+      # GCP IAM Service Account to use for Workload Identity annotation
+      #
+      # For more information see:
+      # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#kubernetes-sa-to-iam
+      sa: ""
 
   # Pod security context. fsGroup 33 (www-data) makes the data volume writable by
   # the gateway.

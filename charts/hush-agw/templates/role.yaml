@@ -1,0 +1,13 @@
+{{- if eq (toString .Values.secretStore.kind) "kubesecrets" }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-role
+  namespace: {{ include "hush-common.kubeSiloNamespace" . }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "delete"]
+{{- end }}

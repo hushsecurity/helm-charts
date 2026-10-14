@@ -16,11 +16,12 @@ spec:
     metadata:
       labels: {{- include "hush-common.podLabels" . | nindent 8 }}
         app.kubernetes.io/component: gateway
-      {{- with .Values.agw.annotations }}
-      annotations: {{- toYaml . | nindent 8 }}
+      {{- with (include "hush-agw.podAnnotations" .) }}
+      annotations: {{- . | nindent 8 }}
       {{- end }}
     spec:
       serviceAccountName: {{ include "hush-common.fullName" . }}
+      automountServiceAccountToken: false
       securityContext: {{- toYaml .Values.agw.podSecurityContext | nindent 8 }}
       {{- with .Values.agw.priorityClassName }}
       priorityClassName: {{ . }}
@@ -50,6 +51,13 @@ spec:
             - name: genai-toolbox-config
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-agw.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
       containers:
         - name: agw-agentgateway
@@ -106,6 +114,13 @@ spec:
             - name: genai-toolbox-config
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
+            {{- with (include "hush-agw.awsWebIdentityVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" .) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -120,6 +135,7 @@ spec:
             - name: vector-sockets
               mountPath: /tmp/vector
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
+            {{- include "hush-agw.kubeApiTokenVolumeMount" . | nindent 12 }}
           startupProbe:
             exec:
               command: ["test", "-S", "/tmp/vector/audit.sock"]
@@ -153,3 +169,10 @@ spec:
           emptyDir: {}
           {{- end }}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
+        {{- include "hush-agw.kubeApiTokenVolume" . | nindent 8 }}
+        {{- with (include "hush-agw.awsWebIdentityVolume" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}
+        {{- with (include "hush-common.hcVaultSiloSaTokenVolume" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}

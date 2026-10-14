@@ -1,0 +1,13 @@
+agw:
+  hostname: gw.example.com
+  workloadIdentity:
+    gcp:
+      sa: "hush-agw@my-project.iam.gserviceaccount.com"
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
+
+secretStore:
+  kind: "gcpsm"
+  gcp:
+    projectId: "my-project"

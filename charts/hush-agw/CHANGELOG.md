@@ -6,7 +6,47 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- the new `secretStore` values choose where the gateway keeps its private
+  keys, with the same settings as hush-am's `secretStore`: `kubesecrets` (the
+  default), `awssm`, `awsssm`, `gcpsm` or `hc_vault`. With the default, the
+  gateway keeps them as Secrets in its own namespace, and the chart lets it
+  manage Secrets there. A gateway that shares its Hush deployment with hush-am
+  must use the same secret store as hush-am. For example:
+
+  ```yaml
+  secretStore:
+    kind: awssm
+    prefix: hush
+    aws:
+      region: eu-central-1
+  ```
+
+  Upgrading an existing release with `--reuse-values` fails, because that flag
+  drops the new chart's defaults; upgrade with explicit values or
+  `--reset-then-reuse-values` (Helm 3.14+) instead.
+
+- the new `agw.workloadIdentity` values give the gateway the cloud identity an
+  `awssm`, `awsssm` or `gcpsm` secret store is reached with, as hush-am's
+  `accessManager.workloadIdentity` does: `aws.irsa` on EKS, `aws.oidc.role`
+  to assume an AWS role with the gateway's service account token outside EKS,
+  or `gcp.sa` on GKE. Only the gateway's controller containers get the AWS
+  role. Annotations set by hand in `agw.serviceAccount.annotations` and
+  `agw.annotations` win over the ones these set. For example:
+
+  ```yaml
+  agw:
+    workloadIdentity:
+      aws:
+        irsa: arn:aws:iam::123456789012:role/hush-agw
+  ```
+
 ### Changed
+
+- the Kubernetes API token is mounted only into the gateway containers that
+  call the API, no longer into the client-facing gateway container or the
+  toolbox.
 
 - raise the default `agw.genaiToolbox.configSizeLimit` from `2Mi` to `16Mi`.
   Gateways that support TLS for mongodb applications also keep each

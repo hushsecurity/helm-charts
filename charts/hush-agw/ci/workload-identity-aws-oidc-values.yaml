@@ -1,0 +1,15 @@
+agw:
+  hostname: gw.example.com
+  workloadIdentity:
+    aws:
+      oidc:
+        role: "arn:aws:iam::123456789012:role/hush-agw"
+        audience: "hush-agw.example.com"
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
+
+secretStore:
+  kind: "awsssm"
+  aws:
+    region: "eu-central-1"
