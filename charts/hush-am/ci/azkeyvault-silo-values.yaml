@@ -1,0 +1,21 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+secretStore:
+  kind: "az_key_vault"
+  # a Key Vault secret name allows no punctuation but "-"
+  prefix: "acme-prod-eu"
+  azKeyVault:
+    vaultUrl: "https://acme-prod.vault.azure.net"
+    auth:
+      # no tenantId: the webhook's AZURE_TENANT_ID carries it
+      method: "default"
+
+# what makes the default method work on AKS: this labels the pod and annotates
+# the service account, and Azure's webhook injects the token and AZURE_CLIENT_ID
+accessManager:
+  workloadIdentity:
+    azure:
+      clientId: "35e9cbbc-45ee-4ec6-8500-3799c3ffbc8e"
