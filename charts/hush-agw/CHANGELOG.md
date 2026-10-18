@@ -8,6 +8,27 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- bump the app version to v0.10.0. The release asks nothing of the chart.
+
+  - a mongodb application can connect over TLS, verifying the server against
+    a CA bundle the admin supplies or, without one, skipping certificate
+    checks. This is what AWS DocumentDB needs. Direct mongodb connections no
+    longer use retryable writes, which DocumentDB rejects.
+  - a mongodb password containing a space now authenticates.
+  - admins can rate limit tool calls per user or agent, on one tool, a tool
+    class or a whole app, either blocking calls past the limit or flagging
+    them in the activity log.
+  - an MCP server whose provider has switched it off is reported as
+    unavailable, with the server's reason, instead of answering every call
+    with a bare refusal.
+  - a call to an MCP server that answers with plain JSON is now cut off after
+    55s; before, it had no limit. A streaming response is not cut off once it
+    has started.
+  - a single SSE event larger than 16 MiB is refused instead of being buffered
+    whole, which could run the gateway out of memory.
+
+  The rest of the release is internal improvements.
+
 - raise the default `agw.genaiToolbox.configSizeLimit` from `2Mi` to `16Mi`.
   Gateways that support TLS for mongodb applications also keep each
   application's CA bundle on this volume, up to 200 KiB apiece. The volume is
