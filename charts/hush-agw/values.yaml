@@ -38,13 +38,15 @@ hushDeployment:
 
   # The deployment token as received from API/UI.
   # When 'hushDeployment.secretKeyRef.{name,tokenKey}' are defined this value is ignored.
-  # Otherwise the hush-sensor deployment secret is used.
+  # Given neither, the Secret named by 'hushDeployment.sensorDeploymentSecretName'
+  # is used; with that empty, this value is required.
   token: ""
 
   # The deployment password as received from API/UI.
   # Only used when 'hushDeployment.authMode' is "password"; ignored when
   # 'hushDeployment.secretKeyRef.{name,key}' are defined.
-  # Otherwise the hush-sensor deployment secret is used.
+  # Given neither, the Secret named by 'hushDeployment.sensorDeploymentSecretName'
+  # is used; with that empty, this value is required.
   password: ""
 
   # A reference to an existing Secret with deployment password and token.
@@ -60,14 +62,17 @@ hushDeployment:
 
     # Password secret key
     # Only used when 'hushDeployment.authMode' is "password".
-    # If 'hushDeployment.password' is defined this value is ignored.
+    # Together with 'name', takes precedence over 'hushDeployment.password'.
     key: ""
 
     # Token secret key
-    # If 'hushDeployment.token' is defined this value is ignored.
+    # Together with 'name', takes precedence over 'hushDeployment.token'.
     tokenKey: ""
 
-  # Name of K8S Secret created by hush-sensor deployment
+  # Name of the deployment Secret a hush-sensor release created in this
+  # namespace. The token and the password each fall back to it when neither
+  # 'secretKeyRef' names them nor the inline value is given. Set it empty to
+  # require the chart's own credentials instead.
   sensorDeploymentSecretName: hush-sensor-deploymentsecret
 
 # Values related to Hush Security container images

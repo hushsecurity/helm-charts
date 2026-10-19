@@ -51,6 +51,21 @@ All notable changes to this project will be documented in this file.
 - the Kubernetes API token is mounted only into the gateway containers that
   call the API, no longer into the client-facing gateway container or the
   toolbox.
+- a pre-created Secret (`hushDeployment.secretKeyRef`) now takes precedence
+  over the inline `hushDeployment.token`/`password`, as the comments on
+  those two values said; the overridden inline value is no longer stored in
+  the chart's Secret.
+- under `hushDeployment.authMode: oidc` an inline `hushDeployment.password`
+  is no longer stored in the chart's Secret.
+- an empty `hushDeployment.sensorDeploymentSecretName` now requires the
+  chart's own credentials instead of referencing a Secret with no name.
+
+### Fixed
+
+- a numeric `hushDeployment.token` or `hushDeployment.password` given with
+  `--set` failed the render ("wrong type for value; expected string; got
+  int64"); it is now stored as given. A bare number in a values file is
+  refused with a message to quote it.
 
 ## hush-agw 0.8.0 - 2026-10-18
 
