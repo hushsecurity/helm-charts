@@ -4,7 +4,10 @@ from yaml import dump
 from common.chart import AGW_CHART
 from common.chart import template as _template
 
-AGW_BASE = "--set agw.hostname=gw.example.com"
+AGW_BASE = (
+    "--set agw.hostname=gw.example.com "
+    "--set agw.secretStore.kind=awssm --set agw.secretStore.aws.region=eu-central-1"
+)
 ROLE = "arn:aws:iam::123456789012:role/hush-agw"
 TOKEN_PATH = "/var/run/secrets/hush.k8s.aws.projection/sa-token"
 TOKEN_VOLUME = "aws-token-projection"
@@ -195,14 +198,21 @@ def test_no_oidc_role_projects_nothing():
     assert TOKEN_VOLUME not in volumes
 
 
-# The AWS SDK takes IRSA ahead of the web identity token, so an OIDC role
-# beside it would silently go unused: the chart refuses it.
+# The AWS SDK takes a static key or IRSA ahead of the web identity token, so an
+# OIDC role beside either would silently go unused: the chart refuses it.
 @pytest.mark.parametrize(
     "extra_args,message",
     [
         (
             f"--set agw.workloadIdentity.aws.irsa={ROLE}",
             "must not be combined with 'agw.workloadIdentity.aws.irsa'",
+        ),
+        (
+            (
+                "--set agw.secretStore.aws.access_key.access_key_id=AKIA "
+                "--set agw.secretStore.aws.access_key.secret_access_key=secret"
+            ),
+            "must not be combined with 'agw.secretStore.aws.access_key'",
         ),
     ],
 )

@@ -8,6 +8,28 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- the new `agw.secretStore` values choose where the gateway keeps its private
+  keys, with the same settings as hush-am's `secretStore`: `kubesecrets` (the
+  default), `awssm`, `awsssm`, `gcpsm`, `hc_vault` or `az_key_vault`. With
+  the default, the gateway keeps them as Secrets in its own namespace, and the
+  chart lets it manage Secrets there. A gateway that shares its Hush
+  deployment with hush-am must use the same secret store as hush-am. An Azure
+  Key Vault must not have purge protection enabled, and the gateway's identity
+  needs get, set, delete and purge on its secrets. For example:
+
+  ```yaml
+  agw:
+    secretStore:
+      kind: awssm
+      prefix: hush
+      aws:
+        region: eu-central-1
+  ```
+
+  Upgrading an existing release with `--reuse-values` fails, because that flag
+  drops the new chart's defaults; upgrade with explicit values or
+  `--reset-then-reuse-values` (Helm 3.14+) instead.
+
 - the new `agw.workloadIdentity` values give the gateway the cloud identity an
   `awssm`, `awsssm`, `gcpsm` or `az_key_vault` secret store is reached with,
   as hush-am's `accessManager.workloadIdentity` does: `aws.irsa` on EKS,

@@ -1,4 +1,5 @@
 {{- $wiCtx := include "hush-agw.workloadIdentityContext" . | fromYaml -}}
+{{- $secretStoreCtx := dict "store" .Values.agw.secretStore "path" "agw.secretStore" "root" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -53,6 +54,9 @@ spec:
               mountPath: /etc/toolbox
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
             {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
+            {{- . | nindent 12 }}
+            {{- end }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
           resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
@@ -115,6 +119,9 @@ spec:
             {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
+            {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
+            {{- . | nindent 12 }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -165,5 +172,8 @@ spec:
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- include "hush-common.saTokenMaskVolume" . | nindent 8 }}
         {{- with (include "hush-common.awsWebIdentityVolume" $wiCtx) }}
+        {{- . | nindent 8 }}
+        {{- end }}
+        {{- with (include "hush-common.hcVaultSiloSaTokenVolume" $secretStoreCtx) }}
         {{- . | nindent 8 }}
         {{- end }}
