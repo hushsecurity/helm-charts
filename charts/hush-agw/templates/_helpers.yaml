@@ -111,6 +111,7 @@ Shared environment for the agw-controller (init + server).
   value: /etc/toolbox/tools.yaml
 - name: TOOLBOX_URL
   value: http://localhost:5000
+{{ include "hush-common.siloEnvs" (dict "store" .Values.agw.secretStore "path" "agw.secretStore" "root" . "azureClientIdPath" "agw.workloadIdentity.azure.clientId") }}
 {{- with (include "hush-common.awsWebIdentityEnvs" (include "hush-agw.workloadIdentityContext" . | fromYaml)) }}
 {{ . }}
 {{- end }}
@@ -154,7 +155,10 @@ Environment for the agw-vector container.
 The gateway's workload identity, in the context the hush-common helpers take
 */}}
 {{- define "hush-agw.workloadIdentityContext" -}}
-{{- include "hush-common.workloadIdentityContext" (dict "identity" .Values.agw.workloadIdentity "path" "agw.workloadIdentity") -}}
+{{- include "hush-common.workloadIdentityContext" (dict
+    "identity" .Values.agw.workloadIdentity
+    "path" "agw.workloadIdentity"
+    "secretStore" (dict "store" .Values.agw.secretStore "path" "agw.secretStore")) -}}
 {{- end }}
 
 {{/*

@@ -3,6 +3,10 @@ agw:
   workloadIdentity:
     gcp:
       sa: "hush-agw@my-project.iam.gserviceaccount.com"
+  secretStore:
+    kind: "gcpsm"
+    gcp:
+      projectId: "my-project"
 hushDeployment:
   token: dummy-token
   password: dummy-password

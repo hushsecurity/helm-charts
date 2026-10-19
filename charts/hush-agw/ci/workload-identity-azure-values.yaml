@@ -1,8 +1,18 @@
 agw:
   hostname: gw.example.com
+  # what makes the default method work on AKS: this labels the pod and
+  # annotates the service account, and Azure's webhook injects the token and
+  # AZURE_CLIENT_ID
   workloadIdentity:
     azure:
       clientId: "35e9cbbc-45ee-4ec6-8500-3799c3ffbc8e"
+  secretStore:
+    kind: "az_key_vault"
+    prefix: "acme-prod-eu"
+    azKeyVault:
+      vaultUrl: "https://acme-prod.vault.azure.net"
+      auth:
+        method: "default"
 hushDeployment:
   token: dummy-token
   password: dummy-password
