@@ -313,14 +313,7 @@ spec:
               mountPath: {{ include "hush-am.spireServerLogDirMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           env:
-            {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
-            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
-            - name: DEPLOYMENT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .name }}
-                  key: {{ .key }}
-            {{- end }}
+            {{- include "hush-am.mandatoryEnvsWithPassword" . | nindent 12 }}
             - name: REPORT_SUBSYSTEM_NAME
               value: "mufasa"
             - name: REPORT_NODE_NAME

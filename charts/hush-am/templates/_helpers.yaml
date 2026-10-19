@@ -589,20 +589,9 @@ ec2role
 {{- end }}
 
 {{/*
-Mandatory envs
+The namespace envs every container gets
 */}}
-{{- define "hush-am.mandatoryEnvs" -}}
-{{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRefWithSensorFallback" . | fromYaml) }}
-- name: DEPLOYMENT_TOKEN
-  valueFrom:
-    secretKeyRef:
-      name: {{ .name }}
-      key: {{ .key }}
-{{- end }}
-- name: DEPLOYMENT_KIND
-  value: k8s
-- name: HUSH_AUTH_MODE
-  value: {{ .Values.hushDeployment.authMode | quote }}
+{{- define "hush-am.namespaceEnvs" -}}
 - name: MUFASA_K8S_NAMESPACE
   valueFrom:
     fieldRef:
@@ -611,22 +600,29 @@ Mandatory envs
   valueFrom:
     fieldRef:
       fieldPath: metadata.namespace
-- name: HUSH_K8S_SA_TOKEN_PATH
-  value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
+{{- end }}
+
+{{/*
+Mandatory envs for a container that authenticates without the deployment password
+*/}}
+{{- define "hush-am.mandatoryEnvs" -}}
+{{ include "hush-common.deploymentIdentityEnvWithoutPassword" . }}
+{{ include "hush-am.namespaceEnvs" . }}
+{{- end }}
+
+{{/*
+Mandatory envs for a container that authenticates with the deployment password
+*/}}
+{{- define "hush-am.mandatoryEnvsWithPassword" -}}
+{{ include "hush-common.deploymentIdentityEnv" . }}
+{{ include "hush-am.namespaceEnvs" . }}
 {{- end }}
 
 {{/*
 Access Manager envs
 */}}
 {{- define "hush-am.accessManagerEnvs" -}}
-{{ include "hush-am.mandatoryEnvs" . }}
-{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
-- name: DEPLOYMENT_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .name }}
-      key: {{ .key }}
-{{- end }}
+{{ include "hush-am.mandatoryEnvsWithPassword" . }}
 {{ include "hush-common.siloEnvs" (dict "store" .Values.secretStore "path" "secretStore" "root" . "azureClientIdPath" "accessManager.workloadIdentity.azure.clientId") }}
 {{- with (include "hush-common.awsWebIdentityEnvs" (include "hush-am.workloadIdentityContext" . | fromYaml)) }}
 {{ . }}
@@ -661,14 +657,7 @@ Access Manager envs
 Diag envs
 */}}
 {{- define "hush-am.diagEnvs" -}}
-{{ include "hush-am.mandatoryEnvs" . }}
-{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
-- name: DEPLOYMENT_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .name }}
-      key: {{ .key }}
-{{- end }}
+{{ include "hush-am.mandatoryEnvsWithPassword" . }}
 {{ include "hush-common.siloEnvs" (dict "store" .Values.secretStore "path" "secretStore" "root" . "azureClientIdPath" "accessManager.workloadIdentity.azure.clientId") }}
 {{- with (include "hush-common.awsWebIdentityEnvs" (include "hush-am.workloadIdentityContext" . | fromYaml)) }}
 {{ . }}
@@ -891,14 +880,7 @@ Spire Agent custom log level
 API Controller envs
 */}}
 {{- define "hush-am.apiControllerEnvs" -}}
-{{ include "hush-am.mandatoryEnvs" . }}
-{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
-- name: DEPLOYMENT_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .name }}
-      key: {{ .key }}
-{{- end }}
+{{ include "hush-am.mandatoryEnvsWithPassword" . }}
 - name: MUFASA_METADATA_DB_PATH
   value: {{ include "hush-am.metadataDbFilePath" . }}
 {{- end }}
