@@ -75,24 +75,7 @@ Persistent volume claim name for the gateway's data.
 Shared environment for the agw-controller (init + server).
 */}}
 {{- define "hush-agw.controllerEnv" -}}
-{{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRefWithSensorFallback" . | fromYaml) }}
-- name: DEPLOYMENT_TOKEN
-  valueFrom:
-    secretKeyRef:
-      name: {{ .name }}
-      key: {{ .key }}
-{{- end }}
-{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
-- name: DEPLOYMENT_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .name }}
-      key: {{ .key }}
-{{- end }}
-- name: DEPLOYMENT_KIND
-  value: k8s
-- name: HUSH_AUTH_MODE
-  value: {{ .Values.hushDeployment.authMode | quote }}
+{{ include "hush-common.deploymentIdentityEnv" . }}
 - name: ADDR
   value: ":8080"
 - name: XDS_ADDR
@@ -105,8 +88,6 @@ Shared environment for the agw-controller (init + server).
   value: /data
 - name: DYNAMIC_OAUTH_REGISTRATION_TTL
   value: {{ .Values.agw.dynamicOAuthRegistrationTTL | quote }}
-- name: HUSH_K8S_SA_TOKEN_PATH
-  value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
 - name: TOOLBOX_CONFIG_PATH
   value: /etc/toolbox/tools.yaml
 - name: TOOLBOX_URL
@@ -121,28 +102,9 @@ Shared environment for the agw-controller (init + server).
 Environment for the agw-vector container.
 */}}
 {{- define "hush-agw.vectorEnv" -}}
-{{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRefWithSensorFallback" . | fromYaml) }}
-- name: DEPLOYMENT_TOKEN
-  valueFrom:
-    secretKeyRef:
-      name: {{ .name }}
-      key: {{ .key }}
-{{- end }}
-{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRefWithSensorFallback" . | fromYaml) }}
-- name: DEPLOYMENT_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ .name }}
-      key: {{ .key }}
-{{- end }}
-- name: DEPLOYMENT_KIND
-  value: k8s
-- name: HUSH_AUTH_MODE
-  value: {{ .Values.hushDeployment.authMode | quote }}
+{{ include "hush-common.deploymentIdentityEnv" . }}
 - name: TOKENGEN_SKIP_ON_NO_CONFIG
   value: "1"
-- name: HUSH_K8S_SA_TOKEN_PATH
-  value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
 - name: HELM_RELEASE
   value: {{ .Release.Name }}
 - name: HELM_NAMESPACE
