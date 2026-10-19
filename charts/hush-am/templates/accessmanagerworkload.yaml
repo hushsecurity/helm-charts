@@ -1,5 +1,6 @@
 {{- $kind := (include "hush-am.accessManagerKind" .) -}}
 {{- $secretStoreCtx := dict "store" .Values.secretStore "path" "secretStore" "root" . "azureClientIdPath" "accessManager.workloadIdentity.azure.clientId" -}}
+{{- $wiCtx := include "hush-am.workloadIdentityContext" . | fromYaml -}}
 ---
 apiVersion: apps/v1
 {{- if eq $kind "statefulset" }}
@@ -68,7 +69,7 @@ spec:
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
-            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
@@ -129,7 +130,7 @@ spec:
             - name: spire-server-log-dir
               mountPath: {{ include "hush-am.spireServerLogDirMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
-            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
@@ -138,7 +139,7 @@ spec:
           env:
             {{- include "hush-am.mandatoryEnvs" . | nindent 12 }}
             {{- include "hush-common.siloEnvs" $secretStoreCtx | nindent 12 }}
-            {{- with (include "hush-am.awsWebIdentityEnvs" .) }}
+            {{- with (include "hush-common.awsWebIdentityEnvs" $wiCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             - name: AUTH_PLUGIN_KEY_DB_PATH
@@ -187,7 +188,7 @@ spec:
             - name: data-volume
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
-            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
@@ -231,7 +232,7 @@ spec:
               mountPath: {{ include "hush-am.dataVolumeMountPath" . }}
               readOnly: true
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
-            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- if .Values.admissionController.logConfig }}
@@ -281,7 +282,7 @@ spec:
               value: {{ include "hush-am.admissionControllerBindAddress" . | quote }}
             - name: ZAZU_AWS_ECR_CFG_MODE
               value: {{ include "hush-am.admissionControllerAwcEcrCfgMode" . | quote }}
-            {{- with (include "hush-am.awsWebIdentityEnvs" .) }}
+            {{- with (include "hush-common.awsWebIdentityEnvs" $wiCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- with .Values.admissionController.injectorSpireAgentWaitDuration }}
@@ -354,7 +355,7 @@ spec:
         - name: spire-server-log-dir
           emptyDir: {}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
-        {{- with (include "hush-am.awsWebIdentityVolume" .) }}
+        {{- with (include "hush-common.awsWebIdentityVolume" $wiCtx) }}
         {{- . | nindent 8 }}
         {{- end }}
         {{- with (include "hush-common.hcVaultSiloSaTokenVolume" $secretStoreCtx) }}
