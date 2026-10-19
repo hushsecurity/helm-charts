@@ -6,11 +6,29 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- a pre-created Secret (`hushDeployment.secretKeyRef`) now takes precedence
+  over the inline `hushDeployment.token`/`password`, as the comments on
+  those two values said; the overridden inline value is no longer stored in
+  the chart's Secret.
+- under `hushDeployment.authMode: oidc` an inline `hushDeployment.password`
+  is no longer stored in the chart's Secret.
+- an empty `hushDeployment.sensorDeploymentSecretName` now requires the
+  chart's own credentials instead of referencing a Secret with no name.
+- the next upgrade restarts every workload once, including the spire-agent
+  DaemonSet on each node: the deployment identity env entries moved to the
+  front of each container's env, which changes the pod templates.
+
 ### Fixed
 
 - `accessManager.annotations` and `spireAgent.annotations` failed to render
   when set as a map ("wrong type for value; expected string"). A block
   string, the one form that did render, still does.
+- a numeric `hushDeployment.token` or `hushDeployment.password` given with
+  `--set` failed the render ("wrong type for value; expected string; got
+  int64"); it is now stored as given. A bare number in a values file is
+  refused with a message to quote it.
 
 ## hush-am 0.31.0 - 2026-10-21
 
