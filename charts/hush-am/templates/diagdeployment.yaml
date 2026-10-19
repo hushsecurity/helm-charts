@@ -1,5 +1,6 @@
 {{- if .Values.diagnostics.enabled -}}
 {{- $secretStoreCtx := dict "store" .Values.secretStore "path" "secretStore" "root" . -}}
+{{- $wiCtx := include "hush-am.workloadIdentityContext" . | fromYaml -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +22,7 @@ spec:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: diag
-        {{- with (include "hush-am.azureWorkloadIdentityPodLabel" .) }}{{ . | nindent 8 }}{{- end }}
+        {{- with (include "hush-common.azureWorkloadIdentityPodLabel" $wiCtx) }}{{ . | nindent 8 }}{{- end }}
     spec:
       {{- with (include "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
@@ -78,7 +79,7 @@ spec:
             - name: spire-agent-socket-dir
               mountPath: {{ include "hush-am.spireAgentSocketDirMountPath" . }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
-            {{- with (include "hush-am.awsWebIdentityVolumeMount" .) }}
+            {{- with (include "hush-common.awsWebIdentityVolumeMount" $wiCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
             {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
@@ -104,7 +105,7 @@ spec:
             path: {{ .Values.spireAgent.hostDir }}
             type: DirectoryOrCreate
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
-        {{- with (include "hush-am.awsWebIdentityVolume" .) }}
+        {{- with (include "hush-common.awsWebIdentityVolume" $wiCtx) }}
         {{- . | nindent 8 }}
         {{- end }}
         {{- with (include "hush-common.hcVaultSiloSaTokenVolume" $secretStoreCtx) }}

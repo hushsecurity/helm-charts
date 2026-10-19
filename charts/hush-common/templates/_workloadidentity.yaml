@@ -1,0 +1,89 @@
+{{/*
+Every helper here takes (dict "identity" <workloadIdentity values> "path"
+<their value path> "irsaPaths" <every value the irsa role may come from>
+"secretStore" <the secret store context>), so that a chart keeps the values
+where it wants and errors name them where they are. "irsaPaths" defaults to
+the irsa value of "identity" alone, and "secretStore" may be left out.
+*/}}
+
+{{/*
+The context as YAML, for a chart's own define to render and its templates to
+read back with fromYaml: a define cannot return a dict. The identity values
+are made strings first, or fromYaml would read an all-digit one back as a
+float.
+*/}}
+{{- define "hush-common.workloadIdentityContext" -}}
+{{- $id := $.identity -}}
+{{- $identity := dict
+    "aws" (dict
+        "irsa" (dig "aws" "irsa" "" $id | default "" | toString)
+        "oidc" (dict
+            "role" (dig "aws" "oidc" "role" "" $id | default "" | toString)
+            "audience" (dig "aws" "oidc" "audience" "" $id | default "" | toString)))
+    "gcp" (dict "sa" (dig "gcp" "sa" "" $id | default "" | toString))
+    "azure" (dict "clientId" (dig "azure" "clientId" "" $id | default "" | toString)) -}}
+{{- $ctx := dict "identity" $identity "path" $.path -}}
+{{- with $.irsaPaths -}}
+  {{- $_ := set $ctx "irsaPaths" . -}}
+{{- end -}}
+{{- with $.secretStore -}}
+  {{- $_ := set $ctx "secretStore" . -}}
+{{- end -}}
+{{- $ctx | toYaml -}}
+{{- end }}
+
+{{/*
+AWS IAM role assumed with the projected K8S SA token
+*/}}
+{{- define "hush-common.awsOidcRole" -}}
+{{- $role := dig "aws" "oidc" "role" "" $.identity -}}
+{{- if $role -}}
+  {{- if dig "aws" "irsa" "" $.identity -}}
+      {{- $names := list -}}
+      {{- range ($.irsaPaths | default (list (printf "%s.aws.irsa" $.path))) -}}
+          {{- $names = append $names (printf "'%s'" .) -}}
+      {{- end -}}
+      {{- $listed := last $names -}}
+      {{- if gt (len $names) 1 -}}
+          {{- $listed = printf "%s or %s" (initial $names | join ", ") (last $names) -}}
+      {{- end -}}
+      {{- fail (printf "'%s.aws.oidc.role' must not be combined with %s" $.path $listed) -}}
+  {{- end -}}
+  {{- if and $.secretStore (include "hush-common.siloAwsAccessToken" $.secretStore) -}}
+      {{- fail (printf "'%s.aws.oidc.role' must not be combined with '%s.aws.access_key'" $.path $.secretStore.path) -}}
+  {{- end -}}
+{{- end -}}
+{{ $role }}
+{{- end }}
+
+{{/*
+Audience of the K8S SA token presented to AWS STS
+*/}}
+{{- define "hush-common.awsOidcAudience" -}}
+{{- dig "aws" "oidc" "audience" "" $.identity | default "sts.amazonaws.com" -}}
+{{- end }}
+
+{{/*
+Service account annotations binding the cloud identities
+*/}}
+{{- define "hush-common.workloadIdentityServiceAccountAnnotations" -}}
+{{- with (dig "aws" "irsa" "" $.identity) -}}
+eks.amazonaws.com/role-arn: {{ . | quote }}
+{{- end }}
+{{- with (dig "gcp" "sa" "" $.identity) }}
+iam.gke.io/gcp-service-account: {{ . | quote }}
+{{- end }}
+{{- with (dig "azure" "clientId" "" $.identity) }}
+azure.workload.identity/client-id: {{ . | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+The label Azure's workload identity webhook acts on: without it no federated
+token is injected, so every Pod that needs an Azure identity carries it.
+*/}}
+{{- define "hush-common.azureWorkloadIdentityPodLabel" -}}
+{{- if dig "azure" "clientId" "" $.identity -}}
+azure.workload.identity/use: "true"
+{{- end -}}
+{{- end }}

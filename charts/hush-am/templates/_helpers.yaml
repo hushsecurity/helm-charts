@@ -399,19 +399,9 @@ how the failurePolicy guard decides whether a selector would match this Pod.
 {{- define "hush-am.accessManagerPodLabels" -}}
 {{ include "hush-common.labels" . }}
 app.kubernetes.io/component: access-manager
-{{- with (include "hush-am.azureWorkloadIdentityPodLabel" .) }}
+{{- with (include "hush-common.azureWorkloadIdentityPodLabel" (include "hush-am.workloadIdentityContext" . | fromYaml)) }}
 {{ . }}
 {{- end }}
-{{- end }}
-
-{{/*
-The label Azure's workload identity webhook acts on: without it no federated
-token is injected, so every Pod that needs an Azure identity carries it.
-*/}}
-{{- define "hush-am.azureWorkloadIdentityPodLabel" -}}
-{{- if or .Values.accessManager.workloadIdentity.azure.clientId .Values.containerRegistry.azure.clientId -}}
-azure.workload.identity/use: "true"
-{{- end -}}
 {{- end }}
 
 {{/*
@@ -548,65 +538,42 @@ Which address the admission controller should bind to?
 {{- end }}
 
 {{/*
-AWS IAM role the access manager assumes with its projected K8S SA token
+The access manager's workload identity, in the context the hush-common helpers
+take: the deprecated 'secretStore.aws.irsa' and the 'containerRegistry'
+identities fill what 'accessManager.workloadIdentity' leaves empty.
 */}}
-{{- define "hush-am.awsOidcRole" -}}
-{{- $role := dig "oidc" "role" "" .Values.accessManager.workloadIdentity.aws -}}
-{{- if $role -}}
-  {{- $irsa := or
-        .Values.accessManager.workloadIdentity.aws.irsa
-        .Values.secretStore.aws.irsa
-        .Values.containerRegistry.aws.irsa -}}
-  {{- if $irsa -}}
-      {{- fail "'accessManager.workloadIdentity.aws.oidc.role' must not be combined with 'accessManager.workloadIdentity.aws.irsa', 'secretStore.aws.irsa' or 'containerRegistry.aws.irsa'" -}}
-  {{- end -}}
-  {{- if (include "hush-common.siloAwsAccessToken" (dict "store" .Values.secretStore "path" "secretStore" "root" .)) -}}
-      {{- fail "'accessManager.workloadIdentity.aws.oidc.role' must not be combined with 'secretStore.aws.access_key'" -}}
+{{- define "hush-am.workloadIdentityContext" -}}
+{{- $wi := .Values.accessManager.workloadIdentity -}}
+{{- if not $wi.aws.irsa -}}
+  {{- $secretStoreIrsa := .Values.secretStore.aws.irsa -}}
+  {{- $crIrsa := .Values.containerRegistry.aws.irsa -}}
+  {{- if and $secretStoreIrsa $crIrsa -}}
+      {{- if ne $secretStoreIrsa $crIrsa -}}
+          {{- fail "'secretStore.aws.irsa' and 'containerRegistry.aws.irsa' must be equal when both are defined" -}}
+      {{- end -}}
   {{- end -}}
 {{- end -}}
-{{ $role }}
-{{- end }}
-
-{{/*
-Audience of the K8S SA token the access manager presents to AWS STS
-*/}}
-{{- define "hush-am.awsOidcAudience" -}}
-{{- dig "oidc" "audience" "" .Values.accessManager.workloadIdentity.aws | default "sts.amazonaws.com" -}}
+{{- $identity := dict
+    "aws" (dict
+        "irsa" (or $wi.aws.irsa .Values.secretStore.aws.irsa .Values.containerRegistry.aws.irsa)
+        "oidc" ($wi.aws.oidc | default dict))
+    "gcp" (dict "sa" (or $wi.gcp.sa .Values.containerRegistry.gcp.sa))
+    "azure" (dict "clientId" (or $wi.azure.clientId .Values.containerRegistry.azure.clientId)) -}}
+{{- include "hush-common.workloadIdentityContext" (dict
+    "identity" $identity
+    "path" "accessManager.workloadIdentity"
+    "irsaPaths" (list "accessManager.workloadIdentity.aws.irsa" "secretStore.aws.irsa" "containerRegistry.aws.irsa")
+    "secretStore" (dict "store" .Values.secretStore "path" "secretStore")) -}}
 {{- end }}
 
 {{/*
 Is an AWS identity configured for the access manager or the container registry?
 */}}
 {{- define "hush-am.awsIdentityConfigured" -}}
-{{- $oidcRole := include "hush-am.awsOidcRole" . -}}
+{{- $oidcRole := include "hush-common.awsOidcRole" (include "hush-am.workloadIdentityContext" . | fromYaml) -}}
 {{- if or .Values.accessManager.workloadIdentity.aws.irsa $oidcRole .Values.containerRegistry.aws.irsa -}}
 true
 {{- end -}}
-{{- end }}
-
-{{/*
-Projected volume carrying the K8S SA token AWS STS exchanges for credentials
-*/}}
-{{- define "hush-am.awsWebIdentityVolume" -}}
-{{- include "hush-common.awsWebIdentityVolume" (dict
-    "role" (include "hush-am.awsOidcRole" .)
-    "audience" (include "hush-am.awsOidcAudience" .)) -}}
-{{- end }}
-
-{{/*
-Volume mount for the projected AWS web identity token
-*/}}
-{{- define "hush-am.awsWebIdentityVolumeMount" -}}
-{{- include "hush-common.awsWebIdentityVolumeMount" (dict
-    "role" (include "hush-am.awsOidcRole" .)) -}}
-{{- end }}
-
-{{/*
-Envs directing the AWS SDK to assume a role with the projected K8S SA token
-*/}}
-{{- define "hush-am.awsWebIdentityEnvs" -}}
-{{- include "hush-common.awsWebIdentityEnvs" (dict
-    "role" (include "hush-am.awsOidcRole" .)) -}}
 {{- end }}
 
 {{/*
@@ -619,32 +586,6 @@ default
 {{- else -}}
 ec2role
 {{- end -}}
-{{- end }}
-
-{{/*
-Annotations for access manager
-*/}}
-{{- define "hush-am.accessManagerServiceAccountAnnotations" -}}
-{{- $wiIrsa := .Values.accessManager.workloadIdentity.aws.irsa -}}
-{{- if not $wiIrsa -}}
-  {{- $secretStoreIrsa := .Values.secretStore.aws.irsa -}}
-  {{- $crIrsa := .Values.containerRegistry.aws.irsa -}}
-  {{- if and $secretStoreIrsa $crIrsa -}}
-      {{- if ne $secretStoreIrsa $crIrsa -}}
-          {{- fail "'secretStore.aws.irsa' and 'containerRegistry.aws.irsa' must be equal when both are defined" -}}
-      {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- $irsa := or $wiIrsa .Values.secretStore.aws.irsa .Values.containerRegistry.aws.irsa -}}
-{{- if $irsa -}}
-eks.amazonaws.com/role-arn: {{ $irsa | quote }}
-{{- end }}
-{{- with or .Values.accessManager.workloadIdentity.gcp.sa .Values.containerRegistry.gcp.sa }}
-iam.gke.io/gcp-service-account: {{ . | quote }}
-{{- end }}
-{{- with or .Values.accessManager.workloadIdentity.azure.clientId .Values.containerRegistry.azure.clientId }}
-azure.workload.identity/client-id: {{ . | quote }}
-{{- end }}
 {{- end }}
 
 {{/*
@@ -687,7 +628,7 @@ Access Manager envs
       key: {{ .key }}
 {{- end }}
 {{ include "hush-common.siloEnvs" (dict "store" .Values.secretStore "path" "secretStore" "root" . "azureClientIdPath" "accessManager.workloadIdentity.azure.clientId") }}
-{{- with (include "hush-am.awsWebIdentityEnvs" .) }}
+{{- with (include "hush-common.awsWebIdentityEnvs" (include "hush-am.workloadIdentityContext" . | fromYaml)) }}
 {{ . }}
 {{- end }}
 - name: MUFASA_POLICY_DB_PATH
@@ -729,7 +670,7 @@ Diag envs
       key: {{ .key }}
 {{- end }}
 {{ include "hush-common.siloEnvs" (dict "store" .Values.secretStore "path" "secretStore" "root" . "azureClientIdPath" "accessManager.workloadIdentity.azure.clientId") }}
-{{- with (include "hush-am.awsWebIdentityEnvs" .) }}
+{{- with (include "hush-common.awsWebIdentityEnvs" (include "hush-am.workloadIdentityContext" . | fromYaml)) }}
 {{ . }}
 {{- end }}
 - name: MUFASA_POLICY_DB_PATH
