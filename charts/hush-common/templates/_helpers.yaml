@@ -322,29 +322,56 @@ it only when the chart's own Secret must hold the password, see
 {{- end }}
 
 {{/*
+The deployment Secret of a hush-sensor release in the namespace, for the
+charts that offer 'hushDeployment.sensorDeploymentSecretName'. A chart
+declares that with the Chart.yaml annotation
+'hush.security/sensor-deployment-secret-fallback: "true"' (hush-agw and
+hush-am do). The credential helpers below fall back to the Secret when
+neither 'secretKeyRef' nor the inline value is given; setting the value
+empty switches the fallback off. hush-sensor and hush-connector carry no
+such annotation and ignore a stray value, so a values file copied from
+hush-am cannot switch the fallback on there. The annotation rather than
+the chart name, so that an aliased dependency keeps its fallback.
+*/}}
+{{- define "hush-common.sensorDeploymentSecretName" -}}
+{{- $annotations := .Chart.Annotations | default dict -}}
+{{- if eq (index $annotations "hush.security/sensor-deployment-secret-fallback" | toString) "true" -}}
+{{- dig "hushDeployment" "sensorDeploymentSecretName" "" .Values.AsMap -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Should the chart's own Secret hold the deployment token? Yes unless a
-pre-created Secret names it.
+pre-created Secret names it, or neither it nor the inline token is given
+and a sensor's Secret is there to fall back to.
 */}}
 {{- define "hush-common.shouldCreateDeploymentTokenKubeSecret" -}}
 {{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
 {{- $name := and $keyRef $keyRef.name -}}
 {{- $tokenKey := and $keyRef $keyRef.tokenKey -}}
+{{- $inline := and .Values.hushDeployment .Values.hushDeployment.token -}}
 {{- if not (and $name $tokenKey) -}}
+  {{- if or $inline (not (include "hush-common.sensorDeploymentSecretName" .)) -}}
 true
+  {{- end -}}
 {{- end }}
 {{- end }}
 
 {{/*
 Should the chart's own Secret hold the deployment password? Yes in password
-auth mode unless a pre-created Secret names it.
+auth mode unless a pre-created Secret names it, or neither it nor the
+inline password is given and a sensor's Secret is there to fall back to.
 */}}
 {{- define "hush-common.shouldCreateDeploymentPasswordKubeSecret" -}}
 {{- if include "hush-common.isPasswordAuthMode" . -}}
 {{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
 {{- $name := and $keyRef $keyRef.name -}}
 {{- $key := and $keyRef $keyRef.key -}}
+{{- $inline := and .Values.hushDeployment .Values.hushDeployment.password -}}
 {{- if not (and $name $key) -}}
+  {{- if or $inline (not (include "hush-common.sensorDeploymentSecretName" .)) -}}
 true
+  {{- end -}}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -361,12 +388,17 @@ true
 {{- end }}
 
 {{/*
-Which deployment-token Secret the pod reads, resolved strictly: a pre-created
-Secret ('hushDeployment.secretKeyRef'), else the chart's own Secret holding
-the inline 'hushDeployment.token', which must then be set.
+Which deployment-token Secret the pod reads: a pre-created Secret
+('hushDeployment.secretKeyRef') when it names the key; else the chart's own
+Secret holding the inline 'hushDeployment.token'; else a sensor's Secret
+when the chart offers one; else the chart's own Secret, whose render then
+requires the inline token.
 */}}
 {{- define "hush-common.effectiveDeploymentTokenKubeSecretRef" -}}
-{{- if (include "hush-common.shouldCreateDeploymentTokenKubeSecret" .) -}}
+{{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
+{{- if and $keyRef $keyRef.name $keyRef.tokenKey -}}
+    {{- dict "name" $keyRef.name "key" $keyRef.tokenKey | toYaml -}}
+{{- else if (include "hush-common.shouldCreateDeploymentTokenKubeSecret" .) -}}
     {{- dict
         "name" (include "hush-common.deploymentKubeSecretName" .)
         "key" "deployment-token"
@@ -374,8 +406,8 @@ the inline 'hushDeployment.token', which must then be set.
     -}}
 {{- else -}}
     {{- dict
-        "name" .Values.hushDeployment.secretKeyRef.name
-        "key" .Values.hushDeployment.secretKeyRef.tokenKey
+        "name" (include "hush-common.sensorDeploymentSecretName" .)
+        "key" "deployment-token"
         | toYaml
     -}}
 {{- end }}
@@ -383,11 +415,14 @@ the inline 'hushDeployment.token', which must then be set.
 
 {{/*
 Which deployment-password Secret the pod reads (password auth mode only),
-resolved strictly like the token.
+resolved in the same order as the token.
 */}}
 {{- define "hush-common.effectiveDeploymentPasswordKubeSecretRef" -}}
 {{- if include "hush-common.isPasswordAuthMode" . -}}
-  {{- if (include "hush-common.shouldCreateDeploymentPasswordKubeSecret" .) -}}
+  {{- $keyRef := and .Values.hushDeployment .Values.hushDeployment.secretKeyRef -}}
+  {{- if and $keyRef $keyRef.name $keyRef.key -}}
+      {{- dict "name" $keyRef.name "key" $keyRef.key | toYaml -}}
+  {{- else if (include "hush-common.shouldCreateDeploymentPasswordKubeSecret" .) -}}
       {{- dict
           "name" (include "hush-common.deploymentKubeSecretName" .)
           "key" "deployment-password"
@@ -395,8 +430,8 @@ resolved strictly like the token.
       -}}
   {{- else -}}
       {{- dict
-          "name" .Values.hushDeployment.secretKeyRef.name
-          "key" .Values.hushDeployment.secretKeyRef.key
+          "name" (include "hush-common.sensorDeploymentSecretName" .)
+          "key" "deployment-password"
           | toYaml
       -}}
   {{- end }}
