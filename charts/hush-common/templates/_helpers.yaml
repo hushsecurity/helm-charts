@@ -594,3 +594,68 @@ connector images (connector-client, connector-forwarder).
     "version" .Values.image.connectorTag
     "minVersion" "v0.5.0") -}}
 {{- end -}}
+
+{{/*
+The environment that identifies a container to the platform as part of a
+Kubernetes deployment, for a container that authenticates without the
+deployment password: the SA token path, the auth mode, the deployment token
+Secret reference and the deployment kind. The reference resolves through
+'hush-common.effectiveDeploymentTokenKubeSecretRef'.
+*/}}
+{{- define "hush-common.deploymentIdentityEnvWithoutPassword" -}}
+- name: HUSH_K8S_SA_TOKEN_PATH
+  value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
+- name: HUSH_AUTH_MODE
+  value: {{ .Values.hushDeployment.authMode | quote }}
+{{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
+- name: DEPLOYMENT_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+- name: DEPLOYMENT_KIND
+  value: k8s
+{{- end }}
+
+{{/*
+The full deployment identity environment: the entries above plus, in
+password auth mode, the deployment password Secret reference, which resolves
+through 'hush-common.effectiveDeploymentPasswordKubeSecretRef'.
+*/}}
+{{- define "hush-common.deploymentIdentityEnv" -}}
+{{ include "hush-common.deploymentIdentityEnvWithoutPassword" . }}
+{{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+- name: DEPLOYMENT_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .name }}
+      key: {{ .key }}
+{{- end }}
+{{- end }}
+
+{{/*
+OpenShift SCC assignment via RBAC: a RoleBinding of a service account to the
+built-in 'system:openshift:scc:<scc>' ClusterRole (the declarative equivalent
+of 'oc adm policy add-scc-to-user'). Takes a dict with 'root' (the chart
+context), 'name' (the component's full name; the binding is named
+'<name>-scc-<scc>'), 'scc' and 'serviceAccount'. The caller gates it on the
+OpenShift API group and its own value.
+*/}}
+{{- define "hush-common.sccRoleBinding" -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .name }}-scc-{{ .scc }}
+  labels: {{- include "hush-common.labels" .root | nindent 4 }}
+  namespace: {{ include "hush-common.namespace" .root }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:{{ .scc }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .serviceAccount }}
+    namespace: {{ include "hush-common.namespace" .root }}
+{{- end }}
