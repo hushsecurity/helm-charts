@@ -107,26 +107,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: HUSH_K8S_SA_TOKEN_PATH
-              value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
-            - name: HUSH_AUTH_MODE
-              value: {{ .Values.hushDeployment.authMode | quote }}
-            {{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
-            - name: DEPLOYMENT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .name }}
-                  key: {{ .key }}
-            {{- end }}
-            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
-            - name: DEPLOYMENT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .name }}
-                  key: {{ .key }}
-            {{- end }}
-            - name: DEPLOYMENT_KIND
-              value: k8s
+            {{- include "hush-common.deploymentIdentityEnv" . | nindent 12 }}
             - name: SENTRY_SCAN_CONFIG_MAPS
               value: "1"
             - name: PLUTO_CRAWL_K8S_SECRETSTORE
@@ -170,26 +151,7 @@ spec:
               readOnly: true
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           env:
-            - name: HUSH_K8S_SA_TOKEN_PATH
-              value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
-            - name: HUSH_AUTH_MODE
-              value: {{ .Values.hushDeployment.authMode | quote }}
-            {{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
-            - name: DEPLOYMENT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .name }}
-                  key: {{ .key }}
-            {{- end }}
-            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
-            - name: DEPLOYMENT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .name }}
-                  key: {{ .key }}
-            {{- end }}
-            - name: DEPLOYMENT_KIND
-              value: k8s
+            {{- include "hush-common.deploymentIdentityEnv" . | nindent 12 }}
             - name: REPORT_APP_METRICS
               value: "1"
             - name: AGENT_ID_PATH
