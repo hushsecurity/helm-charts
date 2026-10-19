@@ -96,14 +96,14 @@ spec:
               value: {{ .Values.hushDeployment.authMode | quote }}
             - name: CHANNEL_DIGESTS_PERIOD
               value: {{ .Values.vermon.updateFrequency }}
-            {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
+            {{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
-            {{- with (include "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -132,14 +132,14 @@ spec:
               value: {{ include "hush-common.k8sSaTokenPath" . | quote }}
             - name: HUSH_AUTH_MODE
               value: {{ .Values.hushDeployment.authMode | quote }}
-            {{- with (include "hush-sensor.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
+            {{- with (include "hush-common.effectiveDeploymentTokenKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}
                   key: {{ .key }}
             {{- end }}
-            {{- with (include "hush-sensor.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
+            {{- with (include "hush-common.effectiveDeploymentPasswordKubeSecretRef" . | fromYaml) }}
             - name: DEPLOYMENT_PASSWORD
               valueFrom:
                 secretKeyRef:
