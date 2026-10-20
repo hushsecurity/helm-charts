@@ -46,6 +46,24 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- bump the app version to `v0.25.0`, which supports the `az_key_vault` secret
+  store and brings security fixes and SPIRE 1.15.4.
+
+  - access policies that deliver the same environment variable, file or cloud
+    identity to a workload at equal priority, where only one of them takes
+    effect, now get a warning in their activity log. Set `spec.priority` to
+    decide which wins.
+  - a dynamic credential whose rotation stalled when the access manager
+    replica handling it stopped is now rotated. A rotation that keeps failing
+    is retried by every replica, so its failures appear once per replica in
+    the activity log.
+  - an Elasticsearch node that never answers no longer holds up the delivery
+    of other credentials.
+
+- bump the default spire-agent image to `v0.25.0`, which brings SPIRE 1.15.4.
+  The first upgrade after this restarts spire-agent pods once to roll out the
+  new image.
+
 - `secretStore.gcp.credentials_json` now applies whatever `secretStore.kind`
   is, so a `gcpsm` store created through the Hush API can use the key from a
   deployment of any kind. Before, it was used only under `kind: gcpsm`; a
