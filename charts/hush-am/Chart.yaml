@@ -2,8 +2,8 @@ apiVersion: v2
 name: hush-am
 description: A Helm chart for Hush Security Access Management platform.
 type: application
-version: 0.30.0
-appVersion: "v0.25.0"
+version: 0.31.0
+appVersion: "v0.26.0"
 home: https://hush.security
 dependencies:
   - name: hush-common
