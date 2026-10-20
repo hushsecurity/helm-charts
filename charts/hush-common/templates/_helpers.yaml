@@ -305,7 +305,7 @@ only when the chart's own Secret must hold the token, see
 {{- if not $token -}}
     {{- fail "'hushDeployment.token' is undefined" -}}
 {{- end -}}
-{{- printf "%s" $token -}}
+{{- include "hush-common.credentialString" (dict "name" "hushDeployment.token" "value" $token) -}}
 {{- end }}
 
 {{/*
@@ -318,7 +318,24 @@ it only when the chart's own Secret must hold the password, see
 {{- if not $password -}}
     {{- fail "'hushDeployment.password' is undefined" -}}
 {{- end -}}
-{{- printf "%s" $password -}}
+{{- include "hush-common.credentialString" (dict "name" "hushDeployment.password" "value" $password) -}}
+{{- end }}
+
+{{/*
+A credential as the string to store. Takes a dict with 'name' (for the
+message) and 'value'. Digits given with '--set' arrive as an int64, which
+keeps every digit, so they are written back; a bare number in a values file
+arrives as a float64 (and 0123 as 83), which has lost the text, so the render
+fails and says to quote the value or use --set-string.
+*/}}
+{{- define "hush-common.credentialString" -}}
+{{- if kindIs "string" .value -}}
+{{- .value -}}
+{{- else if kindIs "int64" .value -}}
+{{- toString .value -}}
+{{- else -}}
+{{- fail (printf "'%s' must be a string: quote it in the values file, or pass it with --set-string" .name) -}}
+{{- end -}}
 {{- end }}
 
 {{/*
