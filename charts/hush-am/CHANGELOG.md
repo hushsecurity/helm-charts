@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-am 0.30.0 - 2026-10-20
 
 ### Added
 
