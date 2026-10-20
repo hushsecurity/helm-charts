@@ -4,6 +4,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- `accessManager.annotations` and `spireAgent.annotations` failed to render
+  when set as a map ("wrong type for value; expected string"). A block
+  string, the one form that did render, still does.
+
 ## hush-am 0.31.0 - 2026-10-21
 
 ### Changed
