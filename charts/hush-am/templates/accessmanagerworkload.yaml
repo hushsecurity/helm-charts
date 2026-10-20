@@ -32,8 +32,8 @@ spec:
   template:
     metadata:
       labels: {{- include "hush-am.accessManagerPodLabels" . | nindent 8 }}
-      {{ with .Values.accessManager.annotations -}}
-      annotations: {{- . | nindent 8 }}
+      {{- with .Values.accessManager.annotations }}
+      annotations: {{- include "hush-common.annotations" . | nindent 8 }}
       {{- end }}
     spec:
       {{- with (include "hush-am.accessManagerPriorityClassName" .) }}

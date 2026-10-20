@@ -18,8 +18,8 @@ spec:
     metadata:
       labels: {{- include "hush-common.podLabels" . | nindent 8 }}
         app.kubernetes.io/component: spire-agent
-      {{ with .Values.spireAgent.annotations -}}
-      annotations: {{- . | nindent 8 }}
+      {{- with .Values.spireAgent.annotations }}
+      annotations: {{- include "hush-common.annotations" . | nindent 8 }}
       {{- end }}
 
     spec:

@@ -1,0 +1,11 @@
+---
+# Pod annotations on the access manager and the spire agent: a map on one, a
+# block string on the other, since that form rendered before the map handling
+# was fixed.
+accessManager:
+  annotations:
+    example.com/owner: "platform"
+
+spireAgent:
+  annotations: |
+    example.com/owner: platform
