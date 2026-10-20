@@ -13,6 +13,10 @@ All notable changes to this project will be documented in this file.
 - `connector.annotations`, `sentry.annotations` and `vermon.annotations`
   failed to render when set ("wrong type for value; expected string"). A
   block string, the one form that did render, still does.
+- a numeric `hushDeployment.token` or `hushDeployment.password` given with
+  `--set` was stored in the chart's Secret as `%!s(int64=...)`; it is now
+  stored as given. A bare number in a values file arrives as a float and
+  cannot be stored faithfully; the render now fails and says to quote it.
 
 ## hush-sensor 0.32.0 - 2026-10-10
 
