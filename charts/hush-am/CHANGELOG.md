@@ -4,6 +4,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to `v0.26.0`.
+
+  - a MongoDB privilege whose grants apply to every database needs a
+    credential whose `auth_source` is `admin`, since MongoDB allows such a
+    resource only in a role scoped to `admin`. On any other `auth_source` it
+    now fails at once as a configuration error, instead of being retried
+    for up to two hours.
+
 ## hush-am 0.30.0 - 2026-10-20
 
 ### Added
