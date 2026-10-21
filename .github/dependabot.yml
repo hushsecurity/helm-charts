@@ -2,7 +2,9 @@
 version: 2
 updates:
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /.github/actions/setup-helm
     schedule:
       interval: weekly
     commit-message:
