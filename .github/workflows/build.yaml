@@ -45,6 +45,7 @@ jobs:
       - name: Install kube tools
         uses: yokawasa/action-setup-kube-tools@v0.14.0
         with:
+          setup-tools: kubeconform
           kubeconform: "0.8.0"
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.9.0
