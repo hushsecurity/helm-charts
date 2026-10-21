@@ -1,0 +1,24 @@
+---
+name: Install helm
+description: Install the latest Helm 4 release
+inputs:
+  token:
+    description: GitHub token for the release lookup
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - name: Find the latest helm 4
+      id: helm
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        version=$(gh api 'repos/helm/helm/releases?per_page=100' \
+          -q '.[] | select(.prerelease | not) | .tag_name' \
+          | grep -E '^v4\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+    - name: Install helm
+      uses: azure/setup-helm@v5
+      with:
+        version: ${{ steps.helm.outputs.version }}
