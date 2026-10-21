@@ -42,7 +42,7 @@ jobs:
       - name: Install sigstore plugin
         run: |
           helm plugin install https://github.com/sigstore/helm-sigstore \
-            --version $HELM_SIGSTORE_VERSION
+            --version $HELM_SIGSTORE_VERSION --verify=false
       - name: Verify sigstore plugin
         run: |
           set -xe
