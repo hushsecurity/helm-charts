@@ -102,6 +102,34 @@ def test_kubesecrets_in_another_namespace_is_granted_there():
     assert binding["subjects"][0]["namespace"] == "gw-ns"
 
 
+# A Kubernetes secret store created through the Hush platform without a
+# namespace keeps its Secrets in the gateway's own namespace, so both containers
+# that reach the stores are told which namespace that is, whatever the
+# gateway's own store is.
+@pytest.mark.parametrize(
+    "args",
+    [
+        "",
+        "--set agw.secretStore.kind=awssm --set agw.secretStore.aws.region=eu-central-1",
+    ],
+)
+def test_store_containers_are_told_their_namespace(args):
+    # Render the chart in a namespace of its own.
+    docs = template(f"--namespace gw-ns {args}")
+
+    # Both store containers read it from the pod.
+    for container in _containers(docs):
+        refs = [
+            var["valueFrom"]["fieldRef"]["fieldPath"]
+            for var in container.get("env", [])
+            if var["name"] == "HUSH_K8S_NAMESPACE"
+        ]
+        if container["name"] in STORE_CONTAINERS:
+            assert refs == ["metadata.namespace"]
+        else:
+            assert not refs
+
+
 # A store outside the cluster needs no access to Secrets, so the chart grants
 # none, and the containers are pointed at the store instead.
 @pytest.mark.parametrize(
