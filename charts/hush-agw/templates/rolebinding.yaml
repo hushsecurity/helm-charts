@@ -1,17 +1,18 @@
-{{- if eq (toString .Values.agw.secretStore.kind) "kubesecrets" }}
+{{- range $namespace := splitList " " (include "hush-agw.secretNamespaces" .) }}
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "hush-common.fullName" . }}
-  labels: {{- include "hush-common.labels" . | nindent 4 }}
+  name: {{ include "hush-common.fullName" $ }}
+  labels: {{- include "hush-common.labels" $ | nindent 4 }}
     app.kubernetes.io/component: gateway-role-binding
-  namespace: {{ include "hush-common.kubeSiloNamespace" (dict "store" .Values.agw.secretStore "path" "agw.secretStore" "root" .) }}
+  namespace: {{ $namespace }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "hush-common.fullName" . }}
-    namespace: {{ include "hush-common.namespace" . }}
+    name: {{ include "hush-common.fullName" $ }}
+    namespace: {{ include "hush-common.namespace" $ }}
 roleRef:
   kind: Role
-  name: {{ include "hush-common.fullName" . }}
+  name: {{ include "hush-common.fullName" $ }}
   apiGroup: rbac.authorization.k8s.io
 {{- end }}
