@@ -11,8 +11,10 @@ All notable changes to this project will be documented in this file.
 - the new `agw.secretStore` values choose where the gateway keeps its private
   keys, with the same settings as hush-am's `secretStore`: `kubesecrets` (the
   default), `awssm`, `awsssm`, `gcpsm`, `hc_vault` or `az_key_vault`. With
-  the default, the gateway keeps them as Secrets in its own namespace, and the
-  chart lets it manage Secrets there. A gateway that shares its Hush
+  the default, the gateway keeps them as Secrets in its own namespace. Whatever
+  the kind, the chart lets it manage Secrets in its own namespace, where a
+  Kubernetes secret store created through the Hush platform without a
+  namespace keeps them. A gateway that shares its Hush
   deployment with hush-am must use the same secret store as hush-am. An Azure
   Key Vault must not have purge protection enabled, and the gateway's identity
   needs get, set, delete and purge on its secrets. For example:
@@ -46,6 +48,23 @@ All notable changes to this project will be documented in this file.
         irsa: arn:aws:iam::123456789012:role/hush-agw
   ```
 
+- the new `agw.secretStore.k8s.additionalNamespaces` lets the gateway manage
+  Secrets in namespaces other than its own, for the Kubernetes secret stores
+  created through the Hush platform in those namespaces, as hush-am's
+  `secretStore.k8s.additionalNamespaces` does. Each namespace must already
+  exist, and access is granted in each listed namespace only, never
+  cluster-wide. A gateway that shares its Hush deployment with hush-am needs
+  the same list as hush-am. For example:
+
+  ```yaml
+  agw:
+    secretStore:
+      k8s:
+        additionalNamespaces:
+          - team-a
+          - team-b
+  ```
+
 ### Changed
 
 - the Kubernetes API token is mounted only into the gateway containers that
@@ -59,6 +78,9 @@ All notable changes to this project will be documented in this file.
   is no longer stored in the chart's Secret.
 - an empty `hushDeployment.sensorDeploymentSecretName` now requires the
   chart's own credentials instead of referencing a Secret with no name.
+- the gateway may now list pods in every namespace, so that it never revokes
+  a credential a pod still uses, as hush-am may. Whoever installs the chart
+  has to hold that permission to grant it.
 
 ### Fixed
 
