@@ -45,7 +45,7 @@ jobs:
       - name: Install helm
         uses: ./.github/actions/setup-helm
       - name: Install kube tools
-        uses: yokawasa/action-setup-kube-tools@v0.14.0
+        uses: yokawasa/action-setup-kube-tools@v0.14.1
         with:
           setup-tools: kubeconform
           kubeconform: "0.8.0"
