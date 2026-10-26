@@ -8,6 +8,28 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- bump the app version to `v0.27.0`, whose images are rebuilt on minimal
+  bases free of the operating system packages, and their CVEs, that
+  scanners reported in earlier images. It also brings Go and SPIRE 1.15.5
+  security fixes.
+
+  - every x86-64 node now needs an x86-64-v2 CPU to run the hush-am pods,
+    spire-agent included, and the pods the injector adds secrets to. On an
+    older CPU such an injected pod does not start, whatever
+    `admissionController.injectorFailureStrategy` says.
+  - a credential that keeps failing to be delivered shows as failed after a
+    few retries, and again when retries run out two hours later, for every
+    kind of credential. Its activity log shows the failure at those two
+    points instead of at every retry.
+  - a target that cannot be reached, such as a database that is still
+    starting, is now retried, instead of left without its credential until
+    the access policy changes or the access manager restarts. A wrong host
+    is retried too, so it shows as failed after a few retries instead of at
+    once.
+
+- bump the default spire-agent image to `v0.27.0`, which brings SPIRE 1.15.5
+  on the same minimal base.
+
 - a pre-created Secret (`hushDeployment.secretKeyRef`) now takes precedence
   over the inline `hushDeployment.token`/`password`, as the comments on
   those two values said; the overridden inline value is no longer stored in
