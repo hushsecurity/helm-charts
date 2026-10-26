@@ -4,6 +4,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- remove annotations that were interfering with the release workflow.
+
 ## hush-am 0.32.0 - 2026-10-26
 
 ### Changed
