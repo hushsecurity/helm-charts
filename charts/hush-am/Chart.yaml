@@ -9,7 +9,3 @@ dependencies:
   - name: hush-common
     version: 0.1.0
     repository: "file://./charts/hush-common"
-annotations:
-  # The credential helpers in hush-common fall back to a sensor release's
-  # deployment Secret (hushDeployment.sensorDeploymentSecretName).
-  hush.security/sensor-deployment-secret-fallback: "true"

@@ -288,19 +288,18 @@ fails and says to quote the value or use --set-string.
 
 {{/*
 The deployment Secret of a hush-sensor release in the namespace, for the
-charts that offer 'hushDeployment.sensorDeploymentSecretName'. A chart
-declares that with the Chart.yaml annotation
-'hush.security/sensor-deployment-secret-fallback: "true"' (hush-agw and
-hush-am do). The credential helpers below fall back to the Secret when
-neither 'secretKeyRef' nor the inline value is given; setting the value
-empty switches the fallback off. hush-sensor and hush-connector carry no
-such annotation and ignore a stray value, so a values file copied from
-hush-am cannot switch the fallback on there. The annotation rather than
-the chart name, so that an aliased dependency keeps its fallback.
+charts that offer 'hushDeployment.sensorDeploymentSecretName': hush-agw and
+hush-am. The credential helpers below fall back to the Secret when neither
+'secretKeyRef' nor the inline value is given; setting the value empty
+switches the fallback off. hush-sensor and hush-connector ignore a stray
+value, so a values file copied from hush-am cannot switch the fallback on
+there. The check goes by chart name rather than a Chart.yaml annotation
+because the release CLI cannot add its release annotation to a chart that
+already has annotations. Helm renames an aliased dependency to its alias,
+so hush-agw or hush-am pulled in under an alias loses the fallback.
 */}}
 {{- define "hush-common.sensorDeploymentSecretName" -}}
-{{- $annotations := .Chart.Annotations | default dict -}}
-{{- if eq (index $annotations "hush.security/sensor-deployment-secret-fallback" | toString) "true" -}}
+{{- if has .Chart.Name (list "hush-agw" "hush-am") -}}
 {{- dig "hushDeployment" "sensorDeploymentSecretName" "" .Values.AsMap -}}
 {{- end -}}
 {{- end }}

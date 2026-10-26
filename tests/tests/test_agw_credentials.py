@@ -1,6 +1,5 @@
 import base64
 import os
-import shutil
 import subprocess
 import tempfile
 import pytest
@@ -133,27 +132,6 @@ def test_oidc_stores_no_password():
     for container in _identity_containers(docs):
         assert not _has_env(container, "DEPLOYMENT_PASSWORD")
         assert _has_env(container, "HUSH_K8S_SA_TOKEN_PATH")
-
-
-def test_the_fallback_survives_an_alias():
-    # Under an umbrella chart with 'alias', .Chart.Name is the alias. The
-    # fallback is declared by a Chart.yaml annotation, so it still applies.
-    with tempfile.TemporaryDirectory() as tmp:
-        umbrella = os.path.join(tmp, "umbrella")
-        os.makedirs(os.path.join(umbrella, "charts"))
-        shutil.copytree(AGW_CHART, os.path.join(umbrella, "charts", "gateway"))
-        with open(os.path.join(umbrella, "Chart.yaml"), "w", encoding="utf-8") as f:
-            f.write(
-                "apiVersion: v2\nname: umbrella\nversion: 0.1.0\n"
-                "dependencies:\n  - name: hush-agw\n    version: '*'\n"
-                "    alias: gateway\n    repository: file://charts/gateway\n"
-            )
-        out = bash(
-            f"helm template umbrella --set gateway.agw.hostname=gw.example.com {umbrella}"
-        )
-    docs = [doc for doc in load_all(out, Loader=Loader) if doc]
-    for container in _identity_containers(docs):
-        assert _secret_ref(container, "DEPLOYMENT_TOKEN")[0] == SENSOR_SECRET
 
 
 def test_numeric_credentials_from_set_are_stored_as_given():
