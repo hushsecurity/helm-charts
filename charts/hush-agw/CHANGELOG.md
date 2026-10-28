@@ -48,6 +48,27 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- bump the app version to v0.11.0. The gateway now generates the
+  deployment's private keys, as hush-am does, and keeps them in the secret
+  store `agw.secretStore` chooses, and refuses to start without one; this
+  release of the chart always configures one. A gateway whose secret store
+  differs from that of the hush-am in the same Hush deployment fails to
+  start. With `kubesecrets` the namespace is part of the store: a gateway
+  installed in another namespace than hush-am sets
+  `agw.secretStore.k8s.namespace` to hush-am's.
+
+  - a mongodb application gains a tool that lists the database's
+    collections. A mongodb read, update or delete tool given a collection
+    that does not exist now fails instead of returning an empty result.
+  - a mongodb user created in another database than the one the tools run
+    against, such as `admin`, now authenticates. A database name containing
+    `%` or `+` now works.
+  - an application whose server does not answer is reported as unavailable,
+    instead of every tool call waiting out a connect timeout.
+  - the gateway images carry the latest CA trust store.
+
+  The rest of the release is internal improvements.
+
 - the Kubernetes API token is mounted only into the gateway containers that
   call the API, no longer into the client-facing gateway container or the
   toolbox.
