@@ -80,6 +80,10 @@ All notable changes to this project will be documented in this file.
   is no longer stored in the chart's Secret.
 - an empty `hushDeployment.sensorDeploymentSecretName` now requires the
   chart's own credentials instead of referencing a Secret with no name.
+- the `hushDeployment.sensorDeploymentSecretName` fallback applies only to a
+  chart named hush-agw. Pulled into an umbrella chart under an alias, the
+  chart must be given its own credentials; the render fails with
+  "'hushDeployment.token' is undefined" otherwise.
 
 ### Fixed
 
