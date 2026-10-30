@@ -9,3 +9,6 @@ rules:
     resources: ["namespaces"]
     resourceNames: ["kube-system"]
     verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]

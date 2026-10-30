@@ -1,5 +1,6 @@
 import subprocess
 import pytest
+from yaml import dump
 from common.chart import AGW_CHART
 from common.chart import template as _template
 
@@ -93,17 +94,49 @@ def test_kubesecrets_in_another_namespace_is_granted_there():
     for env in _store_envs(docs):
         assert env["SILO_K8S_NAMESPACE"] == "silo-ns"
 
-    # The Role and its binding live there, bound to the install namespace's
-    # service account.
-    (role,) = _rbac(docs, "Role")
-    (binding,) = _rbac(docs, "RoleBinding")
-    assert role["metadata"]["namespace"] == "silo-ns"
-    assert binding["metadata"]["namespace"] == "silo-ns"
-    assert binding["subjects"][0]["namespace"] == "gw-ns"
+    # A Role and its binding live there, bound to the install namespace's
+    # service account, and the install namespace keeps its own for the stores
+    # created through Hush without a namespace.
+    roles = sorted(role["metadata"]["namespace"] for role in _rbac(docs, "Role"))
+    bindings = _rbac(docs, "RoleBinding")
+    assert roles == ["gw-ns", "silo-ns"]
+    assert sorted(b["metadata"]["namespace"] for b in bindings) == roles
+    for binding in bindings:
+        assert binding["subjects"][0]["namespace"] == "gw-ns"
 
 
-# A store outside the cluster needs no access to Secrets, so the chart grants
-# none, and the containers are pointed at the store instead.
+# A Kubernetes secret store created through the Hush platform without a
+# namespace keeps its Secrets in the gateway's own namespace, so both containers
+# that reach the stores are told which namespace that is, whatever the
+# gateway's own store is.
+@pytest.mark.parametrize(
+    "args",
+    [
+        "",
+        "--set agw.secretStore.kind=awssm --set agw.secretStore.aws.region=eu-central-1",
+    ],
+)
+def test_store_containers_are_told_their_namespace(args):
+    # Render the chart in a namespace of its own.
+    docs = template(f"--namespace gw-ns {args}")
+
+    # Both store containers read it from the pod.
+    for container in _containers(docs):
+        refs = [
+            var["valueFrom"]["fieldRef"]["fieldPath"]
+            for var in container.get("env", [])
+            if var["name"] == "HUSH_K8S_NAMESPACE"
+        ]
+        if container["name"] in STORE_CONTAINERS:
+            assert refs == ["metadata.namespace"]
+        else:
+            assert not refs
+
+
+# A store outside the cluster needs no Secrets of its own, but the Kubernetes
+# stores created through Hush without a namespace keep theirs in the gateway's
+# namespace: the chart grants Secrets there only, and the containers are pointed
+# at the store.
 @pytest.mark.parametrize(
     "args,expected",
     [
@@ -138,17 +171,60 @@ def test_kubesecrets_in_another_namespace_is_granted_there():
         ),
     ],
 )
-def test_store_outside_the_cluster_gets_no_secret_access(args, expected):
+def test_store_outside_the_cluster_gets_secrets_in_its_own_namespace_only(
+    args, expected
+):
     # Render with the store.
-    docs = template(args)
+    docs = template(f"--namespace gw-ns {args}")
 
     # Both containers carry its settings.
     for env in _store_envs(docs):
         assert expected.items() <= env.items()
 
-    # No Role or RoleBinding is rendered.
-    assert not _rbac(docs, "Role")
-    assert not _rbac(docs, "RoleBinding")
+    # One Role and its binding, in the install namespace.
+    (role,) = _rbac(docs, "Role")
+    (binding,) = _rbac(docs, "RoleBinding")
+    assert role["metadata"]["namespace"] == "gw-ns"
+    assert binding["metadata"]["namespace"] == "gw-ns"
+
+
+# Simulates Kubernetes stores created through Hush in namespaces of their own,
+# beside a gateway store of either kind: the gateway is granted Secrets in each
+# listed namespace beside its own, once each, and nowhere else.
+@pytest.mark.parametrize(
+    "args",
+    [
+        "",
+        "--set agw.secretStore.kind=awssm --set agw.secretStore.aws.region=eu-central-1",
+    ],
+)
+def test_additional_namespaces_are_granted_each(tmp_path, args):
+    # List additional namespaces, one of them the install namespace, in a values
+    # file: the shell running helm would expand a list given to --set.
+    values = tmp_path / "additional-namespaces-values.yaml"
+    values.write_text(
+        dump(
+            {
+                "agw": {
+                    "secretStore": {
+                        "k8s": {"additionalNamespaces": ["team-a", "gw-ns", "team-b"]}
+                    }
+                }
+            }
+        )
+    )
+
+    # Render with them.
+    docs = template(f"--namespace gw-ns --values {values} {args}")
+
+    # A Role and a binding in each, bound to the install namespace's service
+    # account.
+    roles = sorted(role["metadata"]["namespace"] for role in _rbac(docs, "Role"))
+    bindings = _rbac(docs, "RoleBinding")
+    assert roles == ["gw-ns", "team-a", "team-b"]
+    assert sorted(b["metadata"]["namespace"] for b in bindings) == roles
+    for binding in bindings:
+        assert binding["subjects"][0]["namespace"] == "gw-ns"
 
 
 # A Vault login presents a projected service account token: both containers

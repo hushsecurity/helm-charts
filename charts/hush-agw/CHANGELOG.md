@@ -4,6 +4,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- the new `agw.secretStore.k8s.additionalNamespaces` lets the gateway manage
+  Secrets in namespaces other than its own, for the Kubernetes secret stores
+  created through the Hush platform in those namespaces, as hush-am's
+  `secretStore.k8s.additionalNamespaces` does. Each namespace must already
+  exist, and access is granted in each listed namespace only, never
+  cluster-wide. A gateway that shares its Hush deployment with hush-am needs
+  the same list as hush-am. For example:
+
+  ```yaml
+  agw:
+    secretStore:
+      k8s:
+        additionalNamespaces:
+          - team-a
+          - team-b
+  ```
+
+### Changed
+
+- whatever the `agw.secretStore` kind, the chart lets the gateway manage
+  Secrets in its own namespace, where a Kubernetes secret store created
+  through the Hush platform without a namespace keeps them. Until now only a
+  `kubesecrets` store got that access, in the store's own namespace. Whoever
+  installs the chart has to hold that permission to grant it.
+- the gateway may now list pods in every namespace, so that it never revokes
+  a credential a pod still uses, as hush-am may. Whoever installs the chart
+  has to hold that permission to grant it.
+
 ## hush-agw 0.9.0 - 2026-10-28
 
 ### Added
