@@ -4,6 +4,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to `v0.29.0`, whose access manager and api-controller
+  reconnect promptly when their connection to the Hush API dies silently, for
+  example after the cluster's egress IP changes.
+
 ## hush-am 0.32.2 - 2026-11-01
 
 ### Changed
