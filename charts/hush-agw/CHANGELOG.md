@@ -4,6 +4,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to v0.16.0. The release asks nothing of the chart.
+
+  - Apache Pinot is supported as a database application, queried directly
+    through its broker, with no, basic or bearer authentication, optional
+    TLS verified against an admin-supplied CA (or unverified without one),
+    and an opt-in multi-stage engine.
+  - an application can authenticate to its server with the OAuth client
+    credentials grant, such as Hush's own API or CrowdStrike Falcon; the
+    gateway fetches and renews the token itself, and no user connects the
+    app.
+  - users' upstream tokens are kept in Hush, sealed under the deployment's
+    access manager keys, instead of in plaintext on each replica's disk, so a
+    user connected through one replica is connected on all of them. On the
+    first start after the upgrade, a gateway uploads the tokens it already
+    holds, so users do not have to connect their apps again. Tokens still
+    under an older key are re-encrypted daily, so an idle connection no
+    longer breaks after a key rotation.
+  - an agent waiting for a user's consent decision can wait up to 45s per
+    check, and picks the task back up once the user approves.
+  - agents no longer ask the user how to approve before every gated call:
+    the user is reached the way they approved last time, and is asked only
+    when they have never chosen, with plain names such as "Approve from a
+    Slack message".
+  - the gateway's instructions list the caller's apps and whether each is
+    connected, so agents need fewer calls to find them.
+  - `hush_search_tools` returns its hits under a `tools` key instead of as a
+    bare list, which Gemini CLI reported as an error.
+  - an agent is told why an upstream refused its tool call.
+  - an app URL's query string is kept on the requests the gateway sends to
+    the app's server.
+  - an app whose server requires the client to name itself, such as PostHog,
+    lists its tools instead of showing none.
+  - a connection to the Hush API that dies silently, for example after an
+    egress IP change, is detected and replaced instead of timing out every
+    later request.
+  - the agw-controller and agw-vector images are built on new minimal base
+    images, to reduce their exposure to security vulnerabilities, with
+    vector moving from 0.49 to 0.60. Both images need an x86-64-v2 CPU on
+    amd64, and agw-controller an arm64 CPU with the CRC and crypto
+    extensions; `kubectl cp` no longer works on either.
+
+  The rest of the release is internal improvements.
+
 ## hush-agw 0.9.0 - 2026-10-28
 
 ### Added
