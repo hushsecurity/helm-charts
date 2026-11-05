@@ -4,6 +4,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to `v0.30.0`, which issues credentials for Apache
+  Pinot: a broker user that reads only the privilege's tables, created on
+  grant and deleted on revoke. The Pinot controller must run ZooKeeper basic
+  auth access control, and a privilege that excludes tables needs Pinot 1.4
+  or later.
+
+  - `kubectl cp` works again on the hush-am images.
+
+- bump the default spire-agent image to `v0.30.0`, which keeps SPIRE 1.15.5
+  and moves to the base of the other images, so `kubectl cp` works on it
+  again too.
+
 ## hush-am 0.32.3 - 2026-11-02
 
 ### Changed
