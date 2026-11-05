@@ -4,6 +4,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to v0.17.0. The release asks nothing of the chart.
+
+  - agents can use the skills their organization assigns them: the gateway
+    lists the caller's skills, and `hush_get_skill` loads a skill's
+    `SKILL.md` or any file it references. A caller sees only the skills its
+    token grants.
+  - users can approve a tool call right in the agent's chat, when the
+    organization offers that way and the client speaks the 2026-07-28 MCP
+    protocol and can show a form. The prompt names the app and its tools the
+    way users know them. Agents acting on behalf of a user keep the other
+    ways.
+  - agents ask the user which way to approve instead of picking one, and
+    offer the other ways when an in-chat prompt is dismissed, goes
+    unanswered or its answer cannot be recorded.
+  - the OAuth clients the gateway registers with apps' servers are kept in
+    Hush, their secrets sealed under the deployment's access manager keys,
+    instead of in plaintext on the gateway's disk. On the first start after
+    the upgrade, the gateway uploads the clients it registered, so users do
+    not have to connect their apps again.
+  - an app whose server the gateway has not probed yet reads as unavailable
+    instead of as needing no sign-in, which sent its calls without the
+    user's token.
+  - an agent is told the current reason an app is unavailable, not the first
+    one seen.
+  - a token refresh waits up to 30s instead of 10s, so users of an app that
+    rotates refresh tokens, such as Notion or Coralogix, no longer lose their
+    connection when its token endpoint is slow.
+  - users can sign in to a custom app behind the Microsoft Entra ID v2
+    endpoint, which refused the sign-in before.
+  - an agent refers to a database app by its engine and tool instead of by
+    its connection name, so a user without access no longer learns what the
+    connection is called.
+  - audit events carry a service agent's name and whether the agent acts for
+    a user or as a service, so activity and the SIEM stream show which
+    service agent acted.
+  - `kubectl cp` works again on the agw-controller and agw-vector images.
+
+  The rest of the release is internal improvements.
+
 ## hush-agw 0.10.0 - 2026-11-02
 
 ### Changed
