@@ -93,6 +93,8 @@ spec:
             {{- include "hush-common.deploymentIdentityEnv" . | nindent 12 }}
             - name: CHANNEL_DIGESTS_PERIOD
               value: {{ .Values.vermon.updateFrequency }}
+            - name: FALLBACK_RESTART_AGE
+              value: {{ .Values.vermon.fallbackRestartAge | quote }}
             - name: CONTAINER_REGISTRY
               value: {{ include "hush-common.imageRegistry" . | quote }}
         - name: hush-vermon-vector
