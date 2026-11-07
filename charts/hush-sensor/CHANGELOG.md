@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `vermon.fallbackRestartAge` (default `168h`, minimum `24h`). When the image
+  registry has no Hush channel digests, such as a mirror of the Hush registry,
+  Vermon restarts Sensor components whose pods are older than this age, so
+  they pull the current image of their tag. `"0"` turns these restarts off.
+  Vermon images without this support ignore it.
+
 ### Fixed
 
 - the image tag version gate rejected a two-part channel tag whose major is

@@ -525,6 +525,14 @@ vermon:
   # Minimum 4 hours, maximum 360 hours (15 days)
   updateFrequency: "8h"
 
+  # Fallback when the image registry has no Hush channel digests, such as a
+  # mirror of the Hush registry. Vermon cannot detect new images there, so it
+  # restarts Sensor components whose pods are older than this age, to pull the
+  # current image of their tag. Containers pinned to a digest or to the
+  # release Vermon runs are skipped.
+  # Go time.Duration format, minimum 24 hours. "0" turns these restarts off.
+  fallbackRestartAge: "168h"
+
   # Custom priority class
   priorityClassName: ""
 
