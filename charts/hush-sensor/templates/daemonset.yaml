@@ -17,6 +17,7 @@ spec:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: sensor
+        hush.security/vermon-managed: "true"
       {{ with (include "hush-sensor.daemonSetAnnotations" .) -}}
       annotations: {{- . | nindent 8 }}
       {{- end }}

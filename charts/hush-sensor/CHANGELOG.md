@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
   Vermon restarts Sensor components whose pods are older than this age, so
   they pull the current image of their tag. `"0"` turns these restarts off.
   Vermon images without this support ignore it.
+- the `hush.security/vermon-managed: "true"` label on the sensor, sentry,
+  connector and vermon pods. Vermon restarts by age only the pods with this
+  label or of its own release, not every pod in the namespace.
 
 ### Fixed
 
