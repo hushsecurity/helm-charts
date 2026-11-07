@@ -405,6 +405,13 @@ agw:
       # If not specified, the namespace where the chart is installed is used.
       namespace: ""
 
+      # Additional namespaces where the gateway may manage secrets, for k8s
+      # secret stores that the Secret Store API places outside the gateway's
+      # own namespace. Each namespace must already exist; the gateway is
+      # granted access in each of them (a scoped Role and RoleBinding each),
+      # never cluster-wide.
+      additionalNamespaces: []
+
     # HashiCorp Vault secret store configuration (used by hc_vault)
     hcVault:
       # Vault address, e.g. "https://vault.example.com:8200". Must be https: a
