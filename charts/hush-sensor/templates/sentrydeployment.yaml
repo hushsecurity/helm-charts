@@ -17,6 +17,7 @@ spec:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: sentry
+        hush.security/vermon-managed: "true"
       {{- if dig "integrations" "azure" "auth" "workload_identity" "client_id" "" .Values.sentry }}
         azure.workload.identity/use: "true"
       {{- end }}

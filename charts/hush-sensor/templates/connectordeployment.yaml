@@ -17,6 +17,7 @@ spec:
     metadata:
       labels: {{- include "hush-common.labels" . | nindent 8 }}
         app.kubernetes.io/component: connector
+        hush.security/vermon-managed: "true"
       {{- with .Values.connector.annotations }}
       annotations: {{- include "hush-common.annotations" . | nindent 8 }}
       {{- end }}
