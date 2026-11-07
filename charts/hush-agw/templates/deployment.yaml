@@ -122,6 +122,12 @@ spec:
             {{- with (include "hush-common.hcVaultSiloSaTokenVolumeMount" $secretStoreCtx) }}
             {{- . | nindent 12 }}
             {{- end }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /healthz
