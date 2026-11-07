@@ -71,6 +71,15 @@ Persistent volume claim name for the gateway's data.
 {{- end -}}
 {{- end }}
 
+{{- define "hush-agw.secretNamespaces" -}}
+{{- $namespaces := list (include "hush-common.namespace" .) -}}
+{{- if eq (toString .Values.agw.secretStore.kind) "kubesecrets" -}}
+  {{- $namespaces = append $namespaces (include "hush-common.kubeSiloNamespace" (dict "store" .Values.agw.secretStore "path" "agw.secretStore" "root" .)) -}}
+{{- end -}}
+{{- $namespaces = concat $namespaces (dig "k8s" "additionalNamespaces" (list) .Values.agw.secretStore) -}}
+{{- $namespaces | uniq | join " " -}}
+{{- end }}
+
 {{/*
 Shared environment for the agw-controller (init + server).
 */}}
@@ -86,6 +95,10 @@ Shared environment for the agw-controller (init + server).
   value: "http://localhost:8080"
 - name: DB_DIR
   value: /data
+- name: HUSH_K8S_NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.namespace
 - name: DYNAMIC_OAUTH_REGISTRATION_TTL
   value: {{ .Values.agw.dynamicOAuthRegistrationTTL | quote }}
 - name: TOOLBOX_CONFIG_PATH
