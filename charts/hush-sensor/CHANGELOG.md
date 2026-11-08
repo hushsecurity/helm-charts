@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## hush-sensor 0.33.0 - 2026-11-08
+
 ### Added
 
 - `vermon.fallbackRestartAge` (default `240h`, minimum `24h`). When the image
