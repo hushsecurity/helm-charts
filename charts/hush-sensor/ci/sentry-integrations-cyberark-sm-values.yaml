@@ -1,0 +1,21 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+sentry:
+  integrations:
+    cyberark_sm:
+      base_url: "https://conjur.conjur.svc"
+      account: "myorg"
+      caCert:
+        secretKeyRef:
+          name: "conjur-tls"
+          key: "ca.crt"
+      auth:
+        api_key:
+          login: "host/hush/scanner"
+          apiKey:
+            secretKeyRef:
+              name: "cyberark-api-key"
+              key: "api-key"

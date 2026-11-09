@@ -67,6 +67,9 @@ spec:
         {{- with (include "hush-sensor.sentryAkeylessCACertVolume" .) }}
           {{- . | nindent 8 }}
         {{- end }}
+        {{- with (include "hush-sensor.sentryCyberarkSmCACertVolume" .) }}
+          {{- . | nindent 8 }}
+        {{- end }}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- with and .Values.sentry .Values.sentry.extraVolumes -}}
           {{- toYaml . | nindent 8 }}
@@ -93,6 +96,9 @@ spec:
               {{- . | nindent 12 }}
             {{- end }}
             {{- with (include "hush-sensor.sentryAkeylessCACertVolumeMount" .) }}
+              {{- . | nindent 12 }}
+            {{- end }}
+            {{- with (include "hush-sensor.sentryCyberarkSmCACertVolumeMount" .) }}
               {{- . | nindent 12 }}
             {{- end }}
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
@@ -133,6 +139,13 @@ spec:
             {{- end }}
             {{- with (include "hush-sensor.sentryAkeylessAccessKeySecretRef" . | fromYaml) }}
             - name: SENTRY_AKEYLESS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- with (include "hush-sensor.sentryCyberarkSmApiKeySecretRef" . | fromYaml) }}
+            - name: SENTRY_CYBERARK_SM_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .name }}

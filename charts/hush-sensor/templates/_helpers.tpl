@@ -439,6 +439,118 @@ Sentry Akeyless CA cert volume mount
 {{- end }}
 
 {{/*
+CyberArk CA cert mount path
+*/}}
+{{- define "hush-sensor.sentryCyberarkSmCACertMountPath" -}}
+/tmp/cyberark-sm-cacert
+{{- end }}
+
+{{/*
+Check if Sentry CyberArk integration is enabled.
+Enabled when base_url is set, as every auth method needs it. The rest is
+validated separately.
+*/}}
+{{- define "hush-sensor.sentryCyberarkSmEnabled" -}}
+{{- if dig "integrations" "cyberark_sm" "base_url" "" .Values.sentry -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Check if Sentry CyberArk CA cert is configured
+*/}}
+{{- define "hush-sensor.hasSentryCyberarkSmCACert" -}}
+{{- $ca := .Values.sentry.integrations.cyberark_sm -}}
+{{- if and (include "hush-sensor.sentryCyberarkSmEnabled" .)
+    (dig "caCert" "secretKeyRef" "name" "" $ca)
+    (dig "caCert" "secretKeyRef" "key" "" $ca) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Validate the CyberArk configuration: api_key auth is required, and a CA cert
+needs both name and key. The account is left to Sentry, which knows the SaaS
+host names that may omit it.
+*/}}
+{{- define "hush-sensor.validateCyberarkSm" -}}
+{{- $ca := .Values.sentry.integrations.cyberark_sm -}}
+{{- if not (regexMatch "^(?i)https?://[^/:]" $ca.base_url) -}}
+    {{- fail "sentry.integrations.cyberark_sm.base_url: must be a full URL with http:// or https:// and a host" -}}
+{{- end -}}
+{{- if not (and (dig "auth" "api_key" "login" "" $ca)
+    (dig "auth" "api_key" "apiKey" "secretKeyRef" "name" "" $ca)
+    (dig "auth" "api_key" "apiKey" "secretKeyRef" "key" "" $ca)) -}}
+    {{- fail "sentry.integrations.cyberark_sm.auth.api_key: login and apiKey.secretKeyRef.name and key are required" -}}
+{{- end -}}
+{{- $caName := dig "caCert" "secretKeyRef" "name" "" $ca -}}
+{{- $caKey := dig "caCert" "secretKeyRef" "key" "" $ca -}}
+{{- if or (and $caName (not $caKey)) (and $caKey (not $caName)) -}}
+    {{- fail "sentry.integrations.cyberark_sm.caCert.secretKeyRef: both name and key are required" -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry CyberArk API key secret ref
+*/}}
+{{- define "hush-sensor.sentryCyberarkSmApiKeySecretRef" -}}
+{{- if (include "hush-sensor.sentryCyberarkSmEnabled" .) -}}
+    {{- include "hush-sensor.validateCyberarkSm" . -}}
+    {{- $ref := dig "auth" "api_key" "apiKey" "secretKeyRef" dict .Values.sentry.integrations.cyberark_sm -}}
+    {{- dict "name" $ref.name "key" $ref.key | toYaml -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry CyberArk integration configuration, matching the Go config struct
+*/}}
+{{- define "hush-sensor.sentryCyberarkSmIntegration" -}}
+{{- if (include "hush-sensor.sentryCyberarkSmEnabled" .) -}}
+  {{- include "hush-sensor.validateCyberarkSm" . -}}
+  {{- $ca := .Values.sentry.integrations.cyberark_sm -}}
+cyberark_sm:
+  enabled: true
+  base_url: {{ $ca.base_url | quote }}
+  {{- if $ca.account }}
+  account: {{ $ca.account | quote }}
+  {{- end }}
+  {{- if (include "hush-sensor.hasSentryCyberarkSmCACert" .) }}
+  ca_cert: "{{ include "hush-sensor.sentryCyberarkSmCACertMountPath" . }}/{{ dig "caCert" "secretKeyRef" "key" "" $ca }}"
+  {{- end }}
+  auth:
+    api_key:
+      login: {{ dig "auth" "api_key" "login" "" $ca | quote }}
+      api_key_env: "SENTRY_CYBERARK_SM_API_KEY"
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry CyberArk CA cert volume
+*/}}
+{{- define "hush-sensor.sentryCyberarkSmCACertVolume" -}}
+{{- if (include "hush-sensor.hasSentryCyberarkSmCACert" .) -}}
+{{- $ca := dig "caCert" "secretKeyRef" dict .Values.sentry.integrations.cyberark_sm -}}
+- name: cyberark-sm-ca
+  secret:
+    secretName: {{ $ca.name }}
+    items:
+      - key: {{ $ca.key }}
+        path: {{ $ca.key }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Sentry CyberArk CA cert volume mount
+*/}}
+{{- define "hush-sensor.sentryCyberarkSmCACertVolumeMount" -}}
+{{- if (include "hush-sensor.hasSentryCyberarkSmCACert" .) -}}
+- name: cyberark-sm-ca
+  mountPath: {{ include "hush-sensor.sentryCyberarkSmCACertMountPath" . }}
+  readOnly: true
+{{- end -}}
+{{- end }}
+
+{{/*
 Kubernetes version, reduced to its numeric part.
 EKS reports 'v1.31.4-eks-2d5f260' and GKE 'v1.31.1-gke.1146000'; both are semver
 pre-releases, which semverCompare excludes from every constraint, so a version
