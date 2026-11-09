@@ -6,6 +6,33 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `sentry.integrations.cyberark` to crawl CyberArk Secrets Manager (Conjur)
+  variables, Self-Hosted or SaaS. It is enabled when `base_url` is set. It
+  authenticates with an API key whose value is read from a pre-created
+  Secret. `account` is required unless `base_url` is a SaaS tenant. `caCert`
+  adds a private Conjur CA to the system roots. Example:
+
+  ```yaml
+  sentry:
+    integrations:
+      cyberark:
+        base_url: https://conjur.example.com
+        account: myorg
+        caCert:
+          secretKeyRef:
+            name: conjur-tls
+            key: ca.crt
+        auth:
+          api_key:
+            login: host/hush/scanner
+            apiKey:
+              secretKeyRef:
+                name: cyberark-api-key
+                key: api-key
+  ```
+
 ## hush-sensor 0.33.0 - 2026-11-08
 
 ### Added
