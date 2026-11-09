@@ -8,6 +8,24 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- the new `agw.replicas` runs the gateway on several pods. Above 1 it requires
+  `agw.persistence.enabled: false`, so that each pod keeps its own state and
+  rebuilds it from Hush; the pods then update one at a time, spread across
+  zones and nodes where they can, and a disruption budget lets a node drain
+  evict only one at a time. A new installation can raise it right away. An
+  installation upgraded from an earlier chart must first have its applications
+  moved to the keys every pod shares, within 7 days of the upgrade, or sooner
+  when Hush support moves them; before that, every pod but one fails to read
+  the applications. At 1, the default, the gateway renders as before. For
+  example:
+
+  ```yaml
+  agw:
+    replicas: 3
+    persistence:
+      enabled: false
+  ```
+
 - the new `agw.secretStore.k8s.additionalNamespaces` lets the gateway manage
   Secrets in namespaces other than its own, for the Kubernetes secret stores
   created through the Hush platform in those namespaces, as hush-am's

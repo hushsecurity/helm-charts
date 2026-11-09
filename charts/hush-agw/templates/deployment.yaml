@@ -1,5 +1,12 @@
 {{- $wiCtx := include "hush-agw.workloadIdentityContext" . | fromYaml -}}
 {{- $secretStoreCtx := dict "store" .Values.agw.secretStore "path" "agw.secretStore" "root" . -}}
+{{- $replicas := int (dig "replicas" 1 .Values.agw) -}}
+{{- if lt $replicas 1 -}}
+  {{- fail "'agw.replicas' must be at least 1" -}}
+{{- end -}}
+{{- if and (gt $replicas 1) .Values.agw.persistence.enabled -}}
+  {{- fail "'agw.replicas' above 1 requires 'agw.persistence.enabled: false': each pod keeps its own state" -}}
+{{- end -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,9 +15,16 @@ metadata:
     app.kubernetes.io/component: gateway
   namespace: {{ include "hush-common.namespace" . }}
 spec:
-  replicas: 1
+  replicas: {{ $replicas }}
   strategy:
+    {{- if gt $replicas 1 }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    {{- else }}
     type: Recreate
+    {{- end }}
   selector:
     matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: gateway
@@ -36,6 +50,17 @@ spec:
       {{- end }}
       {{- with .Values.agw.affinity }}
       affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if gt $replicas 1 }}
+      topologySpreadConstraints:
+        {{- range list "topology.kubernetes.io/zone" "kubernetes.io/hostname" }}
+        - maxSkew: 1
+          topologyKey: {{ . }}
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {{- include "hush-common.selectorLabels" $ | nindent 14 }}
+              app.kubernetes.io/component: gateway
+        {{- end }}
       {{- end }}
       {{- with (include "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
