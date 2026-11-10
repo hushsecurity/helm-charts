@@ -4,6 +4,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to `v0.31.0`, which delivers GitHub App installation
+  tokens to pods: the token file is named by `HUSH_GITHUB_TOKEN_FILE`, and gh
+  and git are set up to use it. The git setup needs git 2.31 or later, and
+  is skipped in a container that takes env through `envFrom`. The access
+  manager must reach `api.github.com`.
+
+  - a policy that keeps failing is reported in the activity log once every
+    10 minutes rather than on every retry.
+  - the access manager keeps a credential it cannot revoke yet, rather than
+    drop it unrevoked: one in a secret store that failed to load, or of a
+    kind only a newer hush-am or hush-agw knows.
+
 ## hush-am 0.33.0 - 2026-11-05
 
 ### Changed
