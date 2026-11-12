@@ -1,0 +1,30 @@
+# Internal AWS Application Load Balancer set up by hand, through the Ingress's
+# annotations. It gets private IP addresses only, so it is reachable from the
+# VPC and the networks connected to it, such as a VPN, a peered VPC or Direct
+# Connect, and not from the internet. It needs the AWS Load Balancer
+# Controller in the cluster, the ACM certificate below, and private subnets
+# tagged kubernetes.io/role/internal-elb in at least two Availability Zones.
+# Point the hostname's DNS record at the ALB once it has an address, for
+# example in a Route 53 private hosted zone.
+#
+# The Hush backend never connects to Hush AGW itself: it sends browsers there,
+# when users connect applications and when admins share a connection or
+# detect an application's tools. Those users and admins, like the AI clients,
+# must reach the hostname, for example over the VPN.
+agw:
+  hostname: gw.example.com
+  ingress:
+    enabled: true
+    className: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internal
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      alb.ingress.kubernetes.io/healthcheck-port: "15021"
+      alb.ingress.kubernetes.io/healthcheck-path: /healthz/ready
+      alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=600
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
