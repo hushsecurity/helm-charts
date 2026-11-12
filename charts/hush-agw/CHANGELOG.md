@@ -4,6 +4,79 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- the new `agw.ingress` creates an Ingress that sends every path of
+  `agw.hostname` to Hush AGW. `agw.ingress.controller` sets it up for an AWS
+  Application Load Balancer (`aws-alb`), GKE Ingress (`gke-ingress`) or Azure
+  Application Gateway for Containers (`azure-agc`): the health check, a
+  timeout long enough for MCP streams, and the certificate, with the objects
+  GKE and Azure Application Gateway for Containers take them from. The
+  controller itself must already run in the cluster.
+
+  On AWS, through the AWS Load Balancer Controller, which finds the ACM
+  certificate for the hostname:
+
+  ```yaml
+  agw:
+    ingress:
+      enabled: true
+      controller: aws-alb
+  ```
+
+  On GKE, where Google issues the certificate once the hostname's DNS record
+  points at the Ingress:
+
+  ```yaml
+  agw:
+    ingress:
+      enabled: true
+      controller: gke-ingress
+  ```
+
+  On AKS, through the ALB Controller and the ApplicationLoadBalancer it
+  manages, with the certificate in a Secret:
+
+  ```yaml
+  agw:
+    ingress:
+      enabled: true
+      controller: azure-agc
+      tls:
+        secretName: <secret-name>
+      azureAgc:
+        albName: <alb-name>
+        albNamespace: <alb-namespace>
+  ```
+
+  Azure Application Gateway for Containers closes a connection idle for 5
+  minutes, whatever the timeout, so an MCP session idle for longer has to
+  reconnect.
+
+  For any other controller, leave `agw.ingress.controller` empty and set
+  `agw.ingress.className` and `agw.ingress.annotations`. What the controller
+  must do for Hush AGW is listed under `agw.service`.
+
+- `agw.service.loadBalancer: aws-nlb` makes the Hush AGW Service an AWS
+  Network Load Balancer that terminates TLS on port 443. It closes a
+  connection idle for 350 seconds, and cannot send all of a client's
+  connections to the same Hush AGW pod; where either matters, use
+  `agw.ingress` instead. For example:
+
+  ```yaml
+  agw:
+    service:
+      loadBalancer: aws-nlb
+      awsNlb:
+        certificateArn: <certificate-arn>
+  ```
+
+  Another load balancer that terminates TLS itself can be set up through
+  `agw.service.type: LoadBalancer`, which listens on port 443, and
+  `agw.service.annotations`.
+
 ## hush-agw 0.12.1 - 2026-11-15
 
 ### Changed
