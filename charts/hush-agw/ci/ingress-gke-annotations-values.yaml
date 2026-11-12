@@ -1,0 +1,58 @@
+# GKE Ingress set up by hand, through annotations. Create these three in the
+# release's namespace before installing:
+#
+#   apiVersion: cloud.google.com/v1
+#   kind: BackendConfig
+#   metadata:
+#     name: hush-agw
+#   spec:
+#     timeoutSec: 1800
+#     healthCheck:
+#       type: HTTP
+#       port: 15021
+#       requestPath: /healthz/ready
+#   ---
+#   apiVersion: networking.gke.io/v1
+#   kind: ManagedCertificate
+#   metadata:
+#     name: hush-agw
+#   spec:
+#     domains:
+#       - gw.example.com
+#   ---
+#   apiVersion: networking.gke.io/v1beta1
+#   kind: FrontendConfig
+#   metadata:
+#     name: hush-agw
+#   spec:
+#     redirectToHttps:
+#       enabled: true
+#     sslPolicy: hush-agw-tls
+#
+# The BackendConfig health checks Hush AGW and lets a response, an MCP stream
+# included, last 30 minutes; the FrontendConfig redirects plain HTTP to HTTPS.
+# The ManagedCertificate asks Google for the certificate: point the hostname's
+# DNS A record at the Ingress address, and Google issues it, which can take up
+# to 60 minutes, and renews it.
+#
+# The FrontendConfig's SSL policy limits the load balancer to TLS 1.2 or later;
+# without one it also accepts TLS 1.0 and 1.1. Create it in the cluster's
+# Google Cloud project before installing:
+#
+#   gcloud compute ssl-policies create hush-agw-tls --profile MODERN \
+#     --min-tls-version 1.2
+agw:
+  hostname: gw.example.com
+  service:
+    annotations:
+      cloud.google.com/neg: '{"ingress": true}'
+      cloud.google.com/backend-config: '{"default": "hush-agw"}'
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: gce
+      networking.gke.io/managed-certificates: hush-agw
+      networking.gke.io/v1beta1.FrontendConfig: hush-agw
+hushDeployment:
+  token: dummy-token
+  password: dummy-password

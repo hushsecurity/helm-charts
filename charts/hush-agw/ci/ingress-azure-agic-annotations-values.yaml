@@ -1,0 +1,21 @@
+# Azure Application Gateway set up by hand, through the Ingress's
+# annotations. It needs AGIC in the cluster and a v2 Application Gateway.
+# cert-manager, with a ClusterIssuer named letsencrypt, issues the certificate
+# into the Secret below and renews it before it expires, and AGIC applies the
+# renewed Secret to the Application Gateway.
+agw:
+  hostname: gw.example.com
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: azure/application-gateway
+      appgw.ingress.kubernetes.io/health-probe-port: "15021"
+      appgw.ingress.kubernetes.io/health-probe-path: /healthz/ready
+      appgw.ingress.kubernetes.io/request-timeout: "1800"
+      appgw.ingress.kubernetes.io/ssl-redirect: "true"
+      cert-manager.io/cluster-issuer: letsencrypt
+    tls:
+      secretName: gw-example-com-tls
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
