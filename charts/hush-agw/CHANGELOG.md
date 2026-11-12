@@ -4,6 +4,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- the new `agw.ingress` creates an Ingress that sends every path of
+  `agw.hostname` to the gateway. What it must do for the gateway, such as
+  where to health check it and how long to keep an idle connection open, is
+  listed under `agw.service`. For example, for an AWS Application Load
+  Balancer:
+
+  ```yaml
+  agw:
+    ingress:
+      enabled: true
+      className: alb
+      annotations:
+        alb.ingress.kubernetes.io/scheme: internet-facing
+        alb.ingress.kubernetes.io/target-type: ip
+        alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+        alb.ingress.kubernetes.io/certificate-arn: <certificate-arn>
+        alb.ingress.kubernetes.io/healthcheck-port: "15021"
+        alb.ingress.kubernetes.io/healthcheck-path: /healthz/ready
+        alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=600
+  ```
+
+- the gateway's Service can be a load balancer that terminates TLS itself,
+  such as an AWS Network Load Balancer: set `agw.service.type` to
+  `LoadBalancer`, and `agw.service.port` to 443, the port clients reach the
+  gateway on. For example:
+
+  ```yaml
+  agw:
+    service:
+      type: LoadBalancer
+      port: 443
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: external
+        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+        service.beta.kubernetes.io/aws-load-balancer-ssl-cert: <certificate-arn>
+        service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+        service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: http
+        service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "15021"
+        service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /healthz/ready
+  ```
+
 ## hush-agw 0.12.0 - 2026-11-12
 
 ### Added
