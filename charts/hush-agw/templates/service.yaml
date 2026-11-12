@@ -5,11 +5,22 @@ metadata:
   labels: {{- include "hush-common.labels" . | nindent 4 }}
     app.kubernetes.io/component: gateway-service
   namespace: {{ include "hush-common.namespace" . }}
+  {{- with .Values.agw.service.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.agw.service.type }}
+  {{- if eq .Values.agw.service.type "LoadBalancer" }}
+  {{- with .Values.agw.service.loadBalancerClass }}
+  loadBalancerClass: {{ . }}
+  {{- end }}
+  {{- with .Values.agw.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
   selector: {{- include "hush-common.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: gateway
   ports:
     - name: gateway
-      port: 3001
+      port: {{ .Values.agw.service.port }}
       targetPort: gateway
