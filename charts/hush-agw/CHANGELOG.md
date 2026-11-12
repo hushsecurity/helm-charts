@@ -33,6 +33,28 @@ All notable changes to this project will be documented in this file.
   through the Hush platform without a namespace keeps them. Until now only a
   `kubesecrets` store got that access, in the store's own namespace. Whoever
   installs the chart has to hold that permission to grant it.
+- bump the app version to v0.18.0. The Secret access above is what the
+  release asks of the chart.
+
+  - a database application can connect through credentials Hush issues to
+    the gateway on demand, in place of a stored password, and keeps working
+    as they rotate.
+  - an admin can mark an app as shared and connect it once from the Hush
+    console for all its users and for agents acting on their own. This
+    serves apps, such as QuickBooks, that only their own admins can
+    authorize. Users of a shared app are told to ask an admin instead of
+    being sent to sign in, and cannot disconnect it.
+  - an app defined by an OpenAPI 3.1 spec gets its tools, where it used to
+    get none.
+  - connect links stay valid for an hour instead of ten minutes, and a tool
+    detection or shared connection link can be used only once.
+  - the in-chat approval prompt names the tools in one sentence, which reads
+    right in clients that collapse line breaks, such as claude.ai.
+  - the gateway moves to agentgateway v1.7.0: an agent's session with an
+    app's server is closed when the agent ends its own, and idle sessions
+    time out.
+
+  The rest of the release is internal improvements.
 
 ## hush-agw 0.11.0 - 2026-11-05
 
