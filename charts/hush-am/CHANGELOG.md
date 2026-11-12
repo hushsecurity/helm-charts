@@ -4,6 +4,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to `v0.32.0`.
+
+  - credentials for Redis Cloud: a database user, created through the Redis
+    Cloud API on grant and deleted on revoke. The access manager must reach
+    `api.redislabs.com`, and must be admitted by the IP allow list of the API
+    user key when the key has one. The database must run Redis 6.2 or later.
+  - the gh setup for GitHub App tokens keeps the `GH_PROMPT_DISABLED` or
+    `GH_NO_UPDATE_NOTIFIER` a container sets in `env`.
+
 ## hush-am 0.33.1 - 2026-11-10
 
 ### Changed
