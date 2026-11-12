@@ -1,7 +1,4 @@
-{{/*
-External base URL clients reach the gateway on, built from the hostname.
-*/}}
-{{- define "hush-agw.baseUrl" -}}
+{{- define "hush-agw.hostname" -}}
 {{- $host := required "'agw.hostname' is required" .Values.agw.hostname -}}
 {{- if ne $host (lower $host) -}}
 {{- fail "'agw.hostname' must be lowercase" -}}
@@ -9,7 +6,14 @@ External base URL clients reach the gateway on, built from the hostname.
 {{- if not (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)+$" $host) -}}
 {{- fail "'agw.hostname' must be a bare domain name, without a scheme, port or path" -}}
 {{- end -}}
-https://{{ $host }}
+{{- $host -}}
+{{- end }}
+
+{{/*
+External base URL clients reach the gateway on, built from the hostname.
+*/}}
+{{- define "hush-agw.baseUrl" -}}
+https://{{ include "hush-agw.hostname" . }}
 {{- end }}
 
 {{/*
