@@ -164,15 +164,24 @@ agw:
   # change it unless Hush support instructs you to.
   dynamicOAuthRegistrationTTL: 3600
 
+  # Number of gateway pods.
+  #
+  # More than one requires 'persistence.enabled: false': each pod keeps its own
+  # state, which it rebuilds from Hush. A new installation can raise it right
+  # away. An installation upgraded from an earlier chart must first have its
+  # applications moved to the keys every pod shares, which happens within 7
+  # days of the upgrade, or sooner when Hush support does it; before that,
+  # every pod but one fails to read the applications.
+  replicas: 1
+
   # Persistence for the gateway's local state.
   #
-  # Required for a production installation. The state cannot be recreated, so
-  # losing the volume makes every user reconnect their applications.
+  # Each pod rebuilds its state from Hush. The volume matters only for an
+  # installation upgraded from an earlier chart whose applications have not yet
+  # moved to the keys every pod shares: it holds the key they are encrypted to.
   persistence:
-    # Whether to use a PersistentVolumeClaim.
-    #
-    # When false the state is ephemeral and lost on every pod restart. Only use
-    # that for a proof of concept or for testing.
+    # Whether to use a PersistentVolumeClaim. Must be false when 'replicas' is
+    # above 1.
     enabled: true
 
     # Size of the volume claim.
