@@ -158,6 +158,91 @@ agw:
   # disagree.
   hostname: ""
 
+  # The Service clients reach the gateway through, on its port named "gateway".
+  #
+  # The gateway serves plain HTTP. Whatever fronts it -- 'agw.ingress', a
+  # LoadBalancer Service, or an ingress or load balancer of your own -- must:
+  # - terminate TLS on port 443 with a certificate for 'agw.hostname';
+  # - send every path of 'agw.hostname' to the gateway, not only /mcp;
+  # - run any health check against port 15021 at path /healthz/ready. The
+  #   gateway port answers 404 on '/', which a default health check takes for
+  #   a failure;
+  # - keep an idle connection open well beyond the 60 seconds many load
+  #   balancers default to. MCP holds a connection open for a whole session,
+  #   and a shorter timeout cuts it mid-stream.
+  service:
+    # ClusterIP, NodePort or LoadBalancer.
+    #
+    # A LoadBalancer works only where the load balancer terminates TLS itself,
+    # such as an AWS Network Load Balancer with a TLS listener. One that
+    # forwards TCP as it comes hands clients the gateway's plain HTTP, which
+    # they refuse.
+    type: ClusterIP
+
+    # Port the Service listens on. A LoadBalancer that clients reach directly
+    # must listen on 443, the port the gateway's https URL names.
+    port: 3001
+
+    # Annotations for the Service. A cloud load balancer is configured through
+    # them, for example an AWS Network Load Balancer through the AWS Load
+    # Balancer Controller:
+    #
+    #   annotations:
+    #     service.beta.kubernetes.io/aws-load-balancer-type: external
+    #     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    #     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    #     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: <certificate-arn>
+    #     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    #     service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: http
+    #     service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "15021"
+    #     service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /healthz/ready
+    #
+    # For more information see
+    # https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/
+    annotations: {}
+
+    # Load balancer implementation, for a LoadBalancer only. It cannot be
+    # changed once set.
+    loadBalancerClass: ""
+
+    # Client address ranges (CIDRs) the load balancer admits, for a
+    # LoadBalancer only. Empty admits every address.
+    loadBalancerSourceRanges: []
+
+  # An Ingress for 'agw.hostname' that sends every path to the Service. It must
+  # meet the requirements listed under 'agw.service', which most ingress
+  # controllers take as annotations.
+  ingress:
+    # Whether to create the Ingress.
+    enabled: false
+
+    # IngressClass of the controller that serves the Ingress. When empty the
+    # cluster's default IngressClass is used, if it has one.
+    className: ""
+
+    # Annotations for the Ingress, for example for an AWS Application Load
+    # Balancer through the AWS Load Balancer Controller:
+    #
+    #   annotations:
+    #     alb.ingress.kubernetes.io/scheme: internet-facing
+    #     alb.ingress.kubernetes.io/target-type: ip
+    #     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    #     alb.ingress.kubernetes.io/certificate-arn: <certificate-arn>
+    #     alb.ingress.kubernetes.io/healthcheck-port: "15021"
+    #     alb.ingress.kubernetes.io/healthcheck-path: /healthz/ready
+    #     alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=600
+    #
+    # For more information see
+    # https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/ingress/annotations/
+    annotations: {}
+
+    tls:
+      # Secret holding the certificate for 'agw.hostname', in the namespace the
+      # chart is installed in. Leave it empty for a controller that takes the
+      # certificate from an annotation instead, as the AWS Load Balancer
+      # Controller does.
+      secretName: ""
+
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #
   # This must match the value configured in the Hush authorization server. Do not

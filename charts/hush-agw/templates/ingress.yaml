@@ -1,0 +1,33 @@
+{{- if .Values.agw.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-ingress
+  namespace: {{ include "hush-common.namespace" . }}
+  {{- with .Values.agw.ingress.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.agw.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.agw.ingress.tls.secretName }}
+  tls:
+    - hosts:
+        - {{ include "hush-agw.hostname" $ }}
+      secretName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ include "hush-agw.hostname" . }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hush-common.fullName" . }}
+                port:
+                  name: gateway
+{{- end }}

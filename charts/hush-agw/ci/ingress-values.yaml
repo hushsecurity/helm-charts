@@ -1,0 +1,12 @@
+agw:
+  hostname: gw.example.com
+  ingress:
+    enabled: true
+    className: example
+    annotations:
+      example.com/proxy-read-timeout: "3600"
+    tls:
+      secretName: gw-example-com-tls
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
