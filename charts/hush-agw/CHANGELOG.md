@@ -4,6 +4,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to v0.19.0. The release asks nothing of the chart.
+
+  - when a tool needs the user's approval in the browser, the agent gives the
+    user the approval link and stops, and carries on once the user says they
+    approved. Agents on newer models used to wait for the approval without
+    showing the link, so the request expired unapproved.
+  - a custom MCP app whose tool detection fails is shown in error in the Hush
+    console, or in warning when it keeps the tools found before.
+  - the activity log shows a call that a rate limit let through with a warning
+    as a warning rather than a pass, a call it refused as blocked, and a call
+    that failed at the app as failed rather than passed.
+
+  The rest of the release is internal improvements.
+
 ## hush-agw 0.12.0 - 2026-11-12
 
 ### Added
