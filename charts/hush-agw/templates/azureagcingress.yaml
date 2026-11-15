@@ -1,0 +1,41 @@
+{{- if and .Values.agw.ingress.enabled (eq (include "hush-agw.ingressController" .) "azure-agc") }}
+  {{- $agc := .Values.agw.ingress.azureAgc }}
+  {{- if $agc.healthCheckPolicy.enabled }}
+---
+apiVersion: alb.networking.azure.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-azure-agc-ingress-health-check-policy
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: {{ include "hush-common.fullName" . }}
+    namespace: {{ include "hush-common.namespace" . }}
+  default:
+    port: {{ include "hush-agw.readinessPort" . }}
+    http:
+      path: {{ include "hush-agw.readinessPath" . }}
+  {{- end }}
+  {{- if $agc.ingressExtension.enabled }}
+---
+apiVersion: alb.networking.azure.io/v1
+kind: IngressExtension
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-azure-agc-ingress-ingress-extension
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  backendSettings:
+    - service: {{ include "hush-common.fullName" . }}
+      timeouts:
+        requestTimeout: {{ $agc.ingressExtension.requestTimeout | quote }}
+      {{- with $agc.ingressExtension.sessionAffinity }}
+      sessionAffinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- end }}
+{{- end }}

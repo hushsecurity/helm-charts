@@ -1,8 +1,9 @@
 # Azure Application Gateway for Containers set up by hand, through the
-# Ingress's annotations. It needs the ALB Controller in the cluster and its
-# ApplicationLoadBalancer alb-infra/alb. Create these two in the release's
-# namespace before installing, for a release named hush-agw, whose Service
-# they name:
+# Ingress's annotations, where the 'agw.ingress.controller: azure-agc' preset
+# would create the objects they name. It needs the ALB Controller in the
+# cluster and its ApplicationLoadBalancer alb-infra/alb. Create these two in
+# the release's namespace before installing, for a release named hush-agw,
+# whose Service they name:
 #
 #   apiVersion: alb.networking.azure.io/v1
 #   kind: HealthCheckPolicy

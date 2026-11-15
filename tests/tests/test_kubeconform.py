@@ -152,6 +152,8 @@ SKIPPED_KINDS = [
     "cloud.google.com/v1/BackendConfig",
     "networking.gke.io/v1/ManagedCertificate",
     "networking.gke.io/v1beta1/FrontendConfig",
+    "alb.networking.azure.io/v1/HealthCheckPolicy",
+    "alb.networking.azure.io/v1/IngressExtension",
 ]
 
 

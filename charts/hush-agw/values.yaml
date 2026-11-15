@@ -262,7 +262,9 @@ agw:
     # up through 'className' and 'annotations', or one of:
     # - "aws-alb": an AWS Application Load Balancer, configured under 'awsAlb';
     # - "gke-ingress": GKE Ingress, an external Application Load Balancer,
-    #   configured under 'gkeIngress'.
+    #   configured under 'gkeIngress';
+    # - "azure-agc": Azure Application Gateway for Containers, configured under
+    #   'azureAgc'.
     #
     # 'className' and keys in 'annotations' replace what it sets, except that
     # gke-ingress takes no 'className'.
@@ -361,6 +363,43 @@ agw:
         # '--min-tls-version 1.2'. When empty the load balancer uses Google's
         # default, which accepts TLS 1.0 and later.
         sslPolicy: ""
+
+    # Azure Application Gateway for Containers, for 'controller: azure-agc',
+    # through the ALB Controller, which must be installed in the cluster:
+    # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/overview
+    # It takes the certificate from a Secret only, so 'tls.secretName' is
+    # required. The ALB Controller serves only Ingresses of the class
+    # azure-alb-external, which the chart sets, so 'className' cannot be used
+    # with it.
+    #
+    # It closes a connection idle for 5 minutes, whatever the request timeout:
+    # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/application-gateway-for-containers-components
+    azureAgc:
+      # The ApplicationLoadBalancer the ALB Controller manages, by name and
+      # namespace. Either these or 'albId' and 'albFrontend' are required.
+      albName: ""
+      albNamespace: ""
+
+      # Or the resource ID of an Azure Application Gateway for Containers
+      # managed outside the cluster, and the name of its frontend.
+      albId: ""
+      albFrontend: ""
+
+      # A HealthCheckPolicy that health checks Hush AGW on its readiness port.
+      healthCheckPolicy:
+        enabled: true
+
+      # An IngressExtension that sets how long a request may take. The load
+      # balancer cuts a request that takes longer, an MCP stream included, even
+      # while data flows. AGC's default is 60 seconds.
+      ingressExtension:
+        enabled: true
+        requestTimeout: 1800s
+
+        # Session affinity, which keeps a client on one Hush AGW pod, for
+        # example {affinityType: managed-cookie}. Empty leaves it off.
+        # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/session-affinity
+        sessionAffinity: {}
 
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #
