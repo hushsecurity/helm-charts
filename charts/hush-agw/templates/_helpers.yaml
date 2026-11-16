@@ -310,3 +310,14 @@ store only.
   {{ toYaml . }}
 {{- end -}}
 {{- end }}
+
+{{- define "hush-agw.httpRouteParentRefs" -}}
+{{- $route := .Values.agw.httpRoute -}}
+{{- if $route.gateway.enabled -}}
+  {{- toYaml (list (dict "name" (include "hush-common.fullName" .) "sectionName" "https")) -}}
+{{- else if $route.parentRefs -}}
+  {{- toYaml $route.parentRefs -}}
+{{- else -}}
+  {{- fail "'agw.httpRoute.parentRefs' or 'agw.httpRoute.gateway.enabled' is required" -}}
+{{- end -}}
+{{- end }}

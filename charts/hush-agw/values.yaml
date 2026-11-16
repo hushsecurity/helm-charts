@@ -160,8 +160,9 @@ agw:
 
   # The Service clients reach Hush AGW through, on its port named "gateway".
   #
-  # Hush AGW serves plain HTTP. Whatever fronts it -- 'agw.ingress', a
-  # LoadBalancer Service, or an ingress or load balancer of your own -- must:
+  # Hush AGW serves plain HTTP. Whatever fronts it -- 'agw.ingress',
+  # 'agw.httpRoute', a LoadBalancer Service, or an ingress or load balancer of
+  # your own -- must:
   # - terminate TLS on port 443 with a certificate for 'agw.hostname';
   # - send every path of 'agw.hostname' to Hush AGW, not only /mcp;
   # - run any health check against port 15021 at path /healthz/ready. The
@@ -195,10 +196,10 @@ agw:
     # example ["203.0.113.0/24"]. Traffic from any other address is dropped.
     # Empty allows every address.
     #
-    # It applies to a LoadBalancer only, not to 'agw.ingress', and it is up to
-    # the cloud: one that does not support it ignores it. The AWS Load Balancer
-    # Controller applies it through the security group it gives the load
-    # balancer.
+    # It applies to a LoadBalancer only, not to 'agw.ingress' or
+    # 'agw.httpRoute', and it is up to the cloud: one that does not support it
+    # ignores it. The AWS Load Balancer Controller applies it through the
+    # security group it gives the load balancer.
     # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/#ServiceSpec
     # https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/deploy/security_groups/
     loadBalancerSourceRanges: []
@@ -223,7 +224,8 @@ agw:
     #
     # Its TLS listener closes a connection idle for 350 seconds, and this
     # cannot be changed. It also cannot send all of a client's connections to
-    # the same Hush AGW pod. Where either matters, use 'agw.ingress' instead.
+    # the same Hush AGW pod. Where either matters, use 'agw.ingress' or
+    # 'agw.httpRoute' instead.
     awsNlb:
       # "internet-facing" or "internal".
       scheme: internet-facing
@@ -400,6 +402,46 @@ agw:
         # example {affinityType: managed-cookie}. Empty leaves it off.
         # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/session-affinity
         sessionAffinity: {}
+
+  # An HTTPRoute of the Gateway API that sends every path of 'agw.hostname' to
+  # Hush AGW. It takes the place of 'agw.ingress': enable one of them, not
+  # both. It cannot be enabled together with a LoadBalancer Service either. The
+  # Gateway it attaches to must meet the requirements under 'agw.service'.
+  # https://gateway-api.sigs.k8s.io/reference/api-types/httproute/
+  httpRoute:
+    # Whether to create the HTTPRoute.
+    enabled: false
+
+    # Gateways the HTTPRoute attaches to, as its parentRefs, for example
+    # [{name: shared, namespace: gateway-infra, sectionName: https}]. Each
+    # listener must admit routes from the release's namespace. Required unless
+    # 'gateway.enabled' is set, which attaches the HTTPRoute to the chart's own
+    # Gateway instead.
+    parentRefs: []
+
+    # Annotations for the HTTPRoute.
+    annotations: {}
+
+    # A Gateway of the chart's own, for a cluster with no shared Gateway. It has
+    # one HTTPS listener on port 443 for 'agw.hostname', which admits routes
+    # from the release's namespace only.
+    # https://gateway-api.sigs.k8s.io/reference/api-types/gateway/
+    gateway:
+      # Whether to create the Gateway.
+      enabled: false
+
+      # GatewayClass of the Gateway API implementation that serves it.
+      # Required.
+      className: ""
+
+      # Annotations for the Gateway.
+      annotations: {}
+
+      tls:
+        # Secret holding the certificate for 'agw.hostname', in the namespace
+        # the chart is installed in. Leave it empty for an implementation that
+        # takes the certificate another way.
+        secretName: ""
 
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #

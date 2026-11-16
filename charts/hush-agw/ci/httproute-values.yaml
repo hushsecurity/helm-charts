@@ -1,0 +1,16 @@
+# HTTPRoute attached to a Gateway the platform team runs: the listener 'https'
+# of the Gateway 'shared' in the namespace 'gateway-infra'. That listener must
+# terminate TLS for the hostname and admit routes from the release's namespace,
+# and the Gateway must meet the requirements under 'agw.service' in values.yaml.
+# Point the hostname's DNS record at the Gateway's address.
+agw:
+  hostname: gw.example.com
+  httpRoute:
+    enabled: true
+    parentRefs:
+      - name: shared
+        namespace: gateway-infra
+        sectionName: https
+hushDeployment:
+  token: dummy-token
+  password: dummy-password

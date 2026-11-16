@@ -146,9 +146,11 @@ CI_API_VERSIONS = {
     "openshift-custom-label-image-values.yaml": ["security.openshift.io/v1"],
 }
 
-# Custom kinds of a cloud's ingress controller, which kubeconform has no schema
-# for, so it skips them rather than fail on every one.
+# Gateway API kinds and custom kinds of a cloud's ingress controller, which
+# kubeconform has no schema for, so it skips them rather than fail on every one.
 SKIPPED_KINDS = [
+    "gateway.networking.k8s.io/v1/Gateway",
+    "gateway.networking.k8s.io/v1/HTTPRoute",
     "cloud.google.com/v1/BackendConfig",
     "networking.gke.io/v1/ManagedCertificate",
     "networking.gke.io/v1beta1/FrontendConfig",
