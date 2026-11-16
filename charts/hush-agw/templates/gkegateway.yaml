@@ -1,0 +1,62 @@
+{{- if and .Values.agw.httpRoute.enabled (eq (include "hush-agw.httpRouteController" .) "gke-gateway") }}
+  {{- $gke := .Values.agw.httpRoute.gkeGateway }}
+  {{- if $gke.healthCheckPolicy.enabled }}
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-gke-gateway-health-check-policy
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  default:
+    config:
+      type: HTTP
+      httpHealthCheck:
+        portSpecification: USE_FIXED_PORT
+        port: {{ include "hush-agw.readinessPort" . }}
+        requestPath: {{ include "hush-agw.readinessPath" . }}
+  targetRef:
+    group: ""
+    kind: Service
+    name: {{ include "hush-common.fullName" . }}
+  {{- end }}
+  {{- if $gke.backendPolicy.enabled }}
+---
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-gke-gateway-backend-policy
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  default:
+    timeoutSec: {{ int $gke.backendPolicy.timeoutSec }}
+    {{- with $gke.backendPolicy.sessionAffinity }}
+    sessionAffinity: {{- toYaml . | nindent 6 }}
+    {{- end }}
+  targetRef:
+    group: ""
+    kind: Service
+    name: {{ include "hush-common.fullName" . }}
+  {{- end }}
+  {{- if and .Values.agw.httpRoute.gateway.enabled $gke.sslPolicy }}
+---
+apiVersion: networking.gke.io/v1
+kind: GCPGatewayPolicy
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-gke-gateway-gateway-policy
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  default:
+    sslPolicy: {{ $gke.sslPolicy }}
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: {{ include "hush-common.fullName" . }}
+  {{- end }}
+{{- end }}

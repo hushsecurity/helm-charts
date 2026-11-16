@@ -1,0 +1,29 @@
+# GKE Gateway with 'agw.httpRoute.controller: gke-gateway' and a Gateway of the
+# chart's own, a global external Application Load Balancer. It needs the
+# Gateway API on the cluster, always on in Autopilot, and on Standard:
+#
+#   gcloud container clusters update CLUSTER --gateway-api=standard
+#
+# and, in the cluster's Google Cloud project, a Google-managed certificate for
+# the hostname and an SSL policy that requires TLS 1.2:
+#
+#   gcloud compute ssl-certificates create hush-agw --domains=gw.example.com \
+#     --global
+#   gcloud compute ssl-policies create hush-agw-tls --profile MODERN \
+#     --min-tls-version 1.2
+#
+# Point the hostname's DNS A record at the Gateway's address: Google issues the
+# certificate once it does, and renews it.
+agw:
+  hostname: gw.example.com
+  httpRoute:
+    enabled: true
+    controller: gke-gateway
+    gateway:
+      enabled: true
+    gkeGateway:
+      preSharedCertificate: hush-agw
+      sslPolicy: hush-agw-tls
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
