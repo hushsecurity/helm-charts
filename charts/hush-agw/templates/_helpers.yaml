@@ -217,6 +217,12 @@ store only.
   {{- $_ = set $preset (print $prefix "healthcheck-path") (include "hush-agw.readinessPath" .) -}}
   {{- $_ = set $preset (print $prefix "attributes") (printf "load_balancing.cross_zone.enabled=%v" $nlb.crossZone) -}}
 {{- end -}}
+{{- if and .Values.agw.ingress.enabled (eq (include "hush-agw.ingressController" .) "gke-ingress") -}}
+  {{- $_ := set $preset "cloud.google.com/neg" (toJson (dict "ingress" true)) -}}
+  {{- if .Values.agw.ingress.gkeIngress.backendConfig.enabled -}}
+    {{- $_ = set $preset "cloud.google.com/backend-config" (toJson (dict "default" (include "hush-common.fullName" .))) -}}
+  {{- end -}}
+{{- end -}}
 {{- $annotations := merge (deepCopy (.Values.agw.service.annotations | default dict)) $preset -}}
 {{- with $annotations -}}
   {{ toYaml . }}
@@ -225,7 +231,7 @@ store only.
 
 {{- define "hush-agw.ingressController" -}}
 {{- $controller := toString .Values.agw.ingress.controller -}}
-{{- $known := list "aws-alb" -}}
+{{- $known := list "aws-alb" "gke-ingress" -}}
 {{- if and $controller (not (has $controller $known)) -}}
   {{- fail (printf "'agw.ingress.controller' must be empty or one of: %s" (join ", " $known)) -}}
 {{- end -}}
@@ -234,7 +240,9 @@ store only.
 
 {{- define "hush-agw.ingressClassName" -}}
 {{- $controller := include "hush-agw.ingressController" . -}}
-{{- if .Values.agw.ingress.className -}}
+{{- if and .Values.agw.ingress.className (eq $controller "gke-ingress") -}}
+  {{- fail "'agw.ingress.className' cannot be used with gke-ingress, which takes the class from the 'kubernetes.io/ingress.class' annotation" -}}
+{{- else if .Values.agw.ingress.className -}}
   {{- .Values.agw.ingress.className -}}
 {{- else if eq $controller "aws-alb" -}}
   alb
@@ -263,6 +271,15 @@ store only.
     {{- $_ = set $preset (print $prefix "ssl-policy") . -}}
   {{- end -}}
   {{- $_ = set $preset (print $prefix "target-group-attributes") (printf "stickiness.enabled=%v,stickiness.lb_cookie.duration_seconds=%d,load_balancing.cross_zone.enabled=%v" $alb.stickiness.enabled (int $alb.stickiness.duration) $alb.crossZone) -}}
+{{- else if eq $controller "gke-ingress" -}}
+  {{- $gke := .Values.agw.ingress.gkeIngress -}}
+  {{- $_ := set $preset "kubernetes.io/ingress.class" "gce" -}}
+  {{- if $gke.managedCertificate.enabled -}}
+    {{- $_ = set $preset "networking.gke.io/managed-certificates" (include "hush-common.fullName" .) -}}
+  {{- end -}}
+  {{- if $gke.frontendConfig.enabled -}}
+    {{- $_ = set $preset "networking.gke.io/v1beta1.FrontendConfig" (include "hush-common.fullName" .) -}}
+  {{- end -}}
 {{- end -}}
 {{- $annotations := merge (deepCopy (.Values.agw.ingress.annotations | default dict)) $preset -}}
 {{- with $annotations -}}

@@ -260,9 +260,12 @@ agw:
     # The ingress controller the chart sets the Ingress up for, so that it
     # meets the requirements under 'agw.service': "" for any controller, set
     # up through 'className' and 'annotations', or one of:
-    # - "aws-alb": an AWS Application Load Balancer, configured under 'awsAlb'.
+    # - "aws-alb": an AWS Application Load Balancer, configured under 'awsAlb';
+    # - "gke-ingress": GKE Ingress, an external Application Load Balancer,
+    #   configured under 'gkeIngress'.
     #
-    # 'className' and keys in 'annotations' replace what it sets.
+    # 'className' and keys in 'annotations' replace what it sets, except that
+    # gke-ingress takes no 'className'.
     #
     # Examples for each ingress controller and load balancer are in
     # https://github.com/hushsecurity/helm-charts/tree/main/charts/hush-agw/ci
@@ -319,6 +322,45 @@ agw:
       # to the Hush AGW pods of its own zone, and the ALB takes a zone without
       # a healthy Hush AGW pod out of its DNS name.
       crossZone: true
+
+    # GKE Ingress, for 'controller: gke-ingress'. GKE takes the class from the
+    # 'kubernetes.io/ingress.class' annotation alone, which the chart sets, so
+    # 'className' cannot be used with it. The chart also marks the Service for
+    # container-native load balancing, so that the load balancer reaches the
+    # Hush AGW pods directly.
+    gkeIngress:
+      # A BackendConfig for the Hush AGW Service, which health checks Hush AGW
+      # and sets how long a response may take. The load balancer cuts a
+      # response that takes longer, an MCP stream included.
+      backendConfig:
+        enabled: true
+
+        # Seconds from the request to the end of its response. GKE's default
+        # is 30.
+        timeoutSec: 1800
+
+        # Session affinity, which keeps a client on one Hush AGW pod, for
+        # example {affinityType: GENERATED_COOKIE, affinityCookieTtlSec: 86400}
+        # or {affinityType: CLIENT_IP}. Empty turns it off.
+        # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration
+        sessionAffinity: {}
+
+      # A Google-managed certificate for 'agw.hostname'. Turn it off when
+      # 'tls.secretName' or an annotation of your own provides the certificate.
+      managedCertificate:
+        enabled: true
+
+      # A FrontendConfig that redirects plain HTTP to HTTPS rather than serve
+      # Hush AGW on port 80. GKE leaves its SSL policy on the load balancer when
+      # it is turned off, so empty 'sslPolicy' in an upgrade first.
+      frontendConfig:
+        enabled: true
+
+        # Name of an SSL policy, created in the cluster's Google Cloud project
+        # with 'gcloud compute ssl-policies create', for example one with
+        # '--min-tls-version 1.2'. When empty the load balancer uses Google's
+        # default, which accepts TLS 1.0 and later.
+        sslPolicy: ""
 
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #

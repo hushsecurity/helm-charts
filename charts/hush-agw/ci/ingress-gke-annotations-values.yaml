@@ -1,5 +1,6 @@
-# GKE Ingress set up by hand, through annotations. Create these three in the
-# release's namespace before installing:
+# GKE Ingress set up by hand, through annotations, where the
+# 'agw.ingress.controller: gke-ingress' preset would create the objects they
+# name. Create these three in the release's namespace before installing:
 #
 #   apiVersion: cloud.google.com/v1
 #   kind: BackendConfig
