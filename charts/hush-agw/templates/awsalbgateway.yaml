@@ -1,0 +1,57 @@
+{{- if and .Values.agw.httpRoute.enabled (eq (include "hush-agw.httpRouteController" .) "aws-alb") }}
+  {{- $alb := .Values.agw.httpRoute.awsAlb }}
+  {{- if $alb.targetGroupConfiguration.enabled }}
+    {{- $tg := $alb.targetGroupConfiguration }}
+    {{- if and $tg.stickiness.enabled (not $tg.crossZone) }}
+      {{- fail "'agw.httpRoute.awsAlb.targetGroupConfiguration.stickiness.enabled' cannot be used with 'crossZone: false', which AWS refuses on an ALB target group" }}
+    {{- end }}
+---
+apiVersion: gateway.k8s.aws/v1
+kind: TargetGroupConfiguration
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-aws-alb-gateway-target-group-configuration
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  targetReference:
+    name: {{ include "hush-common.fullName" . }}
+  defaultConfiguration:
+    targetType: ip
+    healthCheckConfig:
+      healthCheckProtocol: HTTP
+      healthCheckPort: {{ include "hush-agw.readinessPort" . | quote }}
+      healthCheckPath: {{ include "hush-agw.readinessPath" . }}
+    targetGroupAttributes:
+      - key: stickiness.enabled
+        value: {{ printf "%v" $tg.stickiness.enabled | quote }}
+      - key: stickiness.lb_cookie.duration_seconds
+        value: {{ printf "%d" (int $tg.stickiness.duration) | quote }}
+      - key: load_balancing.cross_zone.enabled
+        value: {{ printf "%v" $tg.crossZone | quote }}
+  {{- end }}
+  {{- if and .Values.agw.httpRoute.gateway.enabled $alb.loadBalancerConfiguration.enabled }}
+    {{- $lb := $alb.loadBalancerConfiguration }}
+---
+apiVersion: gateway.k8s.aws/v1
+kind: LoadBalancerConfiguration
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-aws-alb-gateway-load-balancer-configuration
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  scheme: {{ $lb.scheme }}
+  loadBalancerAttributes:
+    - key: idle_timeout.timeout_seconds
+      value: {{ printf "%d" (int $lb.idleTimeout) | quote }}
+  listenerConfigurations:
+    - protocolPort: HTTPS:443
+    {{- with $lb.sslPolicy }}
+      sslPolicy: {{ . }}
+    {{- end }}
+    {{- with $lb.certificateArn }}
+      defaultCertificate: {{ . }}
+    {{- end }}
+  {{- end }}
+{{- end }}

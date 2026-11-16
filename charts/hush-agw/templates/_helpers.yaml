@@ -321,3 +321,22 @@ store only.
   {{- fail "'agw.httpRoute.parentRefs' or 'agw.httpRoute.gateway.enabled' is required" -}}
 {{- end -}}
 {{- end }}
+
+{{- define "hush-agw.httpRouteController" -}}
+{{- $controller := toString .Values.agw.httpRoute.controller -}}
+{{- $known := list "aws-alb" -}}
+{{- if and $controller (not (has $controller $known)) -}}
+  {{- fail (printf "'agw.httpRoute.controller' must be empty or one of: %s" (join ", " $known)) -}}
+{{- end -}}
+{{- $controller -}}
+{{- end }}
+
+{{- define "hush-agw.gatewayInfrastructure" -}}
+{{- $controller := include "hush-agw.httpRouteController" . -}}
+{{- if and (eq $controller "aws-alb") .Values.agw.httpRoute.awsAlb.loadBalancerConfiguration.enabled -}}
+parametersRef:
+  group: gateway.k8s.aws
+  kind: LoadBalancerConfiguration
+  name: {{ include "hush-common.fullName" . }}
+{{- end -}}
+{{- end }}

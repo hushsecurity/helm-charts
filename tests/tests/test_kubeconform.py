@@ -151,6 +151,8 @@ CI_API_VERSIONS = {
 SKIPPED_KINDS = [
     "gateway.networking.k8s.io/v1/Gateway",
     "gateway.networking.k8s.io/v1/HTTPRoute",
+    "gateway.k8s.aws/v1/LoadBalancerConfiguration",
+    "gateway.k8s.aws/v1/TargetGroupConfiguration",
     "cloud.google.com/v1/BackendConfig",
     "networking.gke.io/v1/ManagedCertificate",
     "networking.gke.io/v1beta1/FrontendConfig",

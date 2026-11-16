@@ -1,0 +1,27 @@
+# AWS Application Load Balancer through the Gateway API, with
+# 'agw.httpRoute.controller: aws-alb' and a Gateway of the chart's own. It needs
+# the AWS Load Balancer Controller v3.5.0 or later, the Gateway API standard
+# CRDs its release requires and the controller's Gateway CRDs, subnets tagged
+# kubernetes.io/role/elb in at least two Availability Zones, and an ACM
+# certificate for the hostname, which the controller finds by the hostname. The
+# cluster admin creates the GatewayClass:
+#
+#   apiVersion: gateway.networking.k8s.io/v1
+#   kind: GatewayClass
+#   metadata:
+#     name: aws-alb
+#   spec:
+#     controllerName: gateway.k8s.aws/alb
+#
+# Point the hostname's DNS record at the ALB once the Gateway has an address.
+agw:
+  hostname: gw.example.com
+  httpRoute:
+    enabled: true
+    controller: aws-alb
+    gateway:
+      enabled: true
+      className: aws-alb
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
