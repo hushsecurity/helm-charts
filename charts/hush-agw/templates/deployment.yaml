@@ -79,7 +79,7 @@ spec:
             - name: READINESS_ADDR
               value: 0.0.0.0:15021
           ports:
-            - name: gateway
+            - name: gateway-http
               containerPort: 3001
             - name: readiness
               containerPort: 15021
