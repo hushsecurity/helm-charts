@@ -1,0 +1,39 @@
+# AWS Network Load Balancer set up by hand, through the Service's annotations.
+# It needs the AWS Load Balancer Controller in the cluster, an ACM certificate
+# for the hostname, and subnets tagged kubernetes.io/role/elb. Point the
+# hostname's DNS record at the NLB once it has an address.
+#
+# On EKS Auto Mode, Auto Mode creates the NLB itself, with no controller to
+# install, and needs the subnet tags too. Its list of supported annotations does
+# not include aws-load-balancer-ssl-negotiation-policy.
+#
+# AWS does not support sticky sessions on a TLS listener, so this NLB cannot
+# keep a client on one Hush AGW pod. Where that matters, use an ALB.
+#
+# The attributes turn on cross-zone load balancing, which an NLB leaves off
+# unless set, so that the NLB's node in every zone reaches the Hush AGW pods
+# in all zones.
+agw:
+  hostname: gw.example.com
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000
+      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+      service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: http
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "15021"
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /healthz/ready
+      service.beta.kubernetes.io/aws-load-balancer-attributes: load_balancing.cross_zone.enabled=true
+    # Without a class, the annotations above hand the Service to the AWS Load
+    # Balancer Controller. On an EKS Auto Mode cluster, Auto Mode takes every
+    # LoadBalancer Service without a class instead. Uncomment the class to have
+    # the controller handle the Service on an Auto Mode cluster where it is
+    # installed too.
+    # loadBalancerClass: service.k8s.aws/nlb
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
