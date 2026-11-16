@@ -1,0 +1,47 @@
+{{- if and .Values.agw.ingress.enabled (eq (include "hush-agw.ingressController" .) "gke-ingress") }}
+  {{- $gke := .Values.agw.ingress.gkeIngress }}
+  {{- if $gke.backendConfig.enabled }}
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-gke-ingress-backend-config
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  timeoutSec: {{ int $gke.backendConfig.timeoutSec }}
+  healthCheck:
+    type: HTTP
+    port: {{ include "hush-agw.readinessPort" . }}
+    requestPath: {{ include "hush-agw.readinessPath" . }}
+  sessionAffinity: {{- toYaml ($gke.backendConfig.sessionAffinity | default (dict "affinityType" "NONE")) | nindent 4 }}
+  {{- end }}
+  {{- if $gke.managedCertificate.enabled }}
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-gke-ingress-managed-certificate
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  domains:
+    - {{ include "hush-agw.hostname" . }}
+  {{- end }}
+  {{- if $gke.frontendConfig.enabled }}
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-gke-ingress-frontend-config
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  redirectToHttps:
+    enabled: true
+  sslPolicy: {{ $gke.frontendConfig.sslPolicy | quote }}
+  {{- end }}
+{{- end }}

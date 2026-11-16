@@ -1,0 +1,22 @@
+# GKE Ingress through 'agw.ingress.controller: gke-ingress', which also creates
+# the BackendConfig, the ManagedCertificate and the FrontendConfig. Point the
+# hostname's DNS A record at the Ingress address: Google issues the certificate
+# once it does, which can take up to 60 minutes, and renews it.
+#
+# The SSL policy limits the load balancer to TLS 1.2 or later; without one it
+# also accepts TLS 1.0 and 1.1. Create it in the cluster's Google Cloud project
+# before installing:
+#
+#   gcloud compute ssl-policies create hush-agw-tls --profile MODERN \
+#     --min-tls-version 1.2
+agw:
+  hostname: gw.example.com
+  ingress:
+    enabled: true
+    controller: gke-ingress
+    gkeIngress:
+      frontendConfig:
+        sslPolicy: hush-agw-tls
+hushDeployment:
+  token: dummy-token
+  password: dummy-password

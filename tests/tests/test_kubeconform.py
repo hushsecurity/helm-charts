@@ -146,6 +146,14 @@ CI_API_VERSIONS = {
     "openshift-custom-label-image-values.yaml": ["security.openshift.io/v1"],
 }
 
+# Custom kinds of a cloud's ingress controller, which kubeconform has no schema
+# for, so it skips them rather than fail on every one.
+SKIPPED_KINDS = [
+    "cloud.google.com/v1/BackendConfig",
+    "networking.gke.io/v1/ManagedCertificate",
+    "networking.gke.io/v1beta1/FrontendConfig",
+]
+
 
 @contextlib.contextmanager
 def values_tmp_file(chart: str, values: dict):
@@ -185,7 +193,10 @@ def test_kubeconform(chart):
         for api_version in api_versions:
             args += f" --api-versions {api_version}"
         conform_kube_version = kube_version.split("-")[0]
-        conform_args = f"-strict -kubernetes-version {conform_kube_version}"
+        conform_args = (
+            f"-strict -kubernetes-version {conform_kube_version} "
+            f"-skip {','.join(SKIPPED_KINDS)}"
+        )
         bash(f"helm template {args} {chart_path} | kubeconform {conform_args}")
 
     chart_path = os.path.join(CHARTS_DIR, chart)
