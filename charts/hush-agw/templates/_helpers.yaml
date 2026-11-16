@@ -24,6 +24,14 @@ External base URL clients reach the gateway on, built from the hostname.
 https://{{ include "hush-agw.hostname" . }}
 {{- end }}
 
+{{- define "hush-agw.serviceType" -}}
+{{- $type := toString .Values.agw.service.type -}}
+{{- if not (has $type (list "ClusterIP" "LoadBalancer")) -}}
+  {{- fail "'agw.service.type' must be ClusterIP or LoadBalancer" -}}
+{{- end -}}
+{{- $type -}}
+{{- end }}
+
 {{/*
 Image path for the agw-controller container.
 */}}
