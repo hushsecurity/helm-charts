@@ -17,6 +17,10 @@
 /healthz/ready
 {{- end }}
 
+{{- define "hush-agw.servicePort" -}}
+{{- ternary 443 3001 (eq (include "hush-agw.serviceType" .) "LoadBalancer") -}}
+{{- end }}
+
 {{/*
 External base URL clients reach the gateway on, built from the hostname.
 */}}

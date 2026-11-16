@@ -26,5 +26,5 @@ spec:
     app.kubernetes.io/component: gateway
   ports:
     - name: gateway
-      port: {{ ternary 443 3001 (eq $type "LoadBalancer") }}
+      port: {{ include "hush-agw.servicePort" . }}
       targetPort: gateway-http
