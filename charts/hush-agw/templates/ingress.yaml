@@ -9,11 +9,11 @@ metadata:
   labels: {{- include "hush-common.labels" . | nindent 4 }}
     app.kubernetes.io/component: gateway-ingress
   namespace: {{ include "hush-common.namespace" . }}
-  {{- with .Values.agw.ingress.annotations }}
-  annotations: {{- toYaml . | nindent 4 }}
+  {{- with include "hush-agw.ingressAnnotations" . }}
+  annotations: {{- . | nindent 4 }}
   {{- end }}
 spec:
-  {{- with .Values.agw.ingress.className }}
+  {{- with include "hush-agw.ingressClassName" . }}
   ingressClassName: {{ . }}
   {{- end }}
   {{- with .Values.agw.ingress.tls.secretName }}

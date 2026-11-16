@@ -1,0 +1,13 @@
+# AWS Application Load Balancer through 'agw.ingress.controller: aws-alb'. It
+# needs the AWS Load Balancer Controller in the cluster, an ACM certificate for
+# the hostname, which the controller finds by the hostname, and subnets tagged
+# kubernetes.io/role/elb in at least two Availability Zones. Point the
+# hostname's DNS record at the ALB once it has an address.
+agw:
+  hostname: gw.example.com
+  ingress:
+    enabled: true
+    controller: aws-alb
+hushDeployment:
+  token: dummy-token
+  password: dummy-password

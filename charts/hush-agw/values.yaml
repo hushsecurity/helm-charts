@@ -197,12 +197,57 @@ agw:
     #
     # It applies to a LoadBalancer only, not to 'agw.ingress', and it is up to
     # the cloud: one that does not support it ignores it. The AWS Load Balancer
-    # Controller ignores it, for example, when the load balancer does not
-    # preserve client IP addresses, which it does not by default for the pod IP
-    # targets 'aws-nlb' uses.
+    # Controller applies it through the security group it gives the load
+    # balancer.
     # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/#ServiceSpec
-    # https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/#access-control
+    # https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/deploy/security_groups/
     loadBalancerSourceRanges: []
+
+    # A load balancer the chart sets the Service up for, so that it meets the
+    # requirements above: "" for none, or "aws-nlb" for an AWS Network Load
+    # Balancer, configured under 'awsNlb'. It makes the Service a LoadBalancer,
+    # whatever 'type' says. Keys in 'annotations' replace the ones it sets.
+    #
+    # Examples for each load balancer and ingress controller are in
+    # https://github.com/hushsecurity/helm-charts/tree/main/charts/hush-agw/ci
+    loadBalancer: ""
+
+    # An AWS Network Load Balancer, for 'loadBalancer: aws-nlb', through the
+    # AWS Load Balancer Controller, which must be installed in the cluster:
+    # https://kubernetes-sigs.github.io/aws-load-balancer-controller/
+    #
+    # On EKS Auto Mode, Auto Mode creates it instead, with no controller to
+    # install, though its list of supported annotations does not include the
+    # TLS policy one, which an empty 'sslPolicy' leaves out:
+    # https://docs.aws.amazon.com/eks/latest/userguide/auto-configure-nlb.html
+    #
+    # Its TLS listener closes a connection idle for 350 seconds, and this
+    # cannot be changed. It also cannot send all of a client's connections to
+    # the same Hush AGW pod. Where either matters, use 'agw.ingress' instead.
+    awsNlb:
+      # "internet-facing" or "internal".
+      scheme: internet-facing
+
+      # ARN of the ACM certificate for 'agw.hostname'. Required.
+      certificateArn: ""
+
+      # Security policy of the TLS listener. The default accepts TLS 1.2 and
+      # 1.3 only, while the controller's own default also accepts TLS 1.0 and
+      # 1.1. Empty leaves the controller's default.
+      sslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+
+      # Cross-zone load balancing, which an NLB leaves off unless set. When
+      # true, the NLB's node in each zone sends connections to Hush AGW pods
+      # in every zone, and AWS charges for the data that crosses zones. When
+      # false, it sends them only to the Hush AGW pods of its own zone, and
+      # AWS takes a zone without a healthy Hush AGW pod out of the NLB's DNS
+      # name.
+      #
+      # It goes into the annotation
+      # 'service.beta.kubernetes.io/aws-load-balancer-attributes', which, given
+      # in 'annotations', replaces it.
+      # https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancers.html#cross-zone-load-balancing
+      crossZone: true
 
   # An Ingress for 'agw.hostname' that sends every path to the Service. It must
   # meet the requirements listed under 'agw.service', which most ingress
@@ -211,6 +256,17 @@ agw:
   ingress:
     # Whether to create the Ingress.
     enabled: false
+
+    # The ingress controller the chart sets the Ingress up for, so that it
+    # meets the requirements under 'agw.service': "" for any controller, set
+    # up through 'className' and 'annotations', or one of:
+    # - "aws-alb": an AWS Application Load Balancer, configured under 'awsAlb'.
+    #
+    # 'className' and keys in 'annotations' replace what it sets.
+    #
+    # Examples for each ingress controller and load balancer are in
+    # https://github.com/hushsecurity/helm-charts/tree/main/charts/hush-agw/ci
+    controller: ""
 
     # IngressClass of the controller that serves the Ingress. When empty the
     # cluster's default IngressClass is used, if it has one.
@@ -226,6 +282,43 @@ agw:
       # certificate from an annotation instead, as the AWS Load Balancer
       # Controller does.
       secretName: ""
+
+    # An AWS Application Load Balancer, for 'controller: aws-alb', through the
+    # AWS Load Balancer Controller, which must be installed in the cluster:
+    # https://kubernetes-sigs.github.io/aws-load-balancer-controller/
+    awsAlb:
+      # "internet-facing" or "internal".
+      scheme: internet-facing
+
+      # ARN of the ACM certificate for 'agw.hostname'. When empty the
+      # controller finds a certificate for the hostname in ACM.
+      certificateArn: ""
+
+      # Seconds a connection may stay idle before the load balancer closes it.
+      idleTimeout: 600
+
+      # Security policy of the HTTPS listener. The default accepts TLS 1.2 and
+      # 1.3 only, while the controller's own default also accepts TLS 1.0 and
+      # 1.1. Empty leaves the controller's default.
+      sslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+
+      # Sticky sessions: the ALB keeps a client on one Hush AGW pod through a
+      # cookie it sets, for clients that send it back. The cookie lasts
+      # 'duration' seconds. AWS does not allow it with 'crossZone: false'.
+      #
+      # 'stickiness' and 'crossZone' go into the target group attributes. An
+      # 'alb.ingress.kubernetes.io/target-group-attributes' annotation in
+      # 'annotations' replaces both.
+      # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html
+      stickiness:
+        enabled: false
+        duration: 86400
+
+      # Cross-zone load balancing. When true, the ALB's node in each zone sends
+      # requests to Hush AGW pods in every zone. When false, it sends them only
+      # to the Hush AGW pods of its own zone, and the ALB takes a zone without
+      # a healthy Hush AGW pod out of its DNS name.
+      crossZone: true
 
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #

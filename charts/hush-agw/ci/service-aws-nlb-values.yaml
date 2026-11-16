@@ -1,0 +1,21 @@
+# AWS Network Load Balancer through 'agw.service.loadBalancer: aws-nlb'. It
+# needs the AWS Load Balancer Controller in the cluster, an ACM certificate for
+# the hostname, and subnets tagged kubernetes.io/role/elb. Point the hostname's
+# DNS record at the NLB once it has an address.
+#
+# On EKS Auto Mode, Auto Mode creates the NLB itself, with no controller to
+# install, and needs the subnet tags too. Its list of supported annotations does
+# not include aws-load-balancer-ssl-negotiation-policy, which the preset sets
+# unless 'agw.service.awsNlb.sslPolicy' is empty.
+#
+# AWS does not support sticky sessions on a TLS listener, so this NLB cannot
+# keep a client on one Hush AGW pod. Where that matters, use an ALB.
+agw:
+  hostname: gw.example.com
+  service:
+    loadBalancer: aws-nlb
+    awsNlb:
+      certificateArn: arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
