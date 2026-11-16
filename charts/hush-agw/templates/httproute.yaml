@@ -6,7 +6,11 @@
     {{- fail "'agw.httpRoute' cannot be enabled with a LoadBalancer Service" }}
   {{- end }}
   {{- $route := .Values.agw.httpRoute }}
+  {{- $controller := include "hush-agw.httpRouteController" . }}
   {{- if $route.gateway.enabled }}
+    {{- if and (eq $controller "aws-alb") $route.gateway.tls.secretName }}
+      {{- fail "'agw.httpRoute.gateway.tls.secretName' cannot be used with aws-alb, which takes the certificate from ACM" }}
+    {{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -20,6 +24,9 @@ metadata:
     {{- end }}
 spec:
   gatewayClassName: {{ required "'agw.httpRoute.gateway.className' is required" $route.gateway.className }}
+    {{- with include "hush-agw.gatewayInfrastructure" . }}
+  infrastructure: {{- . | nindent 4 }}
+    {{- end }}
   listeners:
     - name: https
       protocol: HTTPS

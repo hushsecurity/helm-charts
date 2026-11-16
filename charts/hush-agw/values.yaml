@@ -412,6 +412,18 @@ agw:
     # Whether to create the HTTPRoute.
     enabled: false
 
+    # The Gateway API implementation the chart sets the HTTPRoute up for, so
+    # that it meets the requirements under 'agw.service': "" for any
+    # implementation, or one of:
+    # - "aws-alb": an AWS Application Load Balancer through the AWS Load
+    #   Balancer Controller, configured under 'awsAlb'.
+    #
+    # Keys in 'gateway.annotations' replace what it sets.
+    #
+    # Examples for each implementation are in
+    # https://github.com/hushsecurity/helm-charts/tree/main/charts/hush-agw/ci
+    controller: ""
+
     # Gateways the HTTPRoute attaches to, as its parentRefs, for example
     # [{name: shared, namespace: gateway-infra, sectionName: https}]. Each
     # listener must admit routes from the release's namespace. Required unless
@@ -442,6 +454,59 @@ agw:
         # the chart is installed in. Leave it empty for an implementation that
         # takes the certificate another way.
         secretName: ""
+
+    # An AWS Application Load Balancer, for 'controller: aws-alb', through the
+    # AWS Load Balancer Controller v3.5.0 or later, with the Gateway API CRDs
+    # its release requires. The cluster admin creates its GatewayClass, with
+    # controllerName gateway.k8s.aws/alb, which 'gateway.className' names.
+    # https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/gateway/gateway/
+    awsAlb:
+      # A TargetGroupConfiguration for the Hush AGW Service, with any Gateway:
+      # pod IP targets, a health check on the readiness port, and the target
+      # group attributes below. An ALB Gateway, a shared one included, needs it
+      # or one of your own: without it the controller cannot send traffic to
+      # the ClusterIP Service, and applies no change to that Gateway, whichever
+      # route it comes from, while the HTTPRoute is attached.
+      # https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/gateway/targetgroupconfig/
+      targetGroupConfiguration:
+        enabled: true
+
+        # Sticky sessions: the ALB keeps a client on one Hush AGW pod through
+        # a cookie it sets, for clients that send it back. The cookie lasts
+        # 'duration' seconds. AWS does not allow it with 'crossZone: false'.
+        stickiness:
+          enabled: false
+          duration: 86400
+
+        # Cross-zone load balancing. When true, the ALB's node in each zone
+        # sends requests to Hush AGW pods in every zone. When false, it sends
+        # them only to the Hush AGW pods of its own zone, and the ALB takes a
+        # zone without a healthy Hush AGW pod out of its DNS name.
+        crossZone: true
+
+      # A LoadBalancerConfiguration for the chart's own Gateway, which refers
+      # to it. A shared Gateway takes these settings from its owner.
+      # https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/gateway/loadbalancerconfig/
+      loadBalancerConfiguration:
+        enabled: true
+
+        # "internet-facing" or "internal". The controller's own default is
+        # "internal".
+        scheme: internet-facing
+
+        # ARN of the ACM certificate for 'agw.hostname'. When empty the
+        # controller finds a certificate for the hostname in ACM. The
+        # controller takes no certificate from a Secret.
+        certificateArn: ""
+
+        # Seconds a connection may stay idle before the load balancer closes
+        # it.
+        idleTimeout: 600
+
+        # Security policy of the HTTPS listener. The default accepts TLS 1.2
+        # and 1.3 only, while the controller's own default also accepts TLS 1.0
+        # and 1.1. Empty leaves the controller's default.
+        sslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
 
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #

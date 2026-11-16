@@ -2,7 +2,9 @@
 # of the Gateway 'shared' in the namespace 'gateway-infra'. That listener must
 # terminate TLS for the hostname and admit routes from the release's namespace,
 # and the Gateway must meet the requirements under 'agw.service' in values.yaml.
-# Point the hostname's DNS record at the Gateway's address.
+# On a Gateway of the AWS Load Balancer Controller also set
+# 'agw.httpRoute.controller: aws-alb', see 'agw.httpRoute.awsAlb' in
+# values.yaml. Point the hostname's DNS record at the Gateway's address.
 agw:
   hostname: gw.example.com
   httpRoute:
