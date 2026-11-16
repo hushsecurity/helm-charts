@@ -417,7 +417,9 @@ agw:
     # implementation, or one of:
     # - "aws-alb": an AWS Application Load Balancer through the AWS Load
     #   Balancer Controller, configured under 'awsAlb';
-    # - "gke-gateway": GKE Gateway, configured under 'gkeGateway'.
+    # - "gke-gateway": GKE Gateway, configured under 'gkeGateway';
+    # - "azure-agc": Azure Application Gateway for Containers, configured under
+    #   'azureAgc'.
     #
     # Keys in 'gateway.annotations' replace what it sets.
     #
@@ -554,6 +556,44 @@ agw:
       # it through a GCPGatewayPolicy. When empty the load balancer uses
       # Google's default, which accepts TLS 1.0 and later.
       sslPolicy: ""
+
+    # Azure Application Gateway for Containers, for 'controller: azure-agc',
+    # through the ALB Controller, which must be installed in the cluster. The
+    # chart's own Gateway defaults to the class azure-alb-external and takes
+    # its certificate from a Secret only, so 'gateway.tls.secretName' is
+    # required with it.
+    # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/overview
+    #
+    # It closes a connection idle for 5 minutes, whatever the request timeout:
+    # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/application-gateway-for-containers-components
+    azureAgc:
+      # For the chart's own Gateway, the ApplicationLoadBalancer the ALB
+      # Controller manages, by name and namespace. Either these or 'albId' and
+      # 'albFrontend' are required.
+      albName: ""
+      albNamespace: ""
+
+      # Or the resource ID of an Azure Application Gateway for Containers
+      # managed outside the cluster, and the name of its frontend.
+      albId: ""
+      albFrontend: ""
+
+      # A HealthCheckPolicy for the Hush AGW Service, with any Gateway, which
+      # health checks Hush AGW on its readiness port.
+      # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/custom-health-probe
+      healthCheckPolicy:
+        enabled: true
+
+      # How long a request may take, set on the HTTPRoute. AGC cuts a request
+      # that takes longer, an MCP stream included, even while data flows.
+      # AGC's default is 60 seconds.
+      requestTimeout: 1800s
+
+      # Session affinity, which keeps a client on one Hush AGW pod, for
+      # example {affinityType: managed-cookie}, applied through a RoutePolicy
+      # for the HTTPRoute. Empty leaves it off.
+      # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/session-affinity
+      sessionAffinity: {}
 
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #

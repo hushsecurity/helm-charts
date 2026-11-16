@@ -161,6 +161,7 @@ SKIPPED_KINDS = [
     "networking.gke.io/v1beta1/FrontendConfig",
     "alb.networking.azure.io/v1/HealthCheckPolicy",
     "alb.networking.azure.io/v1/IngressExtension",
+    "alb.networking.azure.io/v1/RoutePolicy",
 ]
 
 

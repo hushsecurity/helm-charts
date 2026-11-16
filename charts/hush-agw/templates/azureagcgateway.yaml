@@ -1,0 +1,39 @@
+{{- if and .Values.agw.httpRoute.enabled (eq (include "hush-agw.httpRouteController" .) "azure-agc") }}
+  {{- $agc := .Values.agw.httpRoute.azureAgc }}
+  {{- if $agc.healthCheckPolicy.enabled }}
+---
+apiVersion: alb.networking.azure.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: {{ include "hush-common.fullName" . }}
+  labels: {{- include "hush-common.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway-azure-agc-gateway-health-check-policy
+  namespace: {{ include "hush-common.namespace" . }}
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: {{ include "hush-common.fullName" . }}
+  default:
+    port: {{ include "hush-agw.readinessPort" . }}
+    http:
+      path: {{ include "hush-agw.readinessPath" . }}
+  {{- end }}
+  {{- with $agc.sessionAffinity }}
+---
+apiVersion: alb.networking.azure.io/v1
+kind: RoutePolicy
+metadata:
+  name: {{ include "hush-common.fullName" $ }}
+  labels: {{- include "hush-common.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: gateway-azure-agc-gateway-route-policy
+  namespace: {{ include "hush-common.namespace" $ }}
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ include "hush-common.fullName" $ }}
+  default:
+    sessionAffinity: {{- toYaml . | nindent 6 }}
+  {{- end }}
+{{- end }}

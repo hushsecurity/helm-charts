@@ -1,0 +1,23 @@
+# Azure Application Gateway for Containers through the Gateway API, with
+# 'agw.httpRoute.controller: azure-agc' and a Gateway of the chart's own. It
+# needs the ALB Controller in the cluster and its ApplicationLoadBalancer
+# alb-infra/alb, and the certificate for the hostname in the Secret below, in
+# the release's namespace: AGC takes certificates from Secrets only. Point the
+# hostname's DNS record at the frontend once the Gateway has an address.
+#
+# The HTTPRoute lets a request, an MCP stream included, last 30 minutes.
+agw:
+  hostname: gw.example.com
+  httpRoute:
+    enabled: true
+    controller: azure-agc
+    gateway:
+      enabled: true
+      tls:
+        secretName: gw-example-com-tls
+    azureAgc:
+      albName: alb
+      albNamespace: alb-infra
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
