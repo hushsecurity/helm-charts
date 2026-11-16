@@ -77,6 +77,67 @@ All notable changes to this project will be documented in this file.
   `agw.service.type: LoadBalancer`, which listens on port 443, and
   `agw.service.annotations`.
 
+- the new `agw.httpRoute` creates an HTTPRoute of the Gateway API that sends
+  every path of `agw.hostname` to Hush AGW, in place of `agw.ingress`. It
+  attaches to the Gateways named in `agw.httpRoute.parentRefs`, or to a
+  Gateway of the chart's own through `agw.httpRoute.gateway`.
+  `agw.httpRoute.controller` sets it up for the AWS Load Balancer Controller
+  (`aws-alb`), GKE Gateway (`gke-gateway`) or Azure Application Gateway for
+  Containers (`azure-agc`): the health check and a timeout long enough for MCP
+  streams, and on the chart's own Gateway the certificate. On AWS the timeout
+  belongs to the load balancer, so it is set on the chart's own Gateway only.
+  The Gateway API implementation must already run in the cluster.
+
+  On AWS, through the GatewayClass the cluster admin creates for the AWS Load
+  Balancer Controller, which finds the ACM certificate for the hostname:
+
+  ```yaml
+  agw:
+    httpRoute:
+      enabled: true
+      controller: aws-alb
+      gateway:
+        enabled: true
+        className: <gateway-class>
+  ```
+
+  On GKE, with a Google-managed Compute Engine SSL certificate created for the
+  hostname:
+
+  ```yaml
+  agw:
+    httpRoute:
+      enabled: true
+      controller: gke-gateway
+      gateway:
+        enabled: true
+      gkeGateway:
+        preSharedCertificate: <certificate-name>
+  ```
+
+  On AKS, through the ALB Controller and the ApplicationLoadBalancer it
+  manages, with the certificate in a Secret:
+
+  ```yaml
+  agw:
+    httpRoute:
+      enabled: true
+      controller: azure-agc
+      gateway:
+        enabled: true
+        tls:
+          secretName: <secret-name>
+      azureAgc:
+        albName: <alb-name>
+        albNamespace: <alb-namespace>
+  ```
+
+  As with `agw.ingress`, Azure Application Gateway for Containers closes a
+  connection idle for 5 minutes.
+
+  To attach to a shared Gateway instead, set `agw.httpRoute.parentRefs` and
+  leave `agw.httpRoute.gateway.enabled` off.
+
 ### Changed
 
 - the port of the `agw-agentgateway` container is named `gateway-http` rather
