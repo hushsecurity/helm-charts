@@ -77,12 +77,12 @@ spec:
             - name: STATS_ADDR
               value: 0.0.0.0:15020
             - name: READINESS_ADDR
-              value: 0.0.0.0:15021
+              value: 0.0.0.0:{{ include "hush-agw.readinessPort" . }}
           ports:
             - name: gateway-http
               containerPort: 3001
             - name: readiness
-              containerPort: 15021
+              containerPort: {{ include "hush-agw.readinessPort" . }}
             - name: metrics
               containerPort: 15020
           volumeMounts:
@@ -91,7 +91,7 @@ spec:
             {{- include "hush-common.saTokenMaskVolumeMount" . | nindent 12 }}
           readinessProbe:
             httpGet:
-              path: /healthz/ready
+              path: {{ include "hush-agw.readinessPath" . }}
               port: readiness
             initialDelaySeconds: 5
           livenessProbe:

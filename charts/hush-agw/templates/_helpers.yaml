@@ -9,6 +9,14 @@
 {{- $host -}}
 {{- end }}
 
+{{- define "hush-agw.readinessPort" -}}
+15021
+{{- end }}
+
+{{- define "hush-agw.readinessPath" -}}
+/healthz/ready
+{{- end }}
+
 {{/*
 External base URL clients reach the gateway on, built from the hostname.
 */}}
