@@ -324,7 +324,7 @@ store only.
 
 {{- define "hush-agw.httpRouteController" -}}
 {{- $controller := toString .Values.agw.httpRoute.controller -}}
-{{- $known := list "aws-alb" -}}
+{{- $known := list "aws-alb" "gke-gateway" -}}
 {{- if and $controller (not (has $controller $known)) -}}
   {{- fail (printf "'agw.httpRoute.controller' must be empty or one of: %s" (join ", " $known)) -}}
 {{- end -}}
@@ -338,5 +338,45 @@ parametersRef:
   group: gateway.k8s.aws
   kind: LoadBalancerConfiguration
   name: {{ include "hush-common.fullName" . }}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-agw.gatewayClassName" -}}
+{{- $controller := include "hush-agw.httpRouteController" . -}}
+{{- if .Values.agw.httpRoute.gateway.className -}}
+  {{- .Values.agw.httpRoute.gateway.className -}}
+{{- else if eq $controller "gke-gateway" -}}
+  gke-l7-global-external-managed
+{{- else -}}
+  {{- fail "'agw.httpRoute.gateway.className' is required" -}}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-agw.gatewayAnnotations" -}}
+{{- $route := .Values.agw.httpRoute -}}
+{{- $controller := include "hush-agw.httpRouteController" . -}}
+{{- $preset := dict -}}
+{{- if eq $controller "gke-gateway" -}}
+  {{- with $route.gkeGateway.certificateMap -}}
+    {{- $_ := set $preset "networking.gke.io/certmap" . -}}
+  {{- end -}}
+{{- end -}}
+{{- $annotations := merge (deepCopy ($route.gateway.annotations | default dict)) $preset -}}
+{{- with $annotations -}}
+  {{ toYaml . }}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-agw.gatewayListenerTls" -}}
+{{- $route := .Values.agw.httpRoute -}}
+{{- $controller := include "hush-agw.httpRouteController" . -}}
+{{- if $route.gateway.tls.secretName -}}
+mode: Terminate
+certificateRefs:
+  - name: {{ $route.gateway.tls.secretName }}
+{{- else if and (eq $controller "gke-gateway") $route.gkeGateway.preSharedCertificate -}}
+mode: Terminate
+options:
+  networking.gke.io/pre-shared-certs: {{ $route.gkeGateway.preSharedCertificate }}
 {{- end -}}
 {{- end }}

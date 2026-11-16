@@ -416,7 +416,8 @@ agw:
     # that it meets the requirements under 'agw.service': "" for any
     # implementation, or one of:
     # - "aws-alb": an AWS Application Load Balancer through the AWS Load
-    #   Balancer Controller, configured under 'awsAlb'.
+    #   Balancer Controller, configured under 'awsAlb';
+    # - "gke-gateway": GKE Gateway, configured under 'gkeGateway'.
     #
     # Keys in 'gateway.annotations' replace what it sets.
     #
@@ -443,7 +444,7 @@ agw:
       enabled: false
 
       # GatewayClass of the Gateway API implementation that serves it.
-      # Required.
+      # Required, except where 'controller' names a default.
       className: ""
 
       # Annotations for the Gateway.
@@ -507,6 +508,52 @@ agw:
         # and 1.3 only, while the controller's own default also accepts TLS 1.0
         # and 1.1. Empty leaves the controller's default.
         sslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+
+    # GKE Gateway, for 'controller: gke-gateway', on a cluster with the Gateway
+    # API enabled: always on Autopilot, and through
+    # 'gcloud container clusters update --gateway-api=standard' on Standard.
+    # GKE installs the GatewayClasses. The chart's own Gateway defaults to
+    # gke-l7-global-external-managed, a global external Application Load
+    # Balancer.
+    # https://docs.cloud.google.com/kubernetes-engine/docs/concepts/gateway-api
+    gkeGateway:
+      # A HealthCheckPolicy for the Hush AGW Service, with any Gateway, which
+      # health checks Hush AGW on its readiness port.
+      # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/configure-gateway-resources
+      healthCheckPolicy:
+        enabled: true
+
+      # A GCPBackendPolicy for the Hush AGW Service, with any Gateway, which
+      # sets how long a response may take. The load balancer cuts a response
+      # that takes longer, an MCP stream included.
+      backendPolicy:
+        enabled: true
+
+        # Seconds from the request to the end of its response. GKE's default
+        # is 30.
+        timeoutSec: 1800
+
+        # Session affinity, which keeps a client on one Hush AGW pod, for
+        # example {type: GENERATED_COOKIE, cookieTtlSec: 86400} or
+        # {type: CLIENT_IP}. Empty leaves it off.
+        sessionAffinity: {}
+
+      # The certificate of the chart's own Gateway: a Certificate Manager
+      # certificate map, or a Compute Engine SSL certificate, such as a
+      # Google-managed one created with
+      # 'gcloud compute ssl-certificates create --domains --global'. Exactly
+      # one of these two and 'gateway.tls.secretName' is required. GKE Gateway
+      # takes no ManagedCertificate.
+      # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/secure-gateway
+      certificateMap: ""
+      preSharedCertificate: ""
+
+      # Name of an SSL policy for the chart's own Gateway, created in the
+      # cluster's Google Cloud project with 'gcloud compute ssl-policies
+      # create', for example one with '--min-tls-version 1.2'. The chart applies
+      # it through a GCPGatewayPolicy. When empty the load balancer uses
+      # Google's default, which accepts TLS 1.0 and later.
+      sslPolicy: ""
 
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #
