@@ -11,6 +11,9 @@
     {{- if and (eq $controller "aws-alb") $route.gateway.tls.secretName }}
       {{- fail "'agw.httpRoute.gateway.tls.secretName' cannot be used with aws-alb, which takes the certificate from ACM" }}
     {{- end }}
+    {{- if and (eq $controller "azure-agc") (not $route.gateway.tls.secretName) }}
+      {{- fail "'agw.httpRoute.gateway.tls.secretName' is required for azure-agc, which takes the certificate from a Secret only" }}
+    {{- end }}
     {{- if eq $controller "gke-gateway" }}
       {{- $sources := compact (list $route.gateway.tls.secretName $route.gkeGateway.certificateMap $route.gkeGateway.preSharedCertificate) }}
       {{- if ne (len $sources) 1 }}
@@ -32,6 +35,9 @@ spec:
   gatewayClassName: {{ include "hush-agw.gatewayClassName" . }}
     {{- with include "hush-agw.gatewayInfrastructure" . }}
   infrastructure: {{- . | nindent 4 }}
+    {{- end }}
+    {{- with include "hush-agw.gatewayAddresses" . }}
+  addresses: {{- . | nindent 4 }}
     {{- end }}
   listeners:
     - name: https
@@ -68,4 +74,10 @@ spec:
       backendRefs:
         - name: {{ include "hush-common.fullName" . }}
           port: {{ include "hush-agw.servicePort" . }}
+  {{- if eq $controller "azure-agc" }}
+    {{- with $route.azureAgc.requestTimeout }}
+      timeouts:
+        request: {{ . }}
+    {{- end }}
+  {{- end }}
 {{- end }}

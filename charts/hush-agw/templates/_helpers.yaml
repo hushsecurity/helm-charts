@@ -324,7 +324,7 @@ store only.
 
 {{- define "hush-agw.httpRouteController" -}}
 {{- $controller := toString .Values.agw.httpRoute.controller -}}
-{{- $known := list "aws-alb" "gke-gateway" -}}
+{{- $known := list "aws-alb" "gke-gateway" "azure-agc" -}}
 {{- if and $controller (not (has $controller $known)) -}}
   {{- fail (printf "'agw.httpRoute.controller' must be empty or one of: %s" (join ", " $known)) -}}
 {{- end -}}
@@ -347,6 +347,8 @@ parametersRef:
   {{- .Values.agw.httpRoute.gateway.className -}}
 {{- else if eq $controller "gke-gateway" -}}
   gke-l7-global-external-managed
+{{- else if eq $controller "azure-agc" -}}
+  azure-alb-external
 {{- else -}}
   {{- fail "'agw.httpRoute.gateway.className' is required" -}}
 {{- end -}}
@@ -359,6 +361,17 @@ parametersRef:
 {{- if eq $controller "gke-gateway" -}}
   {{- with $route.gkeGateway.certificateMap -}}
     {{- $_ := set $preset "networking.gke.io/certmap" . -}}
+  {{- end -}}
+{{- else if eq $controller "azure-agc" -}}
+  {{- $agc := $route.azureAgc -}}
+  {{- $prefix := "alb.networking.azure.io/" -}}
+  {{- if $agc.albId -}}
+    {{- $_ := set $preset (print $prefix "alb-id") $agc.albId -}}
+  {{- else if $agc.albName -}}
+    {{- $_ := set $preset (print $prefix "alb-name") $agc.albName -}}
+    {{- $_ := set $preset (print $prefix "alb-namespace") (required "'agw.httpRoute.azureAgc.albNamespace' is required with 'albName'" $agc.albNamespace) -}}
+  {{- else -}}
+    {{- fail "'agw.httpRoute.azureAgc.albName' and 'albNamespace', or 'albId' and 'albFrontend', are required" -}}
   {{- end -}}
 {{- end -}}
 {{- $annotations := merge (deepCopy ($route.gateway.annotations | default dict)) $preset -}}
@@ -378,5 +391,13 @@ certificateRefs:
 mode: Terminate
 options:
   networking.gke.io/pre-shared-certs: {{ $route.gkeGateway.preSharedCertificate }}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-agw.gatewayAddresses" -}}
+{{- $agc := .Values.agw.httpRoute.azureAgc -}}
+{{- if and (eq (include "hush-agw.httpRouteController" .) "azure-agc") $agc.albId -}}
+- type: alb.networking.azure.io/alb-frontend
+  value: {{ required "'agw.httpRoute.azureAgc.albFrontend' is required with 'albId'" $agc.albFrontend }}
 {{- end -}}
 {{- end }}
