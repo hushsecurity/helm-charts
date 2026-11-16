@@ -4,6 +4,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to `v0.33.0`.
+
+  - a MongoDB Atlas privilege can grant built-in roles, such as
+    `clusterMonitor@admin`. A role that an older hush-am created without
+    them gets them the next time a credential of that privilege is granted,
+    and so does every user holding it.
+  - Go and glibc security fixes.
+
+- bump the default spire-agent image to `v0.33.0`, which keeps SPIRE 1.15.5
+  and brings the same Go and glibc security fixes. The upgrade restarts
+  spire-agent on every node.
+
 ## hush-am 0.33.2 - 2026-11-12
 
 ### Changed
