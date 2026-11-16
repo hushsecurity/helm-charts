@@ -5,13 +5,16 @@ metadata:
   labels: {{- include "hush-common.labels" . | nindent 4 }}
     app.kubernetes.io/component: gateway-service
   namespace: {{ include "hush-common.namespace" . }}
-  {{- with .Values.agw.service.annotations }}
-  annotations: {{- toYaml . | nindent 4 }}
+  {{- with include "hush-agw.serviceAnnotations" . }}
+  annotations: {{- . | nindent 4 }}
   {{- end }}
 spec:
   {{- $type := include "hush-agw.serviceType" . }}
   type: {{ $type }}
   {{- if eq $type "LoadBalancer" }}
+    {{- if eq (include "hush-agw.serviceLoadBalancer" .) "aws-nlb" }}
+  allocateLoadBalancerNodePorts: false
+    {{- end }}
     {{- with .Values.agw.service.loadBalancerClass }}
   loadBalancerClass: {{ . }}
     {{- end }}

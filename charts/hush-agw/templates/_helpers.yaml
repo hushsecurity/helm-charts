@@ -29,6 +29,9 @@ https://{{ include "hush-agw.hostname" . }}
 {{- if not (has $type (list "ClusterIP" "LoadBalancer")) -}}
   {{- fail "'agw.service.type' must be ClusterIP or LoadBalancer" -}}
 {{- end -}}
+{{- if include "hush-agw.serviceLoadBalancer" . -}}
+  {{- $type = "LoadBalancer" -}}
+{{- end -}}
 {{- $type -}}
 {{- end }}
 
@@ -184,5 +187,85 @@ store only.
 {{- $annotations := merge (deepCopy (.Values.agw.annotations | default dict)) $identity -}}
 {{- with $annotations -}}
 {{ toYaml . }}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-agw.serviceLoadBalancer" -}}
+{{- $loadBalancer := toString .Values.agw.service.loadBalancer -}}
+{{- $known := list "aws-nlb" -}}
+{{- if and $loadBalancer (not (has $loadBalancer $known)) -}}
+  {{- fail (printf "'agw.service.loadBalancer' must be empty or one of: %s" (join ", " $known)) -}}
+{{- end -}}
+{{- $loadBalancer -}}
+{{- end }}
+
+{{- define "hush-agw.serviceAnnotations" -}}
+{{- $preset := dict -}}
+{{- if eq (include "hush-agw.serviceLoadBalancer" .) "aws-nlb" -}}
+  {{- $nlb := .Values.agw.service.awsNlb -}}
+  {{- $prefix := "service.beta.kubernetes.io/aws-load-balancer-" -}}
+  {{- $_ := set $preset (print $prefix "type") "external" -}}
+  {{- $_ = set $preset (print $prefix "nlb-target-type") "ip" -}}
+  {{- $_ = set $preset (print $prefix "scheme") $nlb.scheme -}}
+  {{- $_ = set $preset (print $prefix "ssl-cert") (required "'agw.service.awsNlb.certificateArn' is required" $nlb.certificateArn) -}}
+  {{- $_ = set $preset (print $prefix "ssl-ports") "443" -}}
+  {{- with $nlb.sslPolicy -}}
+    {{- $_ = set $preset (print $prefix "ssl-negotiation-policy") . -}}
+  {{- end -}}
+  {{- $_ = set $preset (print $prefix "healthcheck-protocol") "http" -}}
+  {{- $_ = set $preset (print $prefix "healthcheck-port") (include "hush-agw.readinessPort" .) -}}
+  {{- $_ = set $preset (print $prefix "healthcheck-path") (include "hush-agw.readinessPath" .) -}}
+  {{- $_ = set $preset (print $prefix "attributes") (printf "load_balancing.cross_zone.enabled=%v" $nlb.crossZone) -}}
+{{- end -}}
+{{- $annotations := merge (deepCopy (.Values.agw.service.annotations | default dict)) $preset -}}
+{{- with $annotations -}}
+  {{ toYaml . }}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-agw.ingressController" -}}
+{{- $controller := toString .Values.agw.ingress.controller -}}
+{{- $known := list "aws-alb" -}}
+{{- if and $controller (not (has $controller $known)) -}}
+  {{- fail (printf "'agw.ingress.controller' must be empty or one of: %s" (join ", " $known)) -}}
+{{- end -}}
+{{- $controller -}}
+{{- end }}
+
+{{- define "hush-agw.ingressClassName" -}}
+{{- $controller := include "hush-agw.ingressController" . -}}
+{{- if .Values.agw.ingress.className -}}
+  {{- .Values.agw.ingress.className -}}
+{{- else if eq $controller "aws-alb" -}}
+  alb
+{{- end -}}
+{{- end }}
+
+{{- define "hush-agw.ingressAnnotations" -}}
+{{- $controller := include "hush-agw.ingressController" . -}}
+{{- $preset := dict -}}
+{{- if eq $controller "aws-alb" -}}
+  {{- $alb := .Values.agw.ingress.awsAlb -}}
+  {{- if and $alb.stickiness.enabled (not $alb.crossZone) -}}
+    {{- fail "'agw.ingress.awsAlb.stickiness.enabled' cannot be used with 'crossZone: false', which AWS refuses on an ALB target group" -}}
+  {{- end -}}
+  {{- $prefix := "alb.ingress.kubernetes.io/" -}}
+  {{- $_ := set $preset (print $prefix "scheme") $alb.scheme -}}
+  {{- $_ = set $preset (print $prefix "target-type") "ip" -}}
+  {{- $_ = set $preset (print $prefix "listen-ports") (toJson (list (dict "HTTPS" 443))) -}}
+  {{- with $alb.certificateArn -}}
+    {{- $_ = set $preset (print $prefix "certificate-arn") . -}}
+  {{- end -}}
+  {{- $_ = set $preset (print $prefix "healthcheck-port") (include "hush-agw.readinessPort" .) -}}
+  {{- $_ = set $preset (print $prefix "healthcheck-path") (include "hush-agw.readinessPath" .) -}}
+  {{- $_ = set $preset (print $prefix "load-balancer-attributes") (printf "idle_timeout.timeout_seconds=%d" (int $alb.idleTimeout)) -}}
+  {{- with $alb.sslPolicy -}}
+    {{- $_ = set $preset (print $prefix "ssl-policy") . -}}
+  {{- end -}}
+  {{- $_ = set $preset (print $prefix "target-group-attributes") (printf "stickiness.enabled=%v,stickiness.lb_cookie.duration_seconds=%d,load_balancing.cross_zone.enabled=%v" $alb.stickiness.enabled (int $alb.stickiness.duration) $alb.crossZone) -}}
+{{- end -}}
+{{- $annotations := merge (deepCopy (.Values.agw.ingress.annotations | default dict)) $preset -}}
+{{- with $annotations -}}
+  {{ toYaml . }}
 {{- end -}}
 {{- end }}
