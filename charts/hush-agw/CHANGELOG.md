@@ -77,6 +77,13 @@ All notable changes to this project will be documented in this file.
   `agw.service.type: LoadBalancer`, which listens on port 443, and
   `agw.service.annotations`.
 
+### Changed
+
+- the port of the `agw-agentgateway` container is named `gateway-http` rather
+  than `gateway`, so that it no longer shares the name of the Service port. A
+  NetworkPolicy or other object that names the container port has to name
+  `gateway-http`.
+
 ## hush-agw 0.12.1 - 2026-11-15
 
 ### Changed
