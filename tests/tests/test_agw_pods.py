@@ -238,3 +238,61 @@ def test_wrong_spread_values_are_refused(extra_args, message):
 
     # The chart names the setting.
     assert message in stderr
+
+
+# Several pods need the volume claim off, so the budget is rendered without it.
+def _budgets(extra_args=""):
+    docs = _docs(f"{NO_CLAIM} {extra_args}")
+    budgets = [doc for doc in docs if doc["kind"] == "PodDisruptionBudget"]
+    return budgets, _deployment(docs)
+
+
+# A budget for a single pod would either block every node drain or protect
+# nothing, so one pod gets none.
+def test_one_pod_has_no_disruption_budget():
+    # Render the chart with its defaults.
+    budgets, _ = _budgets()
+
+    # No budget.
+    assert not budgets
+
+
+# Several pods get a budget that lets a voluntary disruption, such as a node
+# drain, evict one Hush AGW pod at a time, and evict a pod that is not ready
+# whatever the budget, so that a broken pod never blocks a drain.
+def test_several_pods_get_a_disruption_budget():
+    # Render two pods.
+    budgets, deployment = _budgets("--set agw.replicas=2")
+
+    # One budget for the Hush AGW pods.
+    (budget,) = budgets
+    assert budget["metadata"]["labels"]["app.kubernetes.io/component"] == (
+        "gateway-pod-disruption-budget"
+    )
+    assert budget["spec"] == {
+        "maxUnavailable": 1,
+        "unhealthyPodEvictionPolicy": "AlwaysAllow",
+        "selector": deployment["spec"]["selector"],
+    }
+
+
+# The budget can be turned off.
+def test_disruption_budget_can_be_turned_off():
+    # Render two pods without a budget.
+    budgets, _ = _budgets(
+        "--set agw.replicas=2 --set agw.podDisruptionBudget.enabled=false"
+    )
+
+    # No budget.
+    assert not budgets
+
+
+# 'helm upgrade --reuse-values' from a release made before the budget existed
+# carries no 'agw.podDisruptionBudget'; a null removes it the same way. The
+# budget is on.
+def test_missing_budget_values_keep_the_budget():
+    # Render two pods without the key.
+    budgets, _ = _budgets("--set agw.replicas=2 --set agw.podDisruptionBudget=null")
+
+    # One budget.
+    assert len(budgets) == 1
