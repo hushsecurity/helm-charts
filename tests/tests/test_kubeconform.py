@@ -196,15 +196,22 @@ def values_tmp_file(chart: str, values: dict):
         yield tmp_file.name
 
 
+# The schemas kubeconform downloads, kept on disk for the whole module, so that
+# each schema is fetched once rather than again for every render.
+@pytest.fixture(name="schema_cache", scope="module")
+def fixture_schema_cache(tmp_path_factory):
+    return tmp_path_factory.mktemp("kubeconform-schemas")
+
+
 @pytest.mark.parametrize("chart", CHARTS)
-def test_kubeconform(chart):
+def test_kubeconform(chart, schema_cache):
     def _test_ver_path(chart_path, kube_version, path, api_versions=()):
         args = f"--kube-version {kube_version} -f {path}"
         for api_version in api_versions:
             args += f" --api-versions {api_version}"
         conform_kube_version = kube_version.split("-")[0]
         conform_args = (
-            f"-strict -kubernetes-version {conform_kube_version} "
+            f"-strict -cache {schema_cache} -kubernetes-version {conform_kube_version} "
             f"-skip {','.join(SKIPPED_KINDS)}"
         )
         bash(f"helm template {args} {chart_path} | kubeconform {conform_args}")
@@ -234,7 +241,7 @@ def test_kubeconform(chart):
                 )
 
 
-def test_hush_sensor_minimum_supported_version():
+def test_hush_sensor_minimum_supported_version(schema_cache):
     values = os.path.join(CHARTS_DIR, "hush-sensor", "ci", "lint-values.yaml")
     chart_path = os.path.join(CHARTS_DIR, "hush-sensor")
 
@@ -253,7 +260,10 @@ def test_hush_sensor_minimum_supported_version():
 
     def _test_sup_ver(ver):
         args = f"-f {values} --set image.{ver}"
-        bash(f"helm template {args} {chart_path} | kubeconform -strict")
+        bash(
+            f"helm template {args} {chart_path} | "
+            f"kubeconform -strict -cache {schema_cache}"
+        )
 
     def _test_sup_vers(valueName, versions):
         for ver in versions:
