@@ -138,12 +138,74 @@ All notable changes to this project will be documented in this file.
   To attach to a shared Gateway instead, set `agw.httpRoute.parentRefs` and
   leave `agw.httpRoute.gateway.enabled` off.
 
+- the new `agw.replicas` runs Hush AGW on several pods, which keeps it up when
+  a pod or a node goes down. Several pods need `agw.persistence.enabled:
+  false`, since they cannot share the volume claim; turn it off only as the
+  deprecation of `agw.persistence` below says. The pods spread across
+  zones and across the nodes of each zone, which
+  `agw.topologySpreadConstraints` changes; on a cluster whose nodes carry no
+  `topology.kubernetes.io/zone` label, set its `type` to `nodes`. A
+  PodDisruptionBudget lets a node drain stop one pod at a time, which
+  `agw.podDisruptionBudget.enabled: false` turns off. For example:
+
+  ```yaml
+  agw:
+    replicas: 3
+    persistence:
+      enabled: false
+  ```
+
+  The `agw.ingress` and `agw.httpRoute` presets keep a client on the pod that
+  served it before, which answers it faster, for clients that send back the
+  cookie the load balancer sets. `stickiness.enabled: false` turns it off on
+  AWS, where `crossZone: false` needs it off, and a null `sessionAffinity` on
+  GKE and Azure.
+
+- the new `agw.dataVolume` sets the volume each Hush AGW pod keeps its local
+  copy of the state on when `agw.persistence.enabled` is false, created with
+  the pod and deleted with it. By default it is an emptyDir of 1Gi on the
+  node's disk. `type: ephemeral` gives each pod a volume of its own from a
+  StorageClass instead, with the capacity and IOPS of the class, at the cost
+  of a slower pod start. An emptyDir larger than 1Gi needs an ephemeral
+  storage request at least as large in `agw.controller.resources`, and the
+  ephemeral storage limits of the Hush AGW containers must add up to more
+  than it, or the chart fails to render. Turn the claim off only as the
+  deprecation of `agw.persistence` below says. For example:
+
+  ```yaml
+  agw:
+    persistence:
+      enabled: false
+    dataVolume:
+      type: ephemeral
+      storageClassName: gp3
+  ```
+
 ### Changed
 
 - the port of the `agw-agentgateway` container is named `gateway-http` rather
   than `gateway`, so that it no longer shares the name of the Service port. A
   NetworkPolicy or other object that names the container port has to name
   `gateway-http`.
+- with `agw.persistence.enabled: false`, an upgrade starts the new Hush AGW
+  pod before it stops the old one, so Hush AGW stays up through it. With the
+  volume claim it still stops the old pod first.
+- the `agw-controller` container requests 1Gi of ephemeral storage instead of
+  128Mi, so that its node has room for the data volume when
+  `agw.persistence.enabled` is false.
+
+### Deprecated
+
+- `agw.persistence`, to be removed in a future release: Hush AGW keeps its
+  state in Hush and each pod rebuilds it when it starts, so it no longer
+  needs the PersistentVolumeClaim. The claim stays on by default. Turn it off
+  only after Hush AGW has started at least once with the claim on chart
+  0.11.0 or later, which uploads the tokens and OAuth clients kept on it to
+  Hush. Turning it off leaves the chart's claim behind, unless
+  `agw.persistence.retainOnDelete` is false, and stops using a claim named in
+  `agw.persistence.existingClaim`; remove either by hand. For a volume from a
+  StorageClass, as `agw.persistence.storageClassName` gives, set
+  `agw.dataVolume.type` to `ephemeral` and `agw.dataVolume.storageClassName`.
 
 ## hush-agw 0.12.1 - 2026-11-15
 
