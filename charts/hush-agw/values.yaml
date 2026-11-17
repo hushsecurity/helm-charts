@@ -677,6 +677,12 @@ agw:
   # volume claim.
   replicas: 1
 
+  # A PodDisruptionBudget, with more than one pod, so that a voluntary
+  # disruption such as a node drain evicts one Hush AGW pod at a time.
+  # https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+  podDisruptionBudget:
+    enabled: true
+
   # How the Hush AGW pods spread across zones and nodes, with more than one pod.
   # https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
   topologySpreadConstraints:
