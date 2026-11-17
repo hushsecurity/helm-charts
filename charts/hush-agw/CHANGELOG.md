@@ -193,6 +193,24 @@ All notable changes to this project will be documented in this file.
 - the `agw-controller` container requests 1Gi of ephemeral storage instead of
   128Mi, so that its node has room for the data volume when
   `agw.persistence.enabled` is false.
+- with `agw.persistence.enabled: false`, a stopping Hush AGW pod, during an
+  upgrade or a node drain, keeps accepting connections for 30 seconds while
+  the load balancer stops sending them, and finishes the requests in flight,
+  MCP streams included, for up to two minutes.
+  `agw.terminationGracePeriodSeconds` sets how long all of it takes, and its
+  default rises from 30 to 150. An upgrade with `--reuse-values` keeps 30,
+  under which a pod stops within seconds as before. To drain, set:
+
+  ```yaml
+  agw:
+    persistence:
+      enabled: false
+    terminationGracePeriodSeconds: 150
+  ```
+
+  With the volume claim a pod stops within seconds as before, since its
+  replacement starts only once it is gone. On Kubernetes before 1.30 the
+  pod's other containers stop at once, so the requests that need them fail.
 
 ### Deprecated
 
