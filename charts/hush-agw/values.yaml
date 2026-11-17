@@ -677,6 +677,35 @@ agw:
   # volume claim.
   replicas: 1
 
+  # How the Hush AGW pods spread across zones and nodes, with more than one pod.
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints:
+    # Allowed values:
+    # - "zones_nodes" - spread across zones and across the nodes of each zone
+    # - "zones"       - spread across zones. Any constraint turns off the
+    #                   scheduler's own spreading across nodes, so several pods
+    #                   may then run on one node.
+    # - "nodes"       - spread across nodes
+    # - "custom"      - use the constraints in 'custom'
+    # - "none"        - leave the spreading to the scheduler's defaults
+    #
+    # "zones" and "zones_nodes" need the topology.kubernetes.io/zone label on
+    # every node, as on EKS, GKE and AKS. With "ScheduleAnyway" the pods are
+    # not spread across a node without it; with "DoNotSchedule" no pod lands
+    # there at all. Choose "nodes" on a cluster without zone labels.
+    type: zones_nodes
+
+    # What the scheduler does when it cannot keep the pods spread, with every
+    # type but "custom" and "none".
+    #
+    # Allowed values:
+    # - "ScheduleAnyway" - schedule the pod anyway, as evenly as it can
+    # - "DoNotSchedule"  - leave the pod pending
+    whenUnsatisfiable: ScheduleAnyway
+
+    # Constraints used as given when 'type' is "custom".
+    custom: []
+
   # Custom priority class name.
   priorityClassName: ""
 
