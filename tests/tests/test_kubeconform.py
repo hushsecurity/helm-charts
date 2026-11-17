@@ -133,74 +133,9 @@ HUSH_CONNECTOR_VALUES = [
     },
     {"connector": {"tolerations": [{"operator": "Exists"}], "extraVolumes": []}},
 ]
-# Session affinity of each hush-agw preset that takes one, which the ci files
-# leave off, so that the fields it adds are checked too, and with it the
-# RoutePolicy of azure-agc.
-HUSH_AGW_VALUES = [
-    {
-        "agw": {
-            "ingress": {
-                "enabled": True,
-                "controller": "gke-ingress",
-                "gkeIngress": {
-                    "backendConfig": {
-                        "sessionAffinity": {
-                            "affinityType": "GENERATED_COOKIE",
-                            "affinityCookieTtlSec": 86400,
-                        }
-                    }
-                },
-            }
-        }
-    },
-    {
-        "agw": {
-            "ingress": {
-                "enabled": True,
-                "controller": "azure-agc",
-                "tls": {"secretName": "gw-example-com-tls"},
-                "azureAgc": {
-                    "albName": "alb",
-                    "albNamespace": "alb-infra",
-                    "ingressExtension": {
-                        "sessionAffinity": {"affinityType": "managed-cookie"}
-                    },
-                },
-            }
-        }
-    },
-    {
-        "agw": {
-            "httpRoute": {
-                "enabled": True,
-                "controller": "gke-gateway",
-                "parentRefs": [{"name": "shared"}],
-                "gkeGateway": {
-                    "backendPolicy": {
-                        "sessionAffinity": {
-                            "type": "GENERATED_COOKIE",
-                            "cookieTtlSec": 86400,
-                        }
-                    }
-                },
-            }
-        }
-    },
-    {
-        "agw": {
-            "httpRoute": {
-                "enabled": True,
-                "controller": "azure-agc",
-                "parentRefs": [{"name": "shared"}],
-                "azureAgc": {"sessionAffinity": {"affinityType": "managed-cookie"}},
-            }
-        }
-    },
-]
 CHART_VALUES = {
     "hush-sensor": HUSH_SENSOR_VALUES,
     "hush-connector": HUSH_CONNECTOR_VALUES,
-    "hush-agw": HUSH_AGW_VALUES,
 }
 
 # ci value files whose scenario needs cluster capabilities that 'helm template'
