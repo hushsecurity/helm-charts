@@ -22,7 +22,7 @@
 {{- end }}
 
 {{/*
-External base URL clients reach the gateway on, built from the hostname.
+External base URL clients reach Hush AGW on, built from the hostname.
 */}}
 {{- define "hush-agw.baseUrl" -}}
 https://{{ include "hush-agw.hostname" . }}
@@ -88,7 +88,7 @@ Image path for the agw-genai-toolbox container.
 {{- end }}
 
 {{/*
-Persistent volume claim name for the gateway's data.
+Persistent volume claim name for the data of Hush AGW.
 */}}
 {{- define "hush-agw.dataClaimName" -}}
 {{- if .Values.agw.persistence.existingClaim -}}
@@ -154,7 +154,7 @@ Environment for the agw-vector container.
 {{- end }}
 
 {{/*
-The gateway's workload identity, in the context the hush-common helpers take
+The workload identity of Hush AGW, in the context the hush-common helpers take
 */}}
 {{- define "hush-agw.workloadIdentityContext" -}}
 {{- include "hush-common.workloadIdentityContext" (dict
@@ -164,7 +164,7 @@ The gateway's workload identity, in the context the hush-common helpers take
 {{- end }}
 
 {{/*
-Annotations of the gateway service account
+Annotations of the Hush AGW service account
 */}}
 {{- define "hush-agw.serviceAccountAnnotations" -}}
 {{- $identity := include "hush-common.workloadIdentityServiceAccountAnnotations" (include "hush-agw.workloadIdentityContext" . | fromYaml) | fromYaml -}}
@@ -175,7 +175,7 @@ Annotations of the gateway service account
 {{- end }}
 
 {{/*
-Annotations of the gateway pod. With irsa or an Azure client id, the EKS or
+Annotations of the Hush AGW pod. With irsa or an Azure client id, the EKS or
 the Azure webhook hands the identity to the containers that reach the secret
 store only.
 */}}

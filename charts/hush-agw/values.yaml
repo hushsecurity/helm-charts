@@ -85,7 +85,7 @@ image:
   # This value is ignored when 'image.pullToken' is defined.
   registry: hushsecurity.azurecr.io
 
-  # Overrides the image tag for all gateway images.
+  # Overrides the image tag for all Hush AGW images.
   #
   # When not defined '.Chart.appVersion' is used. Ensure compatibility when overriding.
   tag: ""
@@ -144,14 +144,14 @@ image:
   # The pull policy for images.
   pullPolicy: Always
 
-# Agent gateway workload. All values specific to the agent gateway live here.
+# Hush AGW workload. All values specific to Hush AGW live here.
 agw:
-  # External hostname (FQDN) where clients and the OAuth browser flow reach the
-  # gateway. Required.
+  # External hostname (FQDN) where clients and the OAuth browser flow reach
+  # Hush AGW. Required.
   #
   # It must resolve to your ingress/load balancer, be reachable by clients'
   # browsers, and match the certificate your edge serves. TLS is terminated at
-  # your ingress/load balancer, not by the gateway.
+  # your ingress/load balancer, not by Hush AGW.
   #
   # It must also be exactly the hostname recorded on this deployment in Hush.
   # Nothing reconciles the two, and connecting an application fails while they
@@ -601,7 +601,7 @@ agw:
   # change it unless Hush support instructs you to.
   dynamicOAuthRegistrationTTL: 3600
 
-  # Persistence for the gateway's local state.
+  # Persistence for the local state of Hush AGW.
   #
   # Required for a production installation. The state cannot be recreated, so
   # losing the volume makes every user reconnect their applications.
@@ -678,7 +678,7 @@ agw:
   serviceAccount:
     annotations: {}
 
-  # Workload Identity configuration for the gateway service account: the
+  # Workload Identity configuration for the Hush AGW service account: the
   # identity an awssm, awsssm, gcpsm or az_key_vault secret store is reached
   # with.
   workloadIdentity:
@@ -692,12 +692,12 @@ agw:
 
       # OIDC configuration for clusters outside EKS.
       #
-      # The gateway presents its Kubernetes service account token and assumes
+      # Hush AGW presents its Kubernetes service account token and assumes
       # the role with it, the way irsa works on EKS. Register the cluster OIDC
       # issuer as an IAM OIDC identity provider, and let the role be assumed
-      # over that provider by the gateway service account. Its subject is
+      # over that provider by the Hush AGW service account. Its subject is
       # 'system:serviceaccount:<namespace>:<account>', where <account> is the
-      # gateway service account name the chart derives from the release:
+      # Hush AGW service account name the chart derives from the release:
       # 'hush-agw' for a release named 'hush-agw'.
       #
       # Mutually exclusive with every other AWS credential: 'irsa' here and
@@ -732,10 +732,10 @@ agw:
       # https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview
       clientId: ""
 
-  # Secret store the gateway keeps the private halves of its access manager keys
+  # Secret store Hush AGW keeps the private halves of its access manager keys
   # in. The same settings as hush-am's 'secretStore'.
   #
-  # A gateway that shares its Hush deployment with hush-am must use hush-am's
+  # A Hush AGW that shares its Hush deployment with hush-am must use hush-am's
   # secret store: the same kind, prefix and location. Either of them may create
   # the deployment's next key, and the other reads it from there.
   secretStore:
@@ -749,7 +749,7 @@ agw:
     # - az_key_vault: Azure Key Vault
     kind: "kubesecrets"
 
-    # A prefix used to distinguish the secrets the gateway creates, and to place
+    # A prefix used to distinguish the secrets Hush AGW creates, and to place
     # them under a path of your choosing. Lowercase, starting and ending with a
     # letter or digit, and fixed once secrets exist under it. An invalid prefix
     # fails the install. '.' may not repeat.
@@ -767,9 +767,9 @@ agw:
     #                                      127 characters -- the only kind whose
     #                                      limit binds the prefix
     #
-    # Check the gateway's credential before choosing a prefix outside the path it
-    # was provisioned with -- for AWS an IRSA policy naming 'secret:<prefix>/*'
-    # -- or the gateway installs and then fails every write.
+    # Check the credential of Hush AGW before choosing a prefix outside the path
+    # it was provisioned with -- for AWS an IRSA policy naming
+    # 'secret:<prefix>/*' -- or Hush AGW installs and then fails every write.
     prefix: "hush"
 
     # AWS secret store configuration (used by awssm and awsssm)
@@ -794,7 +794,7 @@ agw:
       #
       # Behaviour and required KMS permissions depend on 'agw.secretStore.kind'.
       # In both cases the permissions must be granted to the principal the
-      # gateway reaches the secret store with (e.g. the IRSA role configured
+      # Hush AGW reaches the secret store with (e.g. the IRSA role configured
       # under 'agw.workloadIdentity.aws.irsa').
       #
       # awssm (AWS Secrets Manager):
@@ -842,9 +842,9 @@ agw:
       # If not specified, the namespace where the chart is installed is used.
       namespace: ""
 
-      # Additional namespaces where the gateway may manage secrets, for k8s
-      # secret stores that the Secret Store API places outside the gateway's
-      # own namespace. Each namespace must already exist; the gateway is
+      # Additional namespaces where Hush AGW may manage secrets, for k8s
+      # secret stores that the Secret Store API places outside its own
+      # namespace. Each namespace must already exist; Hush AGW is
       # granted access in each of them (a scoped Role and RoleBinding each),
       # never cluster-wide.
       additionalNamespaces: []
@@ -870,7 +870,7 @@ agw:
       # Per-request timeout, e.g. "30s". When empty, 30s is used.
       timeout: ""
 
-      # How the gateway authenticates to Vault.
+      # How Hush AGW authenticates to Vault.
       auth:
         # - kubernetes: the pod's service account token, validated by Vault
         #   calling the cluster's TokenReview API. Needs Vault to reach it.
@@ -925,7 +925,7 @@ agw:
       timeout: ""
 
       # The vault must not have purge protection enabled. A deleted Key Vault
-      # secret keeps its name reserved until it is purged, so the gateway purges
+      # secret keeps its name reserved until it is purged, so Hush AGW purges
       # every key it deletes, and the delete fails when the purge is refused.
       #
       # The identity below needs four permissions on the vault's secrets, and
@@ -940,7 +940,7 @@ agw:
       # "Key Vault Secrets Officer" is a superset that works in either model.
       # Omitting 'purge' has the same effect as purge protection.
       auth:
-        # How the gateway authenticates to Key Vault:
+        # How Hush AGW authenticates to Key Vault:
         #   default        the pod's own identity. On AKS that is workload
         #                  identity, which needs
         #                  'agw.workloadIdentity.azure.clientId' set -- this
@@ -976,7 +976,7 @@ agw:
           key: ""
 
   # Pod security context. fsGroup 33 (www-data) makes the data volume writable by
-  # the gateway.
+  # Hush AGW.
   podSecurityContext:
     fsGroup: 33
 
