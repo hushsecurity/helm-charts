@@ -162,7 +162,7 @@ def test_a_hand_set_annotation_wins(tmp_path):
     assert annotations["eks.amazonaws.com/role-arn"] == "manual"
 
 
-# Outside EKS the gateway assumes the role with a projected token: both
+# Outside EKS Hush AGW assumes the role with a projected token: both
 # containers that reach the store mount it and are told where it is, and no
 # other container sees it.
 def test_oidc_role_projects_a_token_into_the_store_containers():

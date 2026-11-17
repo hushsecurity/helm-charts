@@ -52,7 +52,7 @@ def _rbac(docs, kind):
 
 
 # The default store keeps the keys as Secrets in the install namespace: both
-# agent-warden containers are told so, and the gateway may manage Secrets there,
+# agent-warden containers are told so, and Hush AGW may manage Secrets there,
 # with the verbs the store uses and no more.
 def test_default_store_is_kubesecrets_in_the_install_namespace():
     # Render the chart with its defaults.
@@ -75,7 +75,7 @@ def test_default_store_is_kubesecrets_in_the_install_namespace():
         }
     ]
 
-    # The binding hands that Role to the gateway's service account.
+    # The binding hands that Role to the Hush AGW service account.
     (binding,) = _rbac(docs, "RoleBinding")
     assert binding["roleRef"]["name"] == role["metadata"]["name"]
     (subject,) = binding["subjects"]
@@ -106,9 +106,9 @@ def test_kubesecrets_in_another_namespace_is_granted_there():
 
 
 # A Kubernetes secret store created through the Hush platform without a
-# namespace keeps its Secrets in the gateway's own namespace, so both containers
-# that reach the stores are told which namespace that is, whatever the
-# gateway's own store is.
+# namespace keeps its Secrets in the namespace of Hush AGW, so both containers
+# that reach the stores are told which namespace that is, whatever store
+# Hush AGW itself uses.
 @pytest.mark.parametrize(
     "args",
     [
@@ -134,9 +134,9 @@ def test_store_containers_are_told_their_namespace(args):
 
 
 # A store outside the cluster needs no Secrets of its own, but the Kubernetes
-# stores created through Hush without a namespace keep theirs in the gateway's
-# namespace: the chart grants Secrets there only, and the containers are pointed
-# at the store.
+# stores created through Hush without a namespace keep theirs in the namespace
+# of Hush AGW: the chart grants Secrets there only, and the containers are
+# pointed at the store.
 @pytest.mark.parametrize(
     "args,expected",
     [
@@ -189,7 +189,7 @@ def test_store_outside_the_cluster_gets_secrets_in_its_own_namespace_only(
 
 
 # Simulates Kubernetes stores created through Hush in namespaces of their own,
-# beside a gateway store of either kind: the gateway is granted Secrets in each
+# beside a Hush AGW store of either kind: Hush AGW is granted Secrets in each
 # listed namespace beside its own, once each, and nowhere else.
 @pytest.mark.parametrize(
     "args",
