@@ -1058,8 +1058,19 @@ agw:
   podSecurityContext:
     fsGroup: 33
 
-  # Termination grace period.
-  terminationGracePeriodSeconds: 30
+  # Seconds a stopping Hush AGW pod has to finish, such as during an upgrade
+  # or a node drain. With 'agw.persistence.enabled: false', for its first 30
+  # seconds it keeps accepting connections, while the load balancer stops
+  # sending it new ones. It then finishes the requests in flight, MCP streams
+  # included, until 30 seconds before the end, when it cuts what is left. Its
+  # other containers keep serving it until 20 seconds before the end, on
+  # Kubernetes 1.30 or later; on earlier versions they stop at once, and the
+  # requests that need them fail.
+  #
+  # None of this applies with the volume claim, since the new pod of an
+  # upgrade starts only once the old one is gone, nor below 60, as with the
+  # former default of 30: the pod then stops within seconds.
+  terminationGracePeriodSeconds: 150
 
   # Default resource requests/limits for the agw-controller and its init
   # container. With an emptyDir data volume the ephemeral-storage request must

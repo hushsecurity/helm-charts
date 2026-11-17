@@ -31,6 +31,21 @@
 {{- $replicas -}}
 {{- end }}
 
+{{- define "hush-agw.drainSeconds" -}}
+{{- $grace := int .Values.agw.terminationGracePeriodSeconds -}}
+{{- if and (not .Values.agw.persistence.enabled) (ge $grace 60) -}}
+  {{- sub $grace 30 -}}
+{{- end -}}
+{{- end }}
+
+{{- define "hush-agw.preStopSleep" -}}
+{{- if and (include "hush-agw.drainSeconds" .) (semverCompare ">=1.30-0" .Capabilities.KubeVersion.Version) -}}
+preStop:
+  sleep:
+    seconds: {{ sub (int .Values.agw.terminationGracePeriodSeconds) 20 }}
+{{- end -}}
+{{- end }}
+
 {{- define "hush-agw.topologySpreadConstraints" -}}
 {{- $type := toString (dig "topologySpreadConstraints" "type" "zones_nodes" .Values.agw) -}}
 {{- $types := list "none" "nodes" "zones" "zones_nodes" "custom" -}}
