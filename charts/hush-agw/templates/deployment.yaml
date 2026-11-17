@@ -88,6 +88,12 @@ spec:
               value: 0.0.0.0:15020
             - name: READINESS_ADDR
               value: 0.0.0.0:{{ include "hush-agw.readinessPort" . }}
+            {{- with (include "hush-agw.drainSeconds" .) }}
+            - name: CONNECTION_MIN_TERMINATION_DEADLINE
+              value: 30s
+            - name: CONNECTION_TERMINATION_DEADLINE
+              value: {{ . }}s
+            {{- end }}
           ports:
             - name: gateway-http
               containerPort: 3001
@@ -143,6 +149,9 @@ spec:
               path: /healthz
               port: http
             initialDelaySeconds: 10
+          {{- with (include "hush-agw.preStopSleep" .) }}
+          lifecycle: {{- . | nindent 12 }}
+          {{- end }}
           resources: {{- toYaml .Values.agw.controller.resources | nindent 12 }}
         - name: agw-vector
           image: {{ include "hush-agw.vectorImagePath" . }}
@@ -161,6 +170,9 @@ spec:
             exec:
               command: ["test", "-S", "/tmp/vector/audit.sock"]
             periodSeconds: 10
+          {{- with (include "hush-agw.preStopSleep" .) }}
+          lifecycle: {{- . | nindent 12 }}
+          {{- end }}
           resources: {{- toYaml .Values.agw.vector.resources | nindent 12 }}
         - name: agw-genai-toolbox
           image: {{ include "hush-agw.genaiToolboxImagePath" . }}
@@ -170,6 +182,9 @@ spec:
               mountPath: /etc/toolbox
               readOnly: true
             {{- include "hush-common.saTokenMaskVolumeMount" . | nindent 12 }}
+          {{- with (include "hush-agw.preStopSleep" .) }}
+          lifecycle: {{- . | nindent 12 }}
+          {{- end }}
           resources: {{- toYaml .Values.agw.genaiToolbox.resources | nindent 12 }}
       volumes:
         - name: vector-sockets
