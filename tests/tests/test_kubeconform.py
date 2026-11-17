@@ -146,23 +146,14 @@ CI_API_VERSIONS = {
     "openshift-custom-label-image-values.yaml": ["security.openshift.io/v1"],
 }
 
-# Gateway API kinds and custom kinds of a cloud's ingress controller, which
-# kubeconform has no schema for, so it skips them rather than fail on every one.
-SKIPPED_KINDS = [
-    "gateway.networking.k8s.io/v1/Gateway",
-    "gateway.networking.k8s.io/v1/HTTPRoute",
-    "gateway.k8s.aws/v1/LoadBalancerConfiguration",
-    "gateway.k8s.aws/v1/TargetGroupConfiguration",
-    "networking.gke.io/v1/HealthCheckPolicy",
-    "networking.gke.io/v1/GCPBackendPolicy",
-    "networking.gke.io/v1/GCPGatewayPolicy",
-    "cloud.google.com/v1/BackendConfig",
-    "networking.gke.io/v1/ManagedCertificate",
-    "networking.gke.io/v1beta1/FrontendConfig",
-    "alb.networking.azure.io/v1/HealthCheckPolicy",
-    "alb.networking.azure.io/v1/IngressExtension",
-    "alb.networking.azure.io/v1/RoutePolicy",
-]
+# Schemas of the Gateway API kinds and of the custom kinds of the clouds'
+# controllers, which the default location lacks. Pinned to a commit of the
+# catalog, so that a change there cannot fail a build.
+CRDS_CATALOG = (
+    "https://raw.githubusercontent.com/datreeio/CRDs-catalog/"
+    "fe5a915f84547feb194491b7b8b7d40ad321737a/"
+    "{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
+)
 
 
 @contextlib.contextmanager
@@ -212,7 +203,7 @@ def test_kubeconform(chart, schema_cache):
         conform_kube_version = kube_version.split("-")[0]
         conform_args = (
             f"-strict -cache {schema_cache} -kubernetes-version {conform_kube_version} "
-            f"-skip {','.join(SKIPPED_KINDS)}"
+            f'-schema-location default -schema-location "{CRDS_CATALOG}"'
         )
         bash(f"helm template {args} {chart_path} | kubeconform {conform_args}")
 
