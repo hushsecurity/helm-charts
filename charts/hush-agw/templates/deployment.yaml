@@ -44,6 +44,9 @@ spec:
       {{- with .Values.agw.affinity }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with (include "hush-agw.topologySpreadConstraints" . | trim) }}
+      topologySpreadConstraints: {{- . | nindent 8 }}
+      {{- end }}
       {{- with (include "hush-common.kubeImagePullSecretEffectiveListWithSensorFallback" .) }}
       imagePullSecrets: {{- . | nindent 8 }}
       {{- end }}

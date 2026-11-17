@@ -100,3 +100,141 @@ def test_fewer_than_one_replica_is_refused(replicas):
 
     # The chart names the setting.
     assert "'agw.replicas' must be at least 1" in stderr
+
+
+# Several pods need the volume claim off, so the spreading is rendered without
+# it.
+def _spread(extra_args=""):
+    spec = _deployment(_docs(f"{NO_CLAIM} {extra_args}"))["spec"]
+    return spec["template"]["spec"].get("topologySpreadConstraints"), spec
+
+
+# One pod has nothing to spread, so it gets no constraints.
+def test_one_pod_is_not_spread():
+    # Render the chart with its defaults.
+    spread, _ = _spread()
+
+    # No constraints.
+    assert spread is None
+
+
+# Several pods spread across zones and across the nodes of each zone by
+# default, so that losing a zone or a node leaves Hush AGW pods running. A
+# zone constraint alone would turn off the scheduler's own spreading across
+# nodes.
+def test_several_pods_spread_across_zones_and_nodes():
+    # Render three pods with the default spreading.
+    spread, spec = _spread("--set agw.replicas=3")
+
+    # One constraint per zone and per node, each satisfied as well as the
+    # scheduler can and each selecting the Hush AGW pods of the same rollout,
+    # so that the old pods of an upgrade do not skew where the new ones go.
+    assert [c["topologyKey"] for c in spread] == [
+        "topology.kubernetes.io/zone",
+        "kubernetes.io/hostname",
+    ]
+    for constraint in spread:
+        assert constraint["maxSkew"] == 1
+        assert constraint["whenUnsatisfiable"] == "ScheduleAnyway"
+        assert constraint["labelSelector"] == spec["selector"]
+        assert constraint["matchLabelKeys"] == ["pod-template-hash"]
+
+
+# 'zones' spreads across zones only, and 'whenUnsatisfiable' is passed on.
+def test_zones_spread_takes_when_unsatisfiable():
+    # Render two pods spread across zones, never scheduled against it.
+    spread, _ = _spread(
+        "--set agw.replicas=2 "
+        "--set agw.topologySpreadConstraints.type=zones "
+        "--set agw.topologySpreadConstraints.whenUnsatisfiable=DoNotSchedule"
+    )
+
+    # One zone constraint that leaves a pod pending rather than break it.
+    assert [(c["topologyKey"], c["whenUnsatisfiable"]) for c in spread] == [
+        ("topology.kubernetes.io/zone", "DoNotSchedule")
+    ]
+
+
+# 'nodes' spreads across nodes only, for a cluster whose nodes carry no zone
+# label, on which a zone constraint would spread nothing.
+def test_nodes_spread_across_nodes_only():
+    # Render two pods spread across nodes.
+    spread, _ = _spread(
+        "--set agw.replicas=2 --set agw.topologySpreadConstraints.type=nodes"
+    )
+
+    # One node constraint.
+    assert [c["topologyKey"] for c in spread] == ["kubernetes.io/hostname"]
+
+
+# 'none' leaves the spreading to the scheduler's defaults.
+def test_none_renders_no_constraints():
+    # Render two pods without spreading.
+    spread, _ = _spread(
+        "--set agw.replicas=2 --set agw.topologySpreadConstraints.type=none"
+    )
+
+    # No constraints.
+    assert spread is None
+
+
+# 'custom' renders the constraints given, as they are.
+def test_custom_constraints_are_used_as_given():
+    # Render two pods with one constraint of their own.
+    spread, _ = _spread(
+        "--set agw.replicas=2 "
+        "--set agw.topologySpreadConstraints.type=custom "
+        "--set agw.topologySpreadConstraints.custom[0].maxSkew=2 "
+        "--set agw.topologySpreadConstraints.custom[0].topologyKey=example.com/rack "
+        "--set agw.topologySpreadConstraints.custom[0].whenUnsatisfiable=DoNotSchedule"
+    )
+
+    # The constraint is rendered unchanged.
+    assert spread == [
+        {
+            "maxSkew": 2,
+            "topologyKey": "example.com/rack",
+            "whenUnsatisfiable": "DoNotSchedule",
+        }
+    ]
+
+
+# 'helm upgrade --reuse-values' from a release made before the spreading
+# existed carries no 'agw.topologySpreadConstraints'; a null removes it the
+# same way. The defaults apply.
+def test_missing_spread_values_spread_across_zones_and_nodes():
+    # Render two pods without the key.
+    spread, _ = _spread("--set agw.replicas=2 --set agw.topologySpreadConstraints=null")
+
+    # The default zone and node constraints.
+    assert [c["topologyKey"] for c in spread] == [
+        "topology.kubernetes.io/zone",
+        "kubernetes.io/hostname",
+    ]
+
+
+# A wrong type, a wrong policy or an empty custom list is refused, even with
+# one pod, so that the mistake shows before a second pod is added.
+@pytest.mark.parametrize(
+    "extra_args,message",
+    [
+        (
+            "--set agw.topologySpreadConstraints.type=regions",
+            "'agw.topologySpreadConstraints.type' must be one of",
+        ),
+        (
+            "--set agw.topologySpreadConstraints.whenUnsatisfiable=Never",
+            "'agw.topologySpreadConstraints.whenUnsatisfiable' must be one of",
+        ),
+        (
+            "--set agw.topologySpreadConstraints.type=custom",
+            "'agw.topologySpreadConstraints.custom' must not be empty",
+        ),
+    ],
+)
+def test_wrong_spread_values_are_refused(extra_args, message):
+    # Render one pod with the wrong value.
+    stderr = _template_error(extra_args)
+
+    # The chart names the setting.
+    assert message in stderr

@@ -31,6 +31,46 @@
 {{- $replicas -}}
 {{- end }}
 
+{{- define "hush-agw.topologySpreadConstraints" -}}
+{{- $type := toString (dig "topologySpreadConstraints" "type" "zones_nodes" .Values.agw) -}}
+{{- $types := list "none" "nodes" "zones" "zones_nodes" "custom" -}}
+{{- if not (has $type $types) -}}
+  {{- fail (printf "'agw.topologySpreadConstraints.type' must be one of %v" $types) -}}
+{{- end -}}
+{{- $when := toString (dig "topologySpreadConstraints" "whenUnsatisfiable" "ScheduleAnyway" .Values.agw) -}}
+{{- $whens := list "ScheduleAnyway" "DoNotSchedule" -}}
+{{- if not (has $when $whens) -}}
+  {{- fail (printf "'agw.topologySpreadConstraints.whenUnsatisfiable' must be one of %v" $whens) -}}
+{{- end -}}
+{{- $custom := dig "topologySpreadConstraints" "custom" (list) .Values.agw -}}
+{{- if and (eq $type "custom") (not $custom) -}}
+  {{- fail "'agw.topologySpreadConstraints.custom' must not be empty when type is \"custom\"" -}}
+{{- end -}}
+{{- if gt (int (include "hush-agw.replicas" .)) 1 -}}
+  {{- if eq $type "custom" -}}
+{{ toYaml $custom }}
+  {{- else if ne $type "none" -}}
+    {{- $keys := list -}}
+    {{- if has $type (list "zones" "zones_nodes") -}}
+      {{- $keys = append $keys "topology.kubernetes.io/zone" -}}
+    {{- end -}}
+    {{- if has $type (list "nodes" "zones_nodes") -}}
+      {{- $keys = append $keys "kubernetes.io/hostname" -}}
+    {{- end -}}
+    {{- range $keys }}
+- maxSkew: 1
+  topologyKey: {{ . }}
+  whenUnsatisfiable: {{ $when }}
+  labelSelector:
+    matchLabels: {{- include "hush-common.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: gateway
+  matchLabelKeys:
+    - pod-template-hash
+    {{- end }}
+  {{- end -}}
+{{- end -}}
+{{- end }}
+
 {{/*
 External base URL clients reach Hush AGW on, built from the hostname.
 */}}
