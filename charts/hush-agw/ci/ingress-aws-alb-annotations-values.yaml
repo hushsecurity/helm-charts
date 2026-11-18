@@ -4,6 +4,9 @@
 # two Availability Zones: an ALB needs two, and the controller picks one tagged
 # subnet per zone. Point the hostname's DNS record at the ALB once it has an
 # address.
+#
+# Sticky sessions keep a client on the Hush AGW pod that served it before, for
+# clients that send back the cookie the ALB sets.
 agw:
   hostname: gw.example.com
   ingress:
@@ -18,6 +21,7 @@ agw:
       alb.ingress.kubernetes.io/healthcheck-port: "15021"
       alb.ingress.kubernetes.io/healthcheck-path: /healthz/ready
       alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=600
+      alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=86400
 hushDeployment:
   token: dummy-token
   password: dummy-password

@@ -11,6 +11,9 @@
 # when users connect applications and when admins share a connection or
 # detect an application's tools. Those users and admins, like the AI clients,
 # must reach the hostname, for example over the VPN.
+#
+# Sticky sessions keep a client on the Hush AGW pod that served it before, for
+# clients that send back the cookie the ALB sets.
 agw:
   hostname: gw.example.com
   ingress:
@@ -25,6 +28,7 @@ agw:
       alb.ingress.kubernetes.io/healthcheck-port: "15021"
       alb.ingress.kubernetes.io/healthcheck-path: /healthz/ready
       alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=600
+      alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=86400
 hushDeployment:
   token: dummy-token
   password: dummy-password

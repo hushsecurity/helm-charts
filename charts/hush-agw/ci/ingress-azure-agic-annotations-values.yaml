@@ -3,6 +3,9 @@
 # cert-manager, with a ClusterIssuer named letsencrypt, issues the certificate
 # into the Secret below and renews it before it expires, and AGIC applies the
 # renewed Secret to the Application Gateway.
+#
+# Cookie-based affinity keeps a client on the Hush AGW pod that served it
+# before, for clients that send back the cookie the Application Gateway sets.
 agw:
   hostname: gw.example.com
   ingress:
@@ -13,6 +16,7 @@ agw:
       appgw.ingress.kubernetes.io/health-probe-path: /healthz/ready
       appgw.ingress.kubernetes.io/request-timeout: "1800"
       appgw.ingress.kubernetes.io/ssl-redirect: "true"
+      appgw.ingress.kubernetes.io/cookie-based-affinity: "true"
       cert-manager.io/cluster-issuer: letsencrypt
     tls:
       secretName: gw-example-com-tls

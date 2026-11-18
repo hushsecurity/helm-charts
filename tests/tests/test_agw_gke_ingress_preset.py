@@ -26,9 +26,10 @@ def _kind(docs, kind):
 
 # The gke-ingress preset takes GKE Ingress through everything Hush AGW needs:
 # the class annotation GKE reads, container-native load balancing to the
-# Hush AGW pods, a BackendConfig that health checks the readiness port and
-# keeps a response open for 30 minutes, a Google-managed certificate for the
-# hostname, and a FrontendConfig that redirects plain HTTP to HTTPS.
+# Hush AGW pods, a BackendConfig that health checks the readiness port, keeps
+# a response open for 30 minutes and keeps a client on one pod through a
+# cookie, a Google-managed certificate for the hostname, and a FrontendConfig
+# that redirects plain HTTP to HTTPS.
 def test_gke_ingress_preset_sets_up_the_ingress_and_its_objects():
     # Render the preset with its defaults.
     docs = _docs(GKE)
@@ -55,7 +56,8 @@ def test_gke_ingress_preset_sets_up_the_ingress_and_its_objects():
     }
     assert service["spec"]["type"] == "ClusterIP"
 
-    # The BackendConfig health checks the readiness port and allows 30 minutes.
+    # The BackendConfig health checks the readiness port, allows 30 minutes
+    # and keeps a client on one pod through a cookie.
     assert backend_config["apiVersion"] == "cloud.google.com/v1"
     assert backend_config["metadata"]["name"] == FULL_NAME
     assert backend_config["spec"] == {
@@ -65,7 +67,7 @@ def test_gke_ingress_preset_sets_up_the_ingress_and_its_objects():
             "port": 15021,
             "requestPath": "/healthz/ready",
         },
-        "sessionAffinity": {"affinityType": "NONE"},
+        "sessionAffinity": {"affinityType": "GENERATED_COOKIE"},
     }
 
     # The certificate covers the hostname.
@@ -107,29 +109,23 @@ def test_gke_ingress_preset_objects_can_be_turned_off():
 
 
 # The backend timeout, the session affinity and the SSL policy are taken from
-# the values. Without them the BackendConfig sets affinity NONE and the
-# FrontendConfig an empty policy, since GKE keeps what an earlier
-# BackendConfig or FrontendConfig set once the field is left out.
+# the values. Without a policy the FrontendConfig sets an empty one, since GKE
+# keeps what an earlier FrontendConfig set once the field is left out.
 def test_gke_ingress_preset_takes_the_timeout_affinity_and_ssl_policy():
-    # Render the preset with a two hour timeout, cookie affinity and an SSL
+    # Render the preset with a two hour timeout, client IP affinity and an SSL
     # policy.
     docs = _docs(
         f"{GKE} --set agw.ingress.gkeIngress.backendConfig.timeoutSec=7200 "
         "--set agw.ingress.gkeIngress.backendConfig.sessionAffinity.affinityType="
-        "GENERATED_COOKIE "
-        "--set agw.ingress.gkeIngress.backendConfig.sessionAffinity.affinityCookieTtlSec="
-        "86400 "
+        "CLIENT_IP "
         "--set agw.ingress.gkeIngress.frontendConfig.sslPolicy=tls-1-2"
     )
 
-    # The BackendConfig carries the timeout and the affinity, and the
-    # FrontendConfig the policy.
+    # The BackendConfig carries the timeout and the affinity, with nothing of
+    # the cookie affinity it replaces, and the FrontendConfig the policy.
     (backend_config,) = _kind(docs, "BackendConfig")
     assert backend_config["spec"]["timeoutSec"] == 7200
-    assert backend_config["spec"]["sessionAffinity"] == {
-        "affinityType": "GENERATED_COOKIE",
-        "affinityCookieTtlSec": 86400,
-    }
+    assert backend_config["spec"]["sessionAffinity"] == {"affinityType": "CLIENT_IP"}
     (frontend_config,) = _kind(docs, "FrontendConfig")
     assert frontend_config["spec"]["sslPolicy"] == "tls-1-2"
 
@@ -161,3 +157,17 @@ def test_gke_ingress_preset_refuses_a_class_name():
         "'agw.ingress.className' cannot be used with gke-ingress, which takes the "
         "class from the 'kubernetes.io/ingress.class' annotation"
     ) in stderr
+
+
+# A null session affinity turns it off. The BackendConfig sets NONE rather than
+# leave the field out, since GKE keeps what an earlier BackendConfig set once
+# the field is left out.
+def test_gke_ingress_preset_affinity_can_be_turned_off():
+    # Render the preset without session affinity.
+    docs = _docs(
+        f"{GKE} --set agw.ingress.gkeIngress.backendConfig.sessionAffinity=null"
+    )
+
+    # The BackendConfig sets NONE.
+    (backend_config,) = _kind(docs, "BackendConfig")
+    assert backend_config["spec"]["sessionAffinity"] == {"affinityType": "NONE"}

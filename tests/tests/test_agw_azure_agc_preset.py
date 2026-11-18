@@ -32,7 +32,8 @@ def _kind(docs, kind):
 # The azure-agc preset binds the Ingress to the ApplicationLoadBalancer the
 # ALB Controller manages, serves it with the certificate from the Secret, and
 # adds a HealthCheckPolicy on the readiness port and an IngressExtension that
-# lets a request, an MCP stream included, run for 30 minutes.
+# lets a request, an MCP stream included, run for 30 minutes and keeps a client
+# on one pod through a cookie.
 def test_azure_agc_preset_sets_up_the_ingress_and_its_objects():
     # Render the preset with a managed ApplicationLoadBalancer.
     docs = _docs(AGC)
@@ -67,12 +68,17 @@ def test_azure_agc_preset_sets_up_the_ingress_and_its_objects():
         "default": {"port": 15021, "http": {"path": "/healthz/ready"}},
     }
 
-    # The IngressExtension sets the request timeout for the Hush AGW Service.
+    # The IngressExtension sets the request timeout and the session affinity
+    # for the Hush AGW Service.
     assert extension["apiVersion"] == "alb.networking.azure.io/v1"
     assert extension["metadata"]["name"] == FULL_NAME
     assert extension["spec"] == {
         "backendSettings": [
-            {"service": FULL_NAME, "timeouts": {"requestTimeout": "1800s"}}
+            {
+                "service": FULL_NAME,
+                "timeouts": {"requestTimeout": "1800s"},
+                "sessionAffinity": {"affinityType": "managed-cookie"},
+            }
         ]
     }
 
@@ -163,8 +169,8 @@ def test_azure_agc_preset_refuses_a_class_name():
 
 
 # Each object of the preset can be turned off, for a customer who provides it
-# another way, and the timeout and the session affinity are taken from the
-# values.
+# another way, the timeout is taken from the values, and a null session
+# affinity turns it off.
 def test_azure_agc_preset_objects_can_be_turned_off_and_configured():
     # Render the preset without the HealthCheckPolicy and without the
     # IngressExtension.
@@ -183,16 +189,14 @@ def test_azure_agc_preset_objects_can_be_turned_off_and_configured():
         not in (ingress["metadata"]["annotations"])
     )
 
-    # Render the preset with a two hour request timeout and managed cookie
-    # affinity.
+    # Render the preset with a two hour request timeout and no affinity.
     docs = _docs(
         f"{AGC} --set agw.ingress.azureAgc.ingressExtension.requestTimeout=2h "
-        "--set agw.ingress.azureAgc.ingressExtension.sessionAffinity.affinityType="
-        "managed-cookie"
+        "--set agw.ingress.azureAgc.ingressExtension.sessionAffinity=null"
     )
 
-    # The IngressExtension carries both.
+    # The IngressExtension carries the timeout and no affinity.
     (extension,) = _kind(docs, "IngressExtension")
     (settings,) = extension["spec"]["backendSettings"]
     assert settings["timeouts"] == {"requestTimeout": "2h"}
-    assert settings["sessionAffinity"] == {"affinityType": "managed-cookie"}
+    assert "sessionAffinity" not in settings

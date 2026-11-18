@@ -36,8 +36,9 @@ def _kind(docs, kind):
 
 # With a shared Gateway, the gke-gateway preset configures the Hush AGW
 # backend only: a HealthCheckPolicy on the readiness port, which GKE Gateway
-# does not infer, and a GCPBackendPolicy that lets a response last 30 minutes.
-# The Gateway belongs to its owner, so no GCPGatewayPolicy is rendered.
+# does not infer, and a GCPBackendPolicy that lets a response last 30 minutes
+# and keeps a client on one pod through a cookie. The Gateway belongs to its
+# owner, so no GCPGatewayPolicy is rendered.
 def test_gke_gateway_preset_configures_the_backend_of_a_shared_gateway():
     # Render the preset with a shared Gateway.
     docs = _docs(SHARED)
@@ -59,11 +60,14 @@ def test_gke_gateway_preset_configures_the_backend_of_a_shared_gateway():
         "targetRef": {"group": "", "kind": "Service", "name": FULL_NAME},
     }
 
-    # The GCPBackendPolicy sets the backend timeout and no affinity.
+    # The GCPBackendPolicy sets the backend timeout and cookie affinity.
     (backend_policy,) = _kind(docs, "GCPBackendPolicy")
     assert backend_policy["apiVersion"] == "networking.gke.io/v1"
     assert backend_policy["spec"] == {
-        "default": {"timeoutSec": 1800},
+        "default": {
+            "timeoutSec": 1800,
+            "sessionAffinity": {"type": "GENERATED_COOKIE"},
+        },
         "targetRef": {"group": "", "kind": "Service", "name": FULL_NAME},
     }
 
@@ -159,16 +163,14 @@ def test_gke_gateway_preset_yields_to_the_given_gateway_annotations():
 # the values.
 def test_gke_gateway_preset_takes_its_values():
     # Render the chart's own Gateway with an internal class, an SSL policy, a
-    # two hour timeout and cookie affinity.
+    # two hour timeout and client IP affinity.
     docs = _docs(
         f"{OWN} --set agw.httpRoute.gkeGateway.certificateMap=hush-agw-map "
         "--set agw.httpRoute.gateway.className=gke-l7-rilb "
         "--set agw.httpRoute.gkeGateway.sslPolicy=hush-agw-tls "
         "--set agw.httpRoute.gkeGateway.backendPolicy.timeoutSec=7200 "
         "--set agw.httpRoute.gkeGateway.backendPolicy.sessionAffinity.type="
-        "GENERATED_COOKIE "
-        "--set agw.httpRoute.gkeGateway.backendPolicy.sessionAffinity.cookieTtlSec="
-        "86400"
+        "CLIENT_IP"
     )
 
     # The Gateway takes the class.
@@ -187,11 +189,12 @@ def test_gke_gateway_preset_takes_its_values():
         },
     }
 
-    # The GCPBackendPolicy carries the timeout and the affinity.
+    # The GCPBackendPolicy carries the timeout and the affinity, with nothing
+    # of the cookie affinity it replaces.
     (backend_policy,) = _kind(docs, "GCPBackendPolicy")
     assert backend_policy["spec"]["default"] == {
         "timeoutSec": 7200,
-        "sessionAffinity": {"type": "GENERATED_COOKIE", "cookieTtlSec": 86400},
+        "sessionAffinity": {"type": "CLIENT_IP"},
     }
 
 
@@ -207,3 +210,15 @@ def test_gke_gateway_preset_objects_can_be_turned_off():
     # Neither object is rendered.
     assert _kind(docs, "HealthCheckPolicy") == []
     assert _kind(docs, "GCPBackendPolicy") == []
+
+
+# A null session affinity turns it off, leaving Google's default of none.
+def test_gke_gateway_preset_affinity_can_be_turned_off():
+    # Render the preset without session affinity.
+    docs = _docs(
+        f"{SHARED} --set agw.httpRoute.gkeGateway.backendPolicy.sessionAffinity=null"
+    )
+
+    # The GCPBackendPolicy sets the timeout only.
+    (backend_policy,) = _kind(docs, "GCPBackendPolicy")
+    assert backend_policy["spec"]["default"] == {"timeoutSec": 1800}
