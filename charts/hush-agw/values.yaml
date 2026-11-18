@@ -601,15 +601,19 @@ agw:
   # change it unless Hush support instructs you to.
   dynamicOAuthRegistrationTTL: 3600
 
-  # Persistence for the local state of Hush AGW.
+  # A PersistentVolumeClaim for the local state of Hush AGW.
   #
-  # Required for a production installation. The state cannot be recreated, so
-  # losing the volume makes every user reconnect their applications.
+  # Hush AGW keeps its state in Hush and rebuilds it when a pod starts, so it
+  # no longer needs the claim. Turn the claim off only after Hush AGW has
+  # started on it at least once with chart 0.11.0 or later, which uploads the
+  # tokens and OAuth clients kept on it to Hush. Turning it off leaves the
+  # chart's claim behind, unless 'retainOnDelete' is false, and stops using a
+  # claim named in 'existingClaim'; remove either by hand.
+  # DEPRECATED: set 'enabled' to false.
   persistence:
     # Whether to use a PersistentVolumeClaim.
     #
-    # When false the state is ephemeral and lost on every pod restart. Only use
-    # that for a proof of concept or for testing.
+    # When false each pod rebuilds the state from Hush on an empty volume.
     enabled: true
 
     # Size of the volume claim.
