@@ -10,7 +10,14 @@ metadata:
 spec:
   replicas: 1
   strategy:
+    {{- if .Values.agw.persistence.enabled }}
     type: Recreate
+    {{- else }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    {{- end }}
   selector:
     matchLabels: {{- include "hush-common.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: gateway
