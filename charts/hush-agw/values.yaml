@@ -309,16 +309,17 @@ agw:
       # 1.1. Empty leaves the controller's default.
       sslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
 
-      # Sticky sessions: the ALB keeps a client on one Hush AGW pod through a
-      # cookie it sets, for clients that send it back. The cookie lasts
-      # 'duration' seconds. AWS does not allow it with 'crossZone: false'.
+      # Sticky sessions keep a client on the Hush AGW pod that served it
+      # before, which answers faster than another pod, for clients that send
+      # back the cookie the ALB sets. The cookie lasts 'duration' seconds.
+      # AWS does not allow it with 'crossZone: false'.
       #
       # 'stickiness' and 'crossZone' go into the target group attributes. An
       # 'alb.ingress.kubernetes.io/target-group-attributes' annotation in
       # 'annotations' replaces both.
       # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html
       stickiness:
-        enabled: false
+        enabled: true
         duration: 86400
 
       # Cross-zone load balancing. When true, the ALB's node in each zone sends
@@ -343,11 +344,12 @@ agw:
         # is 30.
         timeoutSec: 1800
 
-        # Session affinity, which keeps a client on one Hush AGW pod, for
-        # example {affinityType: GENERATED_COOKIE, affinityCookieTtlSec: 86400}
-        # or {affinityType: CLIENT_IP}. Empty turns it off.
+        # Session affinity keeps a client on the Hush AGW pod that served it
+        # before, which answers faster than another pod, for clients that send
+        # back the cookie the load balancer sets. Null turns it off.
         # https://docs.cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration
-        sessionAffinity: {}
+        sessionAffinity:
+          affinityType: GENERATED_COOKIE
 
       # A Google-managed certificate for 'agw.hostname'. Turn it off when
       # 'tls.secretName' or an annotation of your own provides the certificate.
@@ -398,10 +400,12 @@ agw:
         enabled: true
         requestTimeout: 1800s
 
-        # Session affinity, which keeps a client on one Hush AGW pod, for
-        # example {affinityType: managed-cookie}. Empty leaves it off.
+        # Session affinity keeps a client on the Hush AGW pod that served it
+        # before, which answers faster than another pod, for clients that send
+        # back the cookie AGC sets. Null turns it off.
         # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/session-affinity
-        sessionAffinity: {}
+        sessionAffinity:
+          affinityType: managed-cookie
 
   # An HTTPRoute of the Gateway API that sends every path of 'agw.hostname' to
   # Hush AGW. It takes the place of 'agw.ingress': enable one of them, not
@@ -474,11 +478,12 @@ agw:
       targetGroupConfiguration:
         enabled: true
 
-        # Sticky sessions: the ALB keeps a client on one Hush AGW pod through
-        # a cookie it sets, for clients that send it back. The cookie lasts
-        # 'duration' seconds. AWS does not allow it with 'crossZone: false'.
+        # Sticky sessions keep a client on the Hush AGW pod that served it
+        # before, which answers faster than another pod, for clients that
+        # send back the cookie the ALB sets. The cookie lasts 'duration'
+        # seconds. AWS does not allow it with 'crossZone: false'.
         stickiness:
-          enabled: false
+          enabled: true
           duration: 86400
 
         # Cross-zone load balancing. When true, the ALB's node in each zone
@@ -535,10 +540,11 @@ agw:
         # is 30.
         timeoutSec: 1800
 
-        # Session affinity, which keeps a client on one Hush AGW pod, for
-        # example {type: GENERATED_COOKIE, cookieTtlSec: 86400} or
-        # {type: CLIENT_IP}. Empty leaves it off.
-        sessionAffinity: {}
+        # Session affinity keeps a client on the Hush AGW pod that served it
+        # before, which answers faster than another pod, for clients that send
+        # back the cookie the load balancer sets. Null turns it off.
+        sessionAffinity:
+          type: GENERATED_COOKIE
 
       # The certificate of the chart's own Gateway: a Certificate Manager
       # certificate map, or a Compute Engine SSL certificate, such as a
@@ -589,11 +595,13 @@ agw:
       # AGC's default is 60 seconds.
       requestTimeout: 1800s
 
-      # Session affinity, which keeps a client on one Hush AGW pod, for
-      # example {affinityType: managed-cookie}, applied through a RoutePolicy
-      # for the HTTPRoute. Empty leaves it off.
+      # Session affinity keeps a client on the Hush AGW pod that served it
+      # before, which answers faster than another pod, for clients that send
+      # back the cookie AGC sets. A RoutePolicy for the HTTPRoute applies it.
+      # Null turns it off.
       # https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/session-affinity
-      sessionAffinity: {}
+      sessionAffinity:
+        affinityType: managed-cookie
 
   # How long an unconsented dynamic OAuth registration stays valid, in seconds.
   #

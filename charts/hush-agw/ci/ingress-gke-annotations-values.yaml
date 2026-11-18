@@ -12,6 +12,8 @@
 #       type: HTTP
 #       port: 15021
 #       requestPath: /healthz/ready
+#     sessionAffinity:
+#       affinityType: GENERATED_COOKIE
 #   ---
 #   apiVersion: networking.gke.io/v1
 #   kind: ManagedCertificate
@@ -30,8 +32,10 @@
 #       enabled: true
 #     sslPolicy: hush-agw-tls
 #
-# The BackendConfig health checks Hush AGW and lets a response, an MCP stream
-# included, last 30 minutes; the FrontendConfig redirects plain HTTP to HTTPS.
+# The BackendConfig health checks Hush AGW, lets a response, an MCP stream
+# included, last 30 minutes, and keeps a client on the Hush AGW pod that served
+# it before, for clients that send back the cookie the load balancer sets. The
+# FrontendConfig redirects plain HTTP to HTTPS.
 # The ManagedCertificate asks Google for the certificate: point the hostname's
 # DNS A record at the Ingress address, and Google issues it, which can take up
 # to 60 minutes, and renews it.

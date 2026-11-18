@@ -28,16 +28,19 @@
 #       - service: hush-agw
 #         timeouts:
 #           requestTimeout: 1800s
+#         sessionAffinity:
+#           affinityType: managed-cookie
 #
 # The HealthCheckPolicy health checks Hush AGW. The IngressExtension lets a
-# request, an MCP stream included, last 30 minutes. cert-manager, with a
-# ClusterIssuer named letsencrypt, issues the certificate into the Secret below
-# and renews it. The Ingress names its frontend, since the ALB Controller
-# otherwise gives cert-manager's HTTP-01 solver a frontend of its own, which the
-# challenge does not reach. The ClusterIssuer's HTTP-01 solver must name the
-# same frontend in the alb.networking.azure.io/alb-frontend annotation of its
-# ingressTemplate. Point the hostname's DNS record at the frontend once it has
-# an address.
+# request, an MCP stream included, last 30 minutes, and keeps a client on the
+# Hush AGW pod that served it before, for clients that send back the cookie AGC
+# sets. cert-manager, with a ClusterIssuer named letsencrypt, issues the
+# certificate into the Secret below and renews it. The Ingress names its
+# frontend, since the ALB Controller otherwise gives cert-manager's HTTP-01
+# solver a frontend of its own, which the challenge does not reach. The
+# ClusterIssuer's HTTP-01 solver must name the same frontend in the
+# alb.networking.azure.io/alb-frontend annotation of its ingressTemplate. Point
+# the hostname's DNS record at the frontend once it has an address.
 agw:
   hostname: gw.example.com
   ingress:

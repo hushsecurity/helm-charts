@@ -41,9 +41,9 @@ def _kind(docs, kind):
 
 
 # With a shared Gateway, the azure-agc preset health checks Hush AGW on its
-# readiness port and lets a request on the HTTPRoute last 30 minutes, since AGC
-# cuts it at the timeout even while an MCP stream flows. Without an affinity no
-# RoutePolicy is rendered, and the Gateway belongs to its owner.
+# readiness port, lets a request on the HTTPRoute last 30 minutes, since AGC
+# cuts it at the timeout even while an MCP stream flows, and keeps a client on
+# one pod through a cookie. The Gateway belongs to its owner.
 def test_azure_agc_preset_configures_the_backend_of_a_shared_gateway():
     # Render the preset with a shared Gateway.
     docs = _docs(SHARED)
@@ -61,8 +61,21 @@ def test_azure_agc_preset_configures_the_backend_of_a_shared_gateway():
     (rule,) = route["spec"]["rules"]
     assert rule["timeouts"] == {"request": "1800s"}
 
-    # Neither a RoutePolicy nor a Gateway is rendered.
-    assert _kind(docs, "RoutePolicy") == []
+    # The RoutePolicy targets the HTTPRoute with the affinity. It names the
+    # HTTPRoute by its API group, which the ALB Controller requires, rather
+    # than the empty group of Microsoft's RoutePolicy example.
+    (route_policy,) = _kind(docs, "RoutePolicy")
+    assert route_policy["apiVersion"] == "alb.networking.azure.io/v1"
+    assert route_policy["spec"] == {
+        "targetRef": {
+            "group": "gateway.networking.k8s.io",
+            "kind": "HTTPRoute",
+            "name": FULL_NAME,
+        },
+        "default": {"sessionAffinity": {"affinityType": "managed-cookie"}},
+    }
+
+    # No Gateway is rendered.
     assert _kind(docs, "Gateway") == []
 
 
@@ -137,13 +150,13 @@ def test_azure_agc_preset_refuses_an_incomplete_gateway(extra_args, message):
     assert message in stderr
 
 
-# A session affinity is applied through a RoutePolicy for the HTTPRoute, and
-# the request timeout is taken from the values.
-def test_azure_agc_preset_takes_the_timeout_and_the_affinity():
-    # Render the preset with a two hour timeout and managed cookie affinity.
+# The request timeout is taken from the values, and a null session affinity
+# turns it off, with the RoutePolicy that carries it.
+def test_azure_agc_preset_takes_the_timeout_and_turns_the_affinity_off():
+    # Render the preset with a two hour timeout and no affinity.
     docs = _docs(
         f"{SHARED} --set agw.httpRoute.azureAgc.requestTimeout=2h "
-        "--set agw.httpRoute.azureAgc.sessionAffinity.affinityType=managed-cookie"
+        "--set agw.httpRoute.azureAgc.sessionAffinity=null"
     )
 
     # The HTTPRoute carries the timeout.
@@ -151,19 +164,8 @@ def test_azure_agc_preset_takes_the_timeout_and_the_affinity():
     (rule,) = route["spec"]["rules"]
     assert rule["timeouts"] == {"request": "2h"}
 
-    # The RoutePolicy targets the HTTPRoute with the affinity. It names the
-    # HTTPRoute by its API group, which the ALB Controller requires, rather
-    # than the empty group of Microsoft's RoutePolicy example.
-    (route_policy,) = _kind(docs, "RoutePolicy")
-    assert route_policy["apiVersion"] == "alb.networking.azure.io/v1"
-    assert route_policy["spec"] == {
-        "targetRef": {
-            "group": "gateway.networking.k8s.io",
-            "kind": "HTTPRoute",
-            "name": FULL_NAME,
-        },
-        "default": {"sessionAffinity": {"affinityType": "managed-cookie"}},
-    }
+    # No RoutePolicy is rendered.
+    assert _kind(docs, "RoutePolicy") == []
 
 
 # The HealthCheckPolicy can be turned off, for a customer who provides it

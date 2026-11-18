@@ -42,7 +42,7 @@ ALB_ANNOTATIONS = {
     ),
     "alb.ingress.kubernetes.io/ssl-policy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
     "alb.ingress.kubernetes.io/target-group-attributes": (
-        "stickiness.enabled=false,stickiness.lb_cookie.duration_seconds=86400,"
+        "stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=86400,"
         "load_balancing.cross_zone.enabled=true"
     ),
 }
@@ -169,8 +169,8 @@ def test_unknown_load_balancer_is_refused():
 # The aws-alb preset gives the Ingress the alb class and the annotations that
 # meet the needs of Hush AGW: HTTPS on 443 only with TLS 1.2 or later, pod IP
 # targets, the health check on the readiness port, and an idle timeout well
-# above the default. The target group attributes keep AWS's defaults: no
-# stickiness and cross-zone load balancing on. Without a certificate ARN the
+# above the default. The target group attributes turn sticky sessions on and
+# keep cross-zone load balancing on. Without a certificate ARN the
 # controller finds the certificate from the rule's host, so none is named.
 def test_aws_alb_preset_sets_the_class_and_the_annotations():
     # Render the preset with its defaults.
@@ -191,13 +191,13 @@ def test_aws_alb_preset_sets_the_class_and_the_annotations():
 # stickiness and cross-zone load balancing are taken from the values.
 def test_aws_alb_preset_takes_its_values():
     # Render an internal ALB with a certificate, a longer idle timeout, another
-    # TLS policy and sticky sessions of an hour.
+    # TLS policy and sticky sessions off with a cookie of an hour.
     ingress = _ingress(
         f"{ALB} --set agw.ingress.awsAlb.scheme=internal "
         f"--set agw.ingress.awsAlb.certificateArn={CERTIFICATE_ARN} "
         "--set agw.ingress.awsAlb.idleTimeout=1200 "
         "--set agw.ingress.awsAlb.sslPolicy=ELBSecurityPolicy-TLS13-1-3-2021-06 "
-        "--set agw.ingress.awsAlb.stickiness.enabled=true "
+        "--set agw.ingress.awsAlb.stickiness.enabled=false "
         "--set agw.ingress.awsAlb.stickiness.duration=3600"
     )
 
@@ -212,17 +212,21 @@ def test_aws_alb_preset_takes_its_values():
         "ELBSecurityPolicy-TLS13-1-3-2021-06"
     )
     assert annotations["alb.ingress.kubernetes.io/target-group-attributes"] == (
-        "stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=3600,"
+        "stickiness.enabled=false,stickiness.lb_cookie.duration_seconds=3600,"
         "load_balancing.cross_zone.enabled=true"
     )
 
 
-# Cross-zone load balancing can be turned off while stickiness stays off.
+# Cross-zone load balancing can be turned off together with stickiness, which
+# is on by default.
 def test_aws_alb_preset_turns_cross_zone_off():
-    # Render the preset with cross-zone load balancing off.
-    ingress = _ingress(f"{ALB} --set agw.ingress.awsAlb.crossZone=false")
+    # Render the preset with cross-zone load balancing and stickiness off.
+    ingress = _ingress(
+        f"{ALB} --set agw.ingress.awsAlb.crossZone=false "
+        "--set agw.ingress.awsAlb.stickiness.enabled=false"
+    )
 
-    # The target group attributes turn it off and keep stickiness off.
+    # The target group attributes turn both off.
     annotations = ingress["metadata"]["annotations"]
     assert annotations["alb.ingress.kubernetes.io/target-group-attributes"] == (
         "stickiness.enabled=false,stickiness.lb_cookie.duration_seconds=86400,"
@@ -269,11 +273,10 @@ def test_aws_alb_preset_yields_to_the_given_class_and_annotations():
 # replaces the one the preset builds from 'stickiness' and 'crossZone', so
 # attributes the values do not cover can still be set.
 def test_aws_alb_preset_yields_to_given_target_group_attributes():
-    # Render the preset with stickiness on and an annotation of the customer's
-    # own holding another attribute.
+    # Render the preset, whose sticky sessions are on, with an annotation of
+    # the customer's own holding another attribute.
     ingress = _ingress(
-        f"{ALB} --set agw.ingress.awsAlb.stickiness.enabled=true "
-        "--set-string agw.ingress.annotations.alb\\\\.ingress\\\\.kubernetes\\\\.io/"
+        f"{ALB} --set-string agw.ingress.annotations.alb\\\\.ingress\\\\.kubernetes\\\\.io/"
         "target-group-attributes=slow_start.duration_seconds=30"
     )
 

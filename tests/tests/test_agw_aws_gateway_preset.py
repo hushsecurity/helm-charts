@@ -39,8 +39,9 @@ def _kind(docs, kind):
 
 # With a shared Gateway, the aws-alb preset configures the Hush AGW target
 # group only: pod IP targets, a health check on the readiness port, and the
-# target group attributes at AWS's defaults. The load balancer belongs to the
-# Gateway's owner, so no LoadBalancerConfiguration is rendered.
+# target group attributes with sticky sessions and cross-zone load balancing
+# on. The load balancer belongs to the Gateway's owner, so no
+# LoadBalancerConfiguration is rendered.
 def test_aws_alb_preset_configures_the_target_group_of_a_shared_gateway():
     # Render the preset with a shared Gateway.
     docs = _docs(SHARED)
@@ -58,7 +59,7 @@ def test_aws_alb_preset_configures_the_target_group_of_a_shared_gateway():
                 "healthCheckPath": "/healthz/ready",
             },
             "targetGroupAttributes": [
-                {"key": "stickiness.enabled", "value": "false"},
+                {"key": "stickiness.enabled", "value": "true"},
                 {"key": "stickiness.lb_cookie.duration_seconds", "value": "86400"},
                 {"key": "load_balancing.cross_zone.enabled", "value": "true"},
             ],
@@ -114,7 +115,7 @@ def test_aws_alb_preset_configures_the_load_balancer_of_its_own_gateway():
 # and cross-zone load balancing are taken from the values.
 def test_aws_alb_preset_takes_its_values():
     # Render an internal ALB with a certificate, a longer idle timeout, another
-    # TLS policy and sticky sessions of an hour.
+    # TLS policy and sticky sessions off with a cookie of an hour.
     lb = "agw.httpRoute.awsAlb.loadBalancerConfiguration"
     tg = "agw.httpRoute.awsAlb.targetGroupConfiguration"
     docs = _docs(
@@ -122,7 +123,7 @@ def test_aws_alb_preset_takes_its_values():
         f"--set {lb}.certificateArn={CERTIFICATE_ARN} "
         f"--set {lb}.idleTimeout=1200 "
         f"--set {lb}.sslPolicy=ELBSecurityPolicy-TLS13-1-3-2021-06 "
-        f"--set {tg}.stickiness.enabled=true "
+        f"--set {tg}.stickiness.enabled=false "
         f"--set {tg}.stickiness.duration=3600"
     )
 
@@ -141,19 +142,22 @@ def test_aws_alb_preset_takes_its_values():
     ]
     (target_group,) = _kind(docs, "TargetGroupConfiguration")
     assert target_group["spec"]["defaultConfiguration"]["targetGroupAttributes"] == [
-        {"key": "stickiness.enabled", "value": "true"},
+        {"key": "stickiness.enabled", "value": "false"},
         {"key": "stickiness.lb_cookie.duration_seconds", "value": "3600"},
         {"key": "load_balancing.cross_zone.enabled", "value": "true"},
     ]
 
 
-# Cross-zone load balancing can be turned off while stickiness stays off.
+# Cross-zone load balancing can be turned off together with stickiness, which
+# is on by default.
 def test_aws_alb_preset_turns_cross_zone_off():
-    # Render the preset with cross-zone load balancing off.
+    # Render the preset with cross-zone load balancing and stickiness off.
     tg = "agw.httpRoute.awsAlb.targetGroupConfiguration"
-    docs = _docs(f"{SHARED} --set {tg}.crossZone=false")
+    docs = _docs(
+        f"{SHARED} --set {tg}.crossZone=false --set {tg}.stickiness.enabled=false"
+    )
 
-    # The target group attributes turn it off and keep stickiness off.
+    # The target group attributes turn both off.
     (target_group,) = _kind(docs, "TargetGroupConfiguration")
     assert target_group["spec"]["defaultConfiguration"]["targetGroupAttributes"] == [
         {"key": "stickiness.enabled", "value": "false"},
