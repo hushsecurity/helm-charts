@@ -1,0 +1,10 @@
+agw:
+  hostname: gw.example.com
+  persistence:
+    enabled: false
+  dataVolume:
+    type: ephemeral
+    storageClassName: gp3
+hushDeployment:
+  token: dummy-token
+  password: dummy-password

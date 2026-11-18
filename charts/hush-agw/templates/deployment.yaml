@@ -173,9 +173,7 @@ spec:
           persistentVolumeClaim:
             claimName: {{ include "hush-agw.dataClaimName" . }}
           {{- else }}
-          {{- include "hush-agw.checkDataVolumeStorage" . }}
-          emptyDir:
-            sizeLimit: {{ dig "dataVolume" "size" "1Gi" .Values.agw }}
+          {{- include "hush-agw.dataVolume" . | nindent 10 }}
           {{- end }}
         {{- include "hush-common.k8sSecretsProjectionVolume" . | nindent 8 }}
         {{- include "hush-common.saTokenMaskVolume" . | nindent 8 }}
