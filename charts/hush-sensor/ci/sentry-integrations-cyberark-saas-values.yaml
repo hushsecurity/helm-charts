@@ -1,0 +1,16 @@
+---
+hushDeployment:
+  token: "ZDE6em9uZTpyZWFsbTpvcmctaWQ6ZGVwbG95bWVudC1pZA=="
+  password: "koko.password"
+
+sentry:
+  integrations:
+    cyberark:
+      base_url: "https://acme.secretsmgr.cyberark.cloud"
+      auth:
+        api_key:
+          login: "host/data/hush/scanner"
+          apiKey:
+            secretKeyRef:
+              name: "cyberark-api-key"
+              key: "api-key"
