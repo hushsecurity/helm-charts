@@ -120,6 +120,33 @@ Persistent volume claim name for the data of Hush AGW.
 {{- end -}}
 {{- end }}
 
+{{- define "hush-agw.dataVolume" -}}
+{{- $type := toString (dig "dataVolume" "type" "emptyDir" .Values.agw) -}}
+{{- $size := dig "dataVolume" "size" "1Gi" .Values.agw -}}
+{{- if eq $type "emptyDir" -}}
+{{- include "hush-agw.checkDataVolumeStorage" . -}}
+emptyDir:
+  sizeLimit: {{ $size }}
+{{- else if eq $type "ephemeral" -}}
+ephemeral:
+  volumeClaimTemplate:
+    metadata:
+      labels: {{- include "hush-common.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: gateway-data-volume-claim
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      {{- with (dig "dataVolume" "storageClassName" "" .Values.agw) }}
+      storageClassName: {{ . }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ $size }}
+{{- else -}}
+  {{- fail "'agw.dataVolume.type' must be emptyDir or ephemeral" -}}
+{{- end -}}
+{{- end }}
+
 {{- define "hush-agw.secretNamespaces" -}}
 {{- $namespaces := list (include "hush-common.namespace" .) -}}
 {{- if eq (toString .Values.agw.secretStore.kind) "kubesecrets" -}}

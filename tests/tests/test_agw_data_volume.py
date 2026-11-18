@@ -201,3 +201,67 @@ def test_size_is_not_checked_with_the_claim():
 
     # The claim is mounted.
     assert "persistentVolumeClaim" in _data_volume(docs)
+
+
+# 'ephemeral' gives each pod a volume of its own from a StorageClass, through a
+# claim created with the pod and deleted with it, so that the pod gets the
+# capacity and IOPS of the class rather than a share of the node's disk.
+def test_ephemeral_data_volume_takes_its_class_and_size():
+    # Render the chart without the claim and with a 2Gi volume of the gp3
+    # class.
+    docs = _docs(
+        f"{NO_CLAIM} --set agw.dataVolume.type=ephemeral "
+        "--set agw.dataVolume.storageClassName=gp3 "
+        "--set agw.dataVolume.size=2Gi"
+    )
+
+    # The chart renders no claim of its own; the pod carries the claim's
+    # template, labelled as the data volume claim of Hush AGW.
+    assert not _claims(docs)
+    template = _data_volume(docs)["ephemeral"]["volumeClaimTemplate"]
+    labels = template["metadata"]["labels"]
+    assert labels["app.kubernetes.io/component"] == "gateway-data-volume-claim"
+    assert template["spec"] == {
+        "accessModes": ["ReadWriteOnce"],
+        "storageClassName": "gp3",
+        "resources": {"requests": {"storage": "2Gi"}},
+    }
+
+
+# Without a class the claim names none, so that the cluster's default
+# StorageClass provides the volume.
+def test_ephemeral_data_volume_defaults_to_the_cluster_class():
+    # Render the chart without the claim and with an ephemeral volume and no
+    # class.
+    docs = _docs(f"{NO_CLAIM} --set agw.dataVolume.type=ephemeral")
+
+    # The claim names no class and asks for 1Gi.
+    spec = _data_volume(docs)["ephemeral"]["volumeClaimTemplate"]["spec"]
+    assert "storageClassName" not in spec
+    assert spec["resources"] == {"requests": {"storage": "1Gi"}}
+
+
+# Any other type is refused.
+def test_unknown_data_volume_type_is_refused():
+    # Render the chart without the claim and with a type the chart does not
+    # know.
+    stderr = _template_error(
+        f"{NO_CLAIM} --set agw.dataVolume.type=persistentVolumeClaim"
+    )
+
+    # The chart names the setting and the types it takes.
+    assert "'agw.dataVolume.type' must be emptyDir or ephemeral" in stderr
+
+
+# A volume from a StorageClass keeps the data off the node's disk, so its size
+# is not checked against the containers' resources.
+def test_ephemeral_data_volume_size_is_not_checked():
+    # Render the chart without the claim and with an ephemeral volume above the
+    # request and limits.
+    docs = _docs(
+        f"{NO_CLAIM} --set agw.dataVolume.type=ephemeral --set agw.dataVolume.size=5Gi"
+    )
+
+    # The claim's template asks for the size.
+    spec = _data_volume(docs)["ephemeral"]["volumeClaimTemplate"]["spec"]
+    assert spec["resources"] == {"requests": {"storage": "5Gi"}}

@@ -650,9 +650,26 @@ agw:
   # 'agw.persistence.enabled' is false. The pod rebuilds the state from Hush
   # when it starts, so the volume lives and dies with the pod.
   dataVolume:
-    # Size of the volume, an emptyDir on the node's disk. The kubelet evicts a
-    # pod whose volume grows past it.
+    # Allowed values:
+    # - "emptyDir"  - a directory on the node's disk, shared with the other
+    #                 pods of the node
+    # - "ephemeral" - a volume of the pod's own from 'storageClassName',
+    #                 created with the pod and deleted with it, with the
+    #                 capacity and IOPS of its class. Each new pod waits for
+    #                 its volume to be created and attached, so it starts more
+    #                 slowly.
+    # https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#generic-ephemeral-volumes
+    type: emptyDir
+
+    # Size of the volume. The kubelet evicts a pod whose emptyDir grows past
+    # it.
     size: 1Gi
+
+    # StorageClass of an "ephemeral" volume. When empty the cluster default is
+    # used, so the cluster must have a default StorageClass or the pod stays
+    # Pending. A zonal class needs volumeBindingMode WaitForFirstConsumer, so
+    # that each volume is created in the zone of its pod's node.
+    storageClassName: ""
 
   # Custom priority class name.
   priorityClassName: ""
