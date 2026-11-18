@@ -671,6 +671,12 @@ agw:
     # that each volume is created in the zone of its pod's node.
     storageClassName: ""
 
+  # Number of Hush AGW pods. Each one rebuilds its state from Hush, so more
+  # than one keeps Hush AGW up when a pod or a node goes down. More than one
+  # needs 'agw.persistence.enabled: false', since the pods cannot share the
+  # volume claim.
+  replicas: 1
+
   # Custom priority class name.
   priorityClassName: ""
 

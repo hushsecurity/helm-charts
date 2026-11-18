@@ -21,6 +21,16 @@
 {{- ternary 443 3001 (eq (include "hush-agw.serviceType" .) "LoadBalancer") -}}
 {{- end }}
 
+{{- define "hush-agw.replicas" -}}
+{{- $replicas := int (dig "replicas" 1 .Values.agw) -}}
+{{- if lt $replicas 1 -}}
+  {{- fail "'agw.replicas' must be at least 1" -}}
+{{- else if and (gt $replicas 1) .Values.agw.persistence.enabled -}}
+  {{- fail "'agw.replicas' above 1 needs 'agw.persistence.enabled: false', since Hush AGW pods cannot share the volume claim" -}}
+{{- end -}}
+{{- $replicas -}}
+{{- end }}
+
 {{/*
 External base URL clients reach Hush AGW on, built from the hostname.
 */}}

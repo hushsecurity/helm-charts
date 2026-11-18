@@ -1,0 +1,8 @@
+agw:
+  hostname: gw.example.com
+  persistence:
+    enabled: false
+  replicas: 3
+hushDeployment:
+  token: dummy-token
+  password: dummy-password
