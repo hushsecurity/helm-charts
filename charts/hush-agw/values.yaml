@@ -609,7 +609,7 @@ agw:
   # tokens and OAuth clients kept on it to Hush. Turning it off leaves the
   # chart's claim behind, unless 'retainOnDelete' is false, and stops using a
   # claim named in 'existingClaim'; remove either by hand.
-  # DEPRECATED: set 'enabled' to false.
+  # DEPRECATED: set 'enabled' to false and use 'agw.dataVolume' instead.
   persistence:
     # Whether to use a PersistentVolumeClaim.
     #
@@ -645,6 +645,14 @@ agw:
     # Use a pre-created claim instead of creating one. When set, the chart does
     # not create a PVC. Ignored when 'enabled' is false.
     existingClaim: ""
+
+  # The volume each Hush AGW pod keeps its local copy of the state on when
+  # 'agw.persistence.enabled' is false. The pod rebuilds the state from Hush
+  # when it starts, so the volume lives and dies with the pod.
+  dataVolume:
+    # Size of the volume, an emptyDir on the node's disk. The kubelet evicts a
+    # pod whose volume grows past it.
+    size: 1Gi
 
   # Custom priority class name.
   priorityClassName: ""
