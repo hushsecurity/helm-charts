@@ -269,14 +269,16 @@ agw:
     #   'azureAgc'.
     #
     # 'className' and keys in 'annotations' replace what it sets, except that
-    # gke-ingress takes no 'className'.
+    # gke-ingress and azure-agc take no 'className'.
     #
     # Examples for each ingress controller and load balancer are in
     # https://github.com/hushsecurity/helm-charts/tree/main/charts/hush-agw/ci
     controller: ""
 
-    # IngressClass of the controller that serves the Ingress. When empty the
-    # cluster's default IngressClass is used, if it has one.
+    # IngressClass of the controller that serves the Ingress. When empty, the
+    # 'agw.ingress.controller' preset sets it: alb for aws-alb and
+    # azure-alb-external for azure-agc. Otherwise the cluster's default
+    # IngressClass is used, if it has one.
     className: ""
 
     # Annotations for the Ingress, through which most ingress controllers are
