@@ -211,6 +211,27 @@ All notable changes to this project will be documented in this file.
   With the volume claim a pod stops within seconds as before, since its
   replacement starts only once it is gone. On Kubernetes before 1.30 the
   pod's other containers stop at once, so the requests that need them fail.
+- bump the app version to v0.20.0. The release asks nothing of the chart.
+
+  - users consent only to the scopes of the applications they are assigned.
+    Applications of the same name with different scopes used to share the
+    scopes of the first of them.
+  - a user who lost scopes of an application is blocked until they connect
+    it again, and one who gained scopes keeps working and is offered them.
+  - an agent whose assignments give it other scopes of an application than
+    its user's other agents connects a token of its own scopes, rather than
+    blocking or reconnecting the token the others use.
+  - an OAuth client that an older Hush AGW registered with an application's
+    scopes is replaced on the application's next scope change, when its
+    users connect again.
+  - a Hush AGW pod that starts without the volume claim no longer makes Hush
+    re-encrypt every application of the deployment, which could undo an
+    edit to an application made at that moment.
+  - the agw-controller image moves to Go 1.27.4 and the agw-genai-toolbox
+    image to Go 1.26.11, and agw-controller and agw-vector move to newer
+    minimal bases, for their CVE fixes.
+
+  The rest of the release is internal improvements.
 
 ### Deprecated
 
