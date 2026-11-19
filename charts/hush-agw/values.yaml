@@ -996,13 +996,16 @@ agw:
   terminationGracePeriodSeconds: 30
 
   # Default resource requests/limits for the agw-controller and its init
-  # container.
+  # container. With an emptyDir data volume the ephemeral-storage request must
+  # be at least 'agw.dataVolume.size', and the ephemeral-storage limits of
+  # agw-controller, agw-agentgateway, agw-vector and agw-genai-toolbox must add
+  # up to more than it.
   controller:
     resources:
       requests:
         cpu: 100m
         memory: 128Mi
-        ephemeral-storage: 128Mi
+        ephemeral-storage: 1Gi
       limits:
         memory: 512Mi
         ephemeral-storage: 1Gi

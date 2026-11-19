@@ -98,6 +98,28 @@ Persistent volume claim name for the data of Hush AGW.
 {{- end -}}
 {{- end }}
 
+{{- define "hush-agw.checkDataVolumeStorage" -}}
+{{- $size := dig "dataVolume" "size" "1Gi" .Values.agw -}}
+{{- $sizeBytes := float64 (include "hush-common.quantityBytes" (dict "key" "agw.dataVolume.size" "value" $size)) -}}
+{{- $controller := .Values.agw.controller.resources | default dict -}}
+{{- $request := dig "requests" "ephemeral-storage" (dig "limits" "ephemeral-storage" "0" $controller) $controller -}}
+{{- $requestBytes := float64 (include "hush-common.quantityBytes" (dict "key" "agw.controller.resources.requests.ephemeral-storage" "value" $request)) -}}
+{{- if lt $requestBytes $sizeBytes -}}
+  {{- fail (printf "'agw.controller.resources.requests.ephemeral-storage' must be at least 'agw.dataVolume.size' (%v), to reserve the node's disk the data volume takes" $size) -}}
+{{- end -}}
+{{- $limited := false -}}
+{{- $limitsBytes := 0.0 -}}
+{{- range $name := list "controller" "agentgateway" "vector" "genaiToolbox" -}}
+  {{- with dig $name "resources" "limits" "ephemeral-storage" "" $.Values.agw -}}
+    {{- $limited = true -}}
+    {{- $limitsBytes = addf $limitsBytes (include "hush-common.quantityBytes" (dict "key" (printf "agw.%s.resources.limits.ephemeral-storage" $name) "value" .)) -}}
+  {{- end -}}
+{{- end -}}
+{{- if and $limited (le $limitsBytes $sizeBytes) -}}
+  {{- fail (printf "the ephemeral-storage limits of 'agw.controller', 'agw.agentgateway', 'agw.vector' and 'agw.genaiToolbox' must add up to more than 'agw.dataVolume.size' (%v), or the pod is evicted before its data volume is full" $size) -}}
+{{- end -}}
+{{- end }}
+
 {{- define "hush-agw.secretNamespaces" -}}
 {{- $namespaces := list (include "hush-common.namespace" .) -}}
 {{- if eq (toString .Values.agw.secretStore.kind) "kubesecrets" -}}
