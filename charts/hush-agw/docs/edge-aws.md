@@ -3,22 +3,24 @@
 The AWS Load Balancer Controller puts Hush AGW behind an Application Load
 Balancer, through the Gateway API or an Ingress, or behind a Network Load
 Balancer, through the Service.
-For what any edge must do and the settings the examples use, see
-[Exposing Hush AGW](edge.md).
+For what any edge must do, what a preset does and the settings the examples
+use, see [Exposing Hush AGW](edge.md).
 
 ## Gateway API
 
 Tested with AWS Load Balancer Controller v3.6.3 on EKS 1.35, with the
-LoadBalancerConfiguration and the TargetGroupConfiguration below as the
-chart's `aws-alb` preset renders them. Attaching the LoadBalancerConfiguration
-to the GatewayClass, as the chart's own Gateway needs here, was not tested.
+`aws-alb` preset on the chart's own Gateway and on a shared one. By hand, the
+objects below are the ones the preset creates, but attaching the
+LoadBalancerConfiguration to the GatewayClass, as the chart's own Gateway needs
+there, was not tested.
 
 The AWS Load Balancer Controller creates an Application Load Balancer (ALB) for
 a Gateway, with an HTTPS listener on port 443, and sends the requests of the
 chart's HTTPRoute to the Hush AGW pods. The chart creates the Gateway and the
 HTTPRoute. The settings of the load balancer go into a
 LoadBalancerConfiguration and those of its targets into a
-TargetGroupConfiguration, which you create.
+TargetGroupConfiguration, which the `aws-alb` preset creates, or you create by
+hand.
 
 ### Prerequisites
 
@@ -46,7 +48,74 @@ TargetGroupConfiguration, which you create.
   See [Gateway API CRDs](#gateway-api-crds).
 - A DNS zone where you can create the hostname's record.
 
-### Create the LoadBalancerConfiguration and the GatewayClass
+### With the preset
+
+Create a GatewayClass of the controller, unless the cluster has one that
+names no LoadBalancerConfiguration. This lists each GatewayClass with its
+controller and the LoadBalancerConfiguration it names:
+
+```bash
+kubectl get gatewayclass -o custom-columns=NAME:.metadata.name,CONTROLLER:.spec.controllerName,PARAMS:.spec.parametersRef.name
+```
+
+Reuse only a class of the controller `gateway.k8s.aws/alb` whose `PARAMS` is
+`<none>`. The controller merges the LoadBalancerConfiguration of the
+GatewayClass with that of the Gateway, and by default the GatewayClass's
+settings win, so they would replace the preset's scheme, idle timeout and TLS
+policy. See
+[Conflict resolution](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/gateway/customization/#conflict-resolution-for-loadbalancerconfiguration).
+Otherwise create one:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: aws-alb
+spec:
+  controllerName: gateway.k8s.aws/alb
+```
+
+Then install with:
+
+```yaml
+agw:
+  hostname: gw.example.com
+  httpRoute:
+    enabled: true
+    controller: aws-alb
+    gateway:
+      enabled: true
+      className: aws-alb
+```
+
+Besides the Gateway and the HTTPRoute, the chart creates the
+LoadBalancerConfiguration and the TargetGroupConfiguration shown under By hand
+below. The Gateway names the LoadBalancerConfiguration in
+`spec.infrastructure.parametersRef`, so the GatewayClass above carries no
+settings and can serve other Gateways too. The settings, under
+`agw.httpRoute.awsAlb`:
+
+| Setting | Default | What it sets |
+| :---- | :---- | :---- |
+| `loadBalancerConfiguration.enabled` | `true` | Creates the LoadBalancerConfiguration, with the chart's own Gateway only. A shared Gateway takes these settings from its owner |
+| `loadBalancerConfiguration.scheme` | `internet-facing` | `scheme`. `internal` keeps the ALB inside your network, as described under [Internal ALB](#internal-alb). Changing it replaces the ALB, and its address with it |
+| `loadBalancerConfiguration.certificateArn` | `""` | `defaultCertificate` of the HTTPS listener. When empty, the controller finds the ACM certificate by the hostname |
+| `loadBalancerConfiguration.idleTimeout` | `600` | The ALB attribute `idle_timeout.timeout_seconds` |
+| `loadBalancerConfiguration.sslPolicy` | `ELBSecurityPolicy-TLS13-1-2-2021-06` | `sslPolicy` of the HTTPS listener. Empty leaves the controller's default, `ELBSecurityPolicy-2016-08`, which also accepts TLS 1.0 and 1.1 |
+| `targetGroupConfiguration.enabled` | `true` | Creates the TargetGroupConfiguration, with any Gateway: `ip` targets and the health check on port 15021 |
+| `targetGroupConfiguration.stickiness.enabled` | `true` | The target group attribute `stickiness.enabled` |
+| `targetGroupConfiguration.stickiness.duration` | `86400` | The target group attribute `stickiness.lb_cookie.duration_seconds`: how long the cookie lasts |
+| `targetGroupConfiguration.crossZone` | `true` | The target group attribute `load_balancing.cross_zone.enabled` |
+
+The chart refuses sticky sessions with `crossZone: false`, which AWS refuses on
+an ALB target group, and `gateway.tls.secretName`, since the controller takes
+the certificate from ACM only.
+
+### By hand
+
+Leave `agw.httpRoute.controller` empty and create the objects yourself.
+
+#### Create the LoadBalancerConfiguration and the GatewayClass
 
 Create the namespace first, `kubectl create namespace hush-security`, since
 the install command creates it only when it runs:
@@ -79,9 +148,9 @@ spec:
     namespace: hush-security
 ```
 
-- The chart's Gateway names no LoadBalancerConfiguration, so the GatewayClass
-  carries it, as the default of every Gateway of the class. Give Hush AGW a
-  GatewayClass of its own.
+- Without the preset, the chart's Gateway names no LoadBalancerConfiguration,
+  so the GatewayClass carries it, as the default of every Gateway of the
+  class. Give Hush AGW a GatewayClass of its own.
 - `scheme: internet-facing` gives the ALB public IP addresses. The
   controller's default is `internal`, which keeps the ALB inside your network,
   as described under [Internal ALB](#internal-alb).
@@ -97,7 +166,7 @@ spec:
 See [Customizing the Gateway](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/gateway/customization/)
 and [LoadBalancerConfiguration](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/gateway/loadbalancerconfig/).
 
-### Create the TargetGroupConfiguration
+#### Create the TargetGroupConfiguration
 
 ```yaml
 apiVersion: gateway.k8s.aws/v1
@@ -141,7 +210,7 @@ spec:
 
 See [TargetGroupConfiguration](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/gateway/targetgroupconfig/).
 
-### Values
+#### Values
 
 ```yaml
 agw:
@@ -168,14 +237,17 @@ agw:
   hostname: gw.example.com
   httpRoute:
     enabled: true
+    controller: aws-alb
     parentRefs:
       - name: shared
         namespace: gateway-infra
         sectionName: https
 ```
 
-The TargetGroupConfiguration is still needed, for the reason above. The
-settings of the load balancer belong to that Gateway, which names a
+With the preset, the chart creates the TargetGroupConfiguration, and no
+LoadBalancerConfiguration. By hand, leave `controller` out and create the
+TargetGroupConfiguration as above: it is still needed, for the reason given
+there. The settings of the load balancer belong to that Gateway, which names a
 LoadBalancerConfiguration of its own namespace in
 `spec.infrastructure.parametersRef`. Its listener must meet the
 [requirements](edge.md#what-any-edge-must-do) and admit routes from the
@@ -190,7 +262,7 @@ LoadBalancerConfiguration of its own namespace in
 - **Certificate.** The controller takes certificates from ACM only: it does
   not support the `certificateRefs` of a Gateway listener. It finds the
   certificate by the listener's hostname, or takes the one the
-  LoadBalancerConfiguration names. See
+  LoadBalancerConfiguration names, from `certificateArn` with the preset. See
   [Certificate Discovery for secure listeners](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/gateway/gateway/).
 - **Issuance.** ACM issues the certificate once the CNAME record of its DNS
   validation resolves. Nothing in the cluster takes part.
@@ -217,8 +289,8 @@ kubectl get gateway hush-agw -n hush-security
 
 ## Ingress
 
-Tested with AWS Load Balancer Controller v3.6.3 on EKS 1.35, internet-facing
-and internal.
+Tested with AWS Load Balancer Controller v3.6.3 on EKS 1.35, with the
+`aws-alb` preset and by hand, internet-facing and internal.
 
 The AWS Load Balancer Controller creates an Application Load Balancer (ALB)
 for the Ingress, with an HTTPS listener on port 443 and the Hush AGW pods as
@@ -242,7 +314,40 @@ its targets.
   See [ACM certificate](#acm-certificate).
 - A DNS zone where you can create the hostname's record.
 
-### Values
+### With the preset
+
+```yaml
+agw:
+  hostname: gw.example.com
+  ingress:
+    enabled: true
+    controller: aws-alb
+```
+
+The preset sets the class `alb` and the annotations shown under By hand below.
+The settings, under `agw.ingress.awsAlb`:
+
+| Setting | Default | What it sets |
+| :---- | :---- | :---- |
+| `scheme` | `internet-facing` | `scheme`. `internal` keeps the ALB inside your network, as described under [Internal ALB](#internal-alb) |
+| `certificateArn` | `""` | `certificate-arn`. When empty, the controller finds the ACM certificate by the hostname |
+| `idleTimeout` | `600` | `load-balancer-attributes`, as `idle_timeout.timeout_seconds` |
+| `sslPolicy` | `ELBSecurityPolicy-TLS13-1-2-2021-06` | `ssl-policy`. Empty leaves the controller's default, `ELBSecurityPolicy-2016-08`, which also accepts TLS 1.0 and 1.1 |
+| `stickiness.enabled` | `true` | `target-group-attributes`, as `stickiness.enabled` |
+| `stickiness.duration` | `86400` | `target-group-attributes`, as `stickiness.lb_cookie.duration_seconds`: how long the cookie lasts |
+| `crossZone` | `true` | `target-group-attributes`, as `load_balancing.cross_zone.enabled` |
+
+The other annotations have no setting of their own: `target-type: ip`, the
+HTTPS listener on port 443, and the health check on port 15021, path
+`/healthz/ready`. The chart refuses sticky sessions with `crossZone: false`,
+which AWS refuses on an ALB target group.
+
+A key in `agw.ingress.annotations` replaces the preset's annotation whole: an
+attribute annotation of your own, for example to turn on access logs, must
+repeat the attributes the preset put there. `agw.ingress.className` replaces
+`alb`, for another IngressClass of the controller.
+
+### By hand
 
 ```yaml
 agw:
@@ -295,11 +400,15 @@ and [Target group attributes](https://docs.aws.amazon.com/elasticloadbalancing/l
 
 ### Internal ALB
 
-To keep the ALB inside your network, set
-`alb.ingress.kubernetes.io/scheme: internal` in the values above. Nothing else
-changes. The ALB then gets private IP addresses only, and is reachable from
-the VPC and the networks connected to it, such as a VPN, a peered VPC or
-Direct Connect. It needs private subnets tagged
+To keep the ALB inside your network, set its scheme to `internal`. Through an
+Ingress, set `agw.ingress.awsAlb.scheme: internal` with the preset, or the
+annotation `alb.ingress.kubernetes.io/scheme: internal` by hand. Through the
+Gateway API, set
+`agw.httpRoute.awsAlb.loadBalancerConfiguration.scheme: internal` with the
+preset, or `scheme: internal` in the LoadBalancerConfiguration by hand.
+Nothing else changes. The ALB then gets private IP addresses only, and is
+reachable from the VPC and the networks connected to it, such as a VPN, a
+peered VPC or Direct Connect. It needs private subnets tagged
 `kubernetes.io/role/internal-elb` in at least two Availability Zones, and a
 DNS record clients resolve, for example in a Route 53 private hosted zone.
 
@@ -320,8 +429,8 @@ kubectl get ingress hush-agw -n hush-security
 
 ## Network Load Balancer
 
-Tested with AWS Load Balancer Controller v3.6.3 on EKS 1.35, with and without
-`loadBalancerClass`.
+Tested with AWS Load Balancer Controller v3.6.3 on EKS 1.35, with the
+`aws-nlb` preset and by hand, with and without `loadBalancerClass`.
 
 The AWS Load Balancer Controller creates a Network Load Balancer (NLB) for the
 `hush-agw` Service itself, of type `LoadBalancer`, with a TLS listener on
@@ -336,9 +445,53 @@ port 443 and the Hush AGW pods as its targets. There is no Ingress.
   `kubernetes.io/role/internal-elb` for an internal one. See
   [Subnet tags](#subnet-tags).
 - Or, instead of the controller, EKS Auto Mode, which creates the NLB itself.
-  It needs the subnet tags too. See the Auto Mode notes below.
+  It needs the subnet tags too. See
+  [Load balancer class and EKS Auto Mode](#load-balancer-class-and-eks-auto-mode).
 
-### Values
+### With the preset
+
+```yaml
+agw:
+  hostname: gw.example.com
+  service:
+    loadBalancer: aws-nlb
+    awsNlb:
+      certificateArn: arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000
+```
+
+The preset makes the Service a `LoadBalancer`, whatever `agw.service.type`
+says, and sets the annotations shown under By hand below. It also turns off
+the node ports of the Service, with `allocateLoadBalancerNodePorts: false`:
+the NLB does not use them with `ip` targets, and a node port would open the
+plain HTTP port of Hush AGW on every node. The settings, under
+`agw.service.awsNlb`:
+
+| Setting | Default | What it sets |
+| :---- | :---- | :---- |
+| `scheme` | `internet-facing` | `aws-load-balancer-scheme` |
+| `certificateArn` | `""` | `aws-load-balancer-ssl-cert`. Required, since the NLB has no certificate discovery |
+| `sslPolicy` | `ELBSecurityPolicy-TLS13-1-2-2021-06` | `aws-load-balancer-ssl-negotiation-policy`. Empty leaves the annotation out, and with it the controller's default, `ELBSecurityPolicy-2016-08`, which also accepts TLS 1.0 and 1.1 |
+| `crossZone` | `true` | `aws-load-balancer-attributes`, as `load_balancing.cross_zone.enabled` |
+
+The other annotations have no setting of their own: `ip` targets, the TLS
+listener on port 443, and the HTTP health check on port 15021, path
+`/healthz/ready`. Keys in `agw.service.annotations` replace the preset's.
+`agw.service.loadBalancerClass` and `agw.service.loadBalancerSourceRanges`
+apply as by hand.
+
+A Service that already has a node port, such as one set up by hand before,
+keeps it when it moves to the preset: Kubernetes does not remove a node port
+it has allocated, and neither does `helm upgrade`. Remove it after the
+upgrade:
+
+```bash
+kubectl patch service hush-agw -n hush-security --type=json -p '[{"op":"remove","path":"/spec/ports/0/nodePort"}]'
+```
+
+See
+[Load balancer NodePort allocation](https://kubernetes.io/docs/concepts/services-networking/service/#load-balancer-nodeport-allocation).
+
+### By hand
 
 ```yaml
 agw:
@@ -379,8 +532,17 @@ The annotations are named `service.beta.kubernetes.io/<setting>`. See
 and the attributes in
 [Network Load Balancer attributes](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancers.html).
 
-`loadBalancerClass` picks the implementation that handles the Service, and
-cannot be changed once set:
+Kubernetes also gives a `LoadBalancer` Service a node port, which the NLB does
+not use with `ip` targets. The node port opens the plain HTTP port of Hush AGW
+on every node, to whatever reaches the nodes. The values have no setting that
+turns it off: only the preset does. Where the nodes are reachable from outside
+the cluster, use the preset, and remove the node port the Service already has,
+as described under With the preset.
+
+### Load balancer class and EKS Auto Mode
+
+`agw.service.loadBalancerClass` picks the implementation that handles the
+Service, and cannot be changed once set:
 
 - The controller's webhook sets `service.k8s.aws/nlb` on a new `LoadBalancer`
   Service by default, so the class can stay empty where the controller is the
@@ -391,14 +553,9 @@ cannot be changed once set:
   service.k8s.aws/nlb` for the controller to handle the Service.
 - With Auto Mode handling the NLB, leave out
   `aws-load-balancer-ssl-negotiation-policy`, which is not among the
-  annotations Auto Mode supports. See
+  annotations Auto Mode supports: by hand, drop the annotation; with the
+  preset, set `agw.service.awsNlb.sslPolicy: ""`. See
   [Use Service annotations to configure Network Load Balancers](https://docs.aws.amazon.com/eks/latest/userguide/auto-configure-nlb.html).
-
-Kubernetes also gives a `LoadBalancer` Service a node port, which the NLB does
-not use with `ip` targets. The node port opens the plain HTTP port of Hush AGW
-on every node, to whatever reaches the nodes. The values have no setting that
-turns it off: only the chart's `aws-nlb` preset does. Where the nodes are
-reachable from outside the cluster, use the preset.
 
 ### TLS and the certificate
 

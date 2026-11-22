@@ -1,19 +1,21 @@
 # Exposing Hush AGW on Google Cloud
 
 GKE Gateway and GKE Ingress put Hush AGW behind an external Application Load
-Balancer. For what any edge must do and the settings the examples use, see
-[Exposing Hush AGW](edge.md).
+Balancer. For what any edge must do, what a preset does and the settings the
+examples use, see [Exposing Hush AGW](edge.md).
 
 ## GKE Gateway
 
-Tested on GKE Standard, with the policies below as the chart's `gke-gateway`
-preset renders them, and with a certificate map.
+Tested on GKE Standard, with the `gke-gateway` preset on the chart's own
+Gateway with each of its certificate sources, and on a shared Gateway. By
+hand, the policies below are the ones the preset creates.
 
 GKE Gateway creates a global external Application Load Balancer for a
 Gateway of the class `gke-l7-global-external-managed`, and sends the requests
 of the chart's HTTPRoute to the Hush AGW pods. The chart creates the Gateway
 and the HTTPRoute. The settings of the load balancer go into policy objects,
-which you create. Google recommends the Gateway API over GKE Ingress. See
+which the `gke-gateway` preset creates, or you create by hand. Google
+recommends the Gateway API over GKE Ingress. See
 [About Gateway API](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/gateway-api).
 
 ### Prerequisites
@@ -34,14 +36,55 @@ which you create. Google recommends the Gateway API over GKE Ingress. See
 - A certificate for the hostname: a Certificate Manager certificate map with a
   Google-managed certificate,
   `gcloud certificate-manager maps describe hush-agw`, or a Secret. See
-  [Certificate Manager certificate](#certificate-manager-certificate).
+  [Certificate Manager certificate](#certificate-manager-certificate). With
+  the preset, a Compute Engine SSL certificate works too:
+  `gcloud compute ssl-certificates describe hush-agw --global`. See
+  [Compute Engine SSL certificate](#compute-engine-ssl-certificate).
 - A DNS zone where you can create the hostname's A record.
 - On a cluster in a service project of a Shared VPC, the firewall rules that
   let Google's proxies and health checks reach the pods, which GKE cannot
   create in the host project by default. See
   [Shared VPC](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/ingress-routing-security#shared_vpc).
 
-### Create the policies
+### With the preset
+
+```yaml
+agw:
+  hostname: gw.example.com
+  httpRoute:
+    enabled: true
+    controller: gke-gateway
+    gateway:
+      enabled: true
+    gkeGateway:
+      certificateMap: hush-agw
+      sslPolicy: hush-agw-tls
+```
+
+Besides the Gateway, of the class `gke-l7-global-external-managed` unless
+`gateway.className` names another, and the HTTPRoute, the chart creates the
+HealthCheckPolicy and the GCPBackendPolicy shown under By hand below, and the
+GCPGatewayPolicy when `sslPolicy` is set. The settings, under
+`agw.httpRoute.gkeGateway`:
+
+| Setting | Default | What it sets |
+| :---- | :---- | :---- |
+| `healthCheckPolicy.enabled` | `true` | Creates the HealthCheckPolicy, with any Gateway |
+| `backendPolicy.enabled` | `true` | Creates the GCPBackendPolicy, with any Gateway |
+| `backendPolicy.timeoutSec` | `1800` | Its `timeoutSec` |
+| `backendPolicy.sessionAffinity` | `{type: GENERATED_COOKIE}` | Its `sessionAffinity`. Null turns session affinity off |
+| `certificateMap` | `""` | The certificate map, in the Gateway's annotation `networking.gke.io/certmap` |
+| `preSharedCertificate` | `""` | A Compute Engine SSL certificate, in the listener option `networking.gke.io/pre-shared-certs` |
+| `sslPolicy` | `""` | Creates the GCPGatewayPolicy that attaches this SSL policy, with the chart's own Gateway only. When empty, the load balancer accepts TLS 1.0 and later |
+
+The chart requires exactly one certificate source: `certificateMap`,
+`preSharedCertificate` or `gateway.tls.secretName`.
+
+### By hand
+
+Leave `agw.httpRoute.controller` empty and create the policies yourself.
+
+#### Create the policies
 
 Create them in the release's namespace before installing, after
 `kubectl create namespace hush-security`:
@@ -114,7 +157,7 @@ a release of that name, and the GCPGatewayPolicy names the chart's Gateway,
 `hush-agw` too. See
 [Configure Gateway resources using Policies](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/configure-gateway-resources).
 
-### Values
+#### Values
 
 ```yaml
 agw:
@@ -132,9 +175,8 @@ The chart creates the Gateway `hush-agw`, with one HTTPS listener on port 443
 for the hostname, and the HTTPRoute that sends every path of the hostname to
 Hush AGW. The `networking.gke.io/certmap` annotation names the certificate
 map. For a Secret instead, leave the annotation out and set
-`gateway.tls.secretName`: GKE refuses the two together. A Google-managed
-Compute Engine certificate needs a listener option that only the chart's
-`gke-gateway` preset sets.
+`gateway.tls.secretName`: GKE refuses the two together. A Compute Engine SSL
+certificate needs a listener option that only the preset sets.
 
 ### On a Gateway of your own
 
@@ -146,15 +188,17 @@ agw:
   hostname: gw.example.com
   httpRoute:
     enabled: true
+    controller: gke-gateway
     parentRefs:
       - name: shared
         namespace: gateway-infra
         sectionName: https
 ```
 
-Create the HealthCheckPolicy and the GCPBackendPolicy as above: they configure
-the backend of Hush AGW on any Gateway. The certificate and the SSL policy
-belong to that Gateway. Its listener must meet the
+With the preset, the chart creates the HealthCheckPolicy and the
+GCPBackendPolicy, which configure the backend of Hush AGW on any Gateway. By
+hand, leave `controller` out and create them as above. The certificate and the
+SSL policy belong to that Gateway. Its listener must meet the
 [requirements](edge.md#what-any-edge-must-do) and admit routes from the
 `hush-security` namespace.
 
@@ -168,14 +212,20 @@ belong to that Gateway. Its listener must meet the
 - **Issuance.** Certificate Manager issues the Google-managed certificate once
   the CNAME record of its DNS authorization resolves. Unlike the
   ManagedCertificate of GKE Ingress, it does not wait for the hostname to point
-  at the load balancer, so the certificate can be ready before the install.
-- **Rotation.** Google renews the certificate on its own, as long as the DNS
-  authorization's CNAME record stays in place and is the only record of its
-  name. See
+  at the load balancer, so the certificate can be ready before the install. A
+  Google-managed Compute Engine SSL certificate does wait: Google provisions it
+  once the hostname's A record points at the Gateway's address, and states
+  that the load balancer can take up to 10 minutes after the DNS change to
+  serve it.
+- **Rotation.** Google renews the Certificate Manager certificate on its own,
+  as long as the DNS authorization's CNAME record stays in place and is the
+  only record of its name. See
   [Certificate Manager overview](https://docs.cloud.google.com/certificate-manager/docs/overview)
   and [Deploy a Google-managed certificate with DNS authorization](https://docs.cloud.google.com/certificate-manager/docs/deploy-google-managed-dns-auth).
-  With a Secret, whoever writes the Secret renews the certificate. Google does
-  not document whether the load balancer follows a changed Secret.
+  It renews a Compute Engine one as long as the A record still points at the
+  load balancer, as it does the ManagedCertificate of GKE Ingress. With a
+  Secret, whoever writes the Secret renews the certificate. Google does not
+  document whether the load balancer follows a changed Secret.
 
 ### After the install
 
@@ -186,9 +236,15 @@ Point the hostname's A record at it:
 kubectl get gateway hush-agw -n hush-security
 ```
 
+With a Compute Engine SSL certificate, wait until it is `ACTIVE`:
+
+```bash
+gcloud compute ssl-certificates describe hush-agw --global --format='value(managed.status)'
+```
+
 ## GKE Ingress
 
-Tested on GKE Standard.
+Tested on GKE Standard, with the `gke-ingress` preset and by hand.
 
 GKE creates an external Application Load Balancer for the Ingress. Google
 recommends [GKE Gateway](#gke-gateway) over GKE Ingress for new work. It reads
@@ -217,7 +273,41 @@ ManagedCertificate and a FrontendConfig.
   create in the host project by default. See
   [Shared VPC](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/ingress-routing-security#shared_vpc).
 
-### Create the BackendConfig, ManagedCertificate and FrontendConfig
+### With the preset
+
+```yaml
+agw:
+  hostname: gw.example.com
+  ingress:
+    enabled: true
+    controller: gke-ingress
+    gkeIngress:
+      frontendConfig:
+        sslPolicy: hush-agw-tls
+```
+
+The preset creates the BackendConfig, the ManagedCertificate and the
+FrontendConfig shown under By hand below, and sets the annotations that name
+them on the Ingress and on the Service. The settings, under
+`agw.ingress.gkeIngress`:
+
+| Setting | Default | What it sets |
+| :---- | :---- | :---- |
+| `backendConfig.enabled` | `true` | Creates the BackendConfig and names it on the Service in `cloud.google.com/backend-config` |
+| `backendConfig.timeoutSec` | `1800` | Its `timeoutSec` |
+| `backendConfig.sessionAffinity` | `{affinityType: GENERATED_COOKIE}` | Its `sessionAffinity`. Null turns session affinity off |
+| `managedCertificate.enabled` | `true` | Creates the ManagedCertificate for the hostname and names it in `networking.gke.io/managed-certificates`. Turn it off when `agw.ingress.tls.secretName` or an annotation of your own provides the certificate |
+| `frontendConfig.enabled` | `true` | Creates the FrontendConfig, which redirects plain HTTP to HTTPS, and names it in `networking.gke.io/v1beta1.FrontendConfig` |
+| `frontendConfig.sslPolicy` | `""` | Its `sslPolicy`. When empty, the load balancer accepts TLS 1.0 and later |
+
+The other annotations have no setting of their own:
+`kubernetes.io/ingress.class: gce` on the Ingress and
+`cloud.google.com/neg: '{"ingress": true}'` on the Service. The chart refuses
+`agw.ingress.className`, since GKE takes the class from the annotation alone.
+
+### By hand
+
+#### Create the BackendConfig, ManagedCertificate and FrontendConfig
 
 Create them in the release's namespace before installing. Create the namespace
 first, since the install command creates it only when it runs:
@@ -281,7 +371,7 @@ spec:
 See [Configure Ingress features](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/ingress-configuration)
 and [Timeouts and retries](https://docs.cloud.google.com/load-balancing/docs/https/request-distribution).
 
-### Values
+#### Values
 
 ```yaml
 agw:
@@ -326,8 +416,9 @@ gcloud compute addresses create hush-agw --global
   3001. On port 80 they answer with the FrontendConfig's redirect.
 - **TLS policy.** Without an SSL policy, the load balancer accepts TLS 1.0 and
   later. The FrontendConfig attaches `hush-agw-tls`, which requires TLS 1.2.
-  To drop the FrontendConfig, first remove its `sslPolicy` and apply: GKE
-  leaves the SSL policy on the load balancer when the FrontendConfig goes. See
+  To drop the FrontendConfig, first remove its `sslPolicy`, or empty
+  `frontendConfig.sslPolicy` with the preset, and apply: GKE leaves the SSL
+  policy on the load balancer when the FrontendConfig goes. See
   [SSL policies overview](https://docs.cloud.google.com/load-balancing/docs/ssl-policies-concepts).
 - **Issuance.** The ManagedCertificate asks Google for a domain-validated
   certificate. Google provisions it once the hostname's A record in public DNS
@@ -404,3 +495,17 @@ gcloud certificate-manager maps entries create hush-agw \
 ```
 
 See [Deploy a Google-managed certificate with DNS authorization](https://docs.cloud.google.com/certificate-manager/docs/deploy-google-managed-dns-auth).
+
+### Compute Engine SSL certificate
+
+For the preset's `preSharedCertificate`, create a Google-managed certificate
+for the hostname in the cluster's project:
+
+```bash
+gcloud compute ssl-certificates create hush-agw --domains=gw.example.com --global
+```
+
+Google provisions it once the hostname's A record points at the Gateway's
+address, after the install. See
+[Secure a Gateway](https://docs.cloud.google.com/kubernetes-engine/docs/how-to/secure-gateway)
+and [Use Google-managed SSL certificates](https://docs.cloud.google.com/load-balancing/docs/ssl-certificates/google-managed-certs).

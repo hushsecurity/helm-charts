@@ -2,22 +2,27 @@
 
 Azure Application Gateway for Containers puts Hush AGW behind a frontend that
 its ALB Controller programs from a Gateway or an Ingress. For what any edge
-must do and the settings the examples use, see [Exposing Hush AGW](edge.md).
+must do, what a preset does and the settings the examples use, see
+[Exposing Hush AGW](edge.md).
 
 ## Gateway API
 
-Tested with ALB Controller 1.13.0 on AKS, with the HealthCheckPolicy and the
-session affinity below as the chart's `azure-agc` preset renders them. The
-preset sets the request timeout on the HTTPRoute instead, so the RoutePolicy
-timeout below was not tested, nor was the DNS-01 issuance.
+Tested with ALB Controller 1.13.0 on AKS, with the `azure-agc` preset on the
+chart's own Gateway and on a shared one, and a certificate in a Secret. By
+hand, the HealthCheckPolicy and the session affinity below are the ones the
+preset creates. The preset sets the request timeout on the HTTPRoute instead,
+so the RoutePolicy timeout below was not tested. Nor were the DNS-01 issuance
+and an AGC created outside the cluster.
 
 The ALB Controller programs a frontend of an Azure Application Gateway for
 Containers (AGC) for a Gateway of the class `azure-alb-external`, and sends
 the requests of the chart's HTTPRoute to the Hush AGW pods. In these examples
 the ALB Controller also creates the AGC itself, from an
-`ApplicationLoadBalancer` resource named `alb` in the namespace `alb-infra`. The chart creates the Gateway and the HTTPRoute. The settings of
-the load balancer go into a HealthCheckPolicy and a RoutePolicy, which you
-create, and cert-manager issues the certificate.
+`ApplicationLoadBalancer` resource named `alb` in the namespace `alb-infra`.
+The chart creates the Gateway and the HTTPRoute. The settings of the load
+balancer go into a HealthCheckPolicy and a RoutePolicy, which the `azure-agc`
+preset creates, or you create by hand, and cert-manager issues the
+certificate.
 
 ### Prerequisites
 
@@ -47,10 +52,11 @@ create, and cert-manager issues the certificate.
 - The hostname's DNS zone, in Azure DNS for this ClusterIssuer. cert-manager
   supports other DNS providers too.
 
-### Create the Certificate and the policies
+### Create the Certificate
 
-Create them in the release's namespace before installing, after
-`kubectl create namespace hush-security`:
+Create it in the release's namespace before installing, after
+`kubectl create namespace hush-security`. cert-manager issues the certificate
+into the Secret `gw-example-com-tls`, which the Gateway's listener names:
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -65,7 +71,53 @@ spec:
   issuerRef:
     name: letsencrypt-dns
     kind: ClusterIssuer
----
+```
+
+### With the preset
+
+```yaml
+agw:
+  hostname: gw.example.com
+  httpRoute:
+    enabled: true
+    controller: azure-agc
+    gateway:
+      enabled: true
+      tls:
+        secretName: gw-example-com-tls
+    azureAgc:
+      albName: alb
+      albNamespace: alb-infra
+```
+
+Besides the Gateway, of the class `azure-alb-external` unless
+`gateway.className` names another, and the HTTPRoute, the chart creates the
+HealthCheckPolicy shown under By hand below, and a RoutePolicy with the
+session affinity alone. It sets the request timeout on the HTTPRoute itself,
+as `timeouts.request`, which AGC prefers to the timeout of a RoutePolicy. The
+settings, under `agw.httpRoute.azureAgc`:
+
+| Setting | Default | What it sets |
+| :---- | :---- | :---- |
+| `albName`, `albNamespace` | `""` | The `ApplicationLoadBalancer` whose AGC serves the chart's Gateway, in the Gateway's annotations `alb.networking.azure.io/alb-name` and `alb-namespace` |
+| `albId`, `albFrontend` | `""` | Instead, an AGC created outside the cluster: its resource ID, in the Gateway's annotation `alb.networking.azure.io/alb-id`, and the name of its frontend, in the Gateway's `spec.addresses`. Not tested |
+| `healthCheckPolicy.enabled` | `true` | Creates the HealthCheckPolicy, with any Gateway |
+| `requestTimeout` | `1800s` | `timeouts.request` of the HTTPRoute, with any Gateway: how long a request, an MCP stream included, may take |
+| `sessionAffinity` | `{affinityType: managed-cookie}` | Creates the RoutePolicy with this `sessionAffinity`, with any Gateway. Null leaves the RoutePolicy out |
+
+With its own Gateway, the chart requires `gateway.tls.secretName`, since AGC
+takes the certificate from a Secret only, and one of the two pairs of ALB
+settings.
+
+### By hand
+
+Leave `agw.httpRoute.controller` empty and create the policies yourself.
+
+#### Create the policies
+
+Create them in the release's namespace:
+
+```yaml
 apiVersion: alb.networking.azure.io/v1
 kind: HealthCheckPolicy
 metadata:
@@ -98,8 +150,6 @@ spec:
       affinityType: managed-cookie
 ```
 
-- The Certificate has cert-manager issue the certificate into the Secret
-  `gw-example-com-tls`, which the Gateway's listener names.
 - The HealthCheckPolicy probes port 15021, path `/healthz/ready`. A probe on a
   port other than the Service's runs in cleartext. Without the policy, AGC
   falls back to the readiness probe of the pod, which checks the same port and
@@ -126,7 +176,7 @@ for `routeTimeout`, the order of the timeouts in
 [Session affinity](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/session-affinity)
 and the [API specification](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/api-specification-kubernetes).
 
-### Values
+#### Values
 
 ```yaml
 agw:
@@ -166,13 +216,16 @@ agw:
   hostname: gw.example.com
   httpRoute:
     enabled: true
+    controller: azure-agc
     parentRefs:
       - name: shared
         namespace: gateway-infra
         sectionName: https
 ```
 
-Create the HealthCheckPolicy and the RoutePolicy as above: they name the
+With the preset, the chart creates the HealthCheckPolicy and the RoutePolicy,
+and sets the request timeout on the HTTPRoute. By hand, leave `controller` out
+and create the HealthCheckPolicy and the RoutePolicy as above. They name the
 Service and the HTTPRoute of Hush AGW, so they apply on any Gateway, and the
 affinity cookie reaches the traffic to Hush AGW only. The certificate belongs
 to that Gateway. Its listener must meet the
@@ -220,7 +273,8 @@ kubectl get certificate -n hush-security
 
 ## Ingress
 
-Tested with ALB Controller 1.13.0 on AKS.
+Tested with ALB Controller 1.13.0 on AKS, with the `azure-agc` preset and by
+hand, but not with an AGC created outside the cluster.
 
 The ALB Controller programs an AGC for the Ingress: a frontend that terminates
 TLS for the hostname and sends the requests to the Hush AGW pods. In this
@@ -290,7 +344,48 @@ issuer of their own.
 See [HTTP01](https://cert-manager.io/docs/configuration/acme/http01/) and
 [Cert-manager and Let's Encrypt with Application Gateway for Containers - Ingress API](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/how-to-cert-manager-lets-encrypt-ingress-api).
 
-### Create the HealthCheckPolicy and the IngressExtension
+### With the preset
+
+```yaml
+agw:
+  hostname: gw.example.com
+  ingress:
+    enabled: true
+    controller: azure-agc
+    annotations:
+      alb.networking.azure.io/alb-frontend: hush-agw
+      cert-manager.io/cluster-issuer: letsencrypt
+    tls:
+      secretName: gw-example-com-tls
+    azureAgc:
+      albName: alb
+      albNamespace: alb-infra
+```
+
+The preset sets the class `azure-alb-external` and the annotations that name
+the `ApplicationLoadBalancer` and the IngressExtension, and creates the
+HealthCheckPolicy and the IngressExtension shown under By hand below. The two
+annotations in `annotations` stay yours: the frontend's name, which the
+ClusterIssuer's solver names too, and the issuer of cert-manager. The
+settings, under `agw.ingress.azureAgc`:
+
+| Setting | Default | What it sets |
+| :---- | :---- | :---- |
+| `albName`, `albNamespace` | `""` | The `ApplicationLoadBalancer` whose AGC serves the Ingress, in the annotations `alb.networking.azure.io/alb-name` and `alb-namespace` |
+| `albId`, `albFrontend` | `""` | Instead, an AGC created outside the cluster: its resource ID and the name of its frontend, in the annotations `alb.networking.azure.io/alb-id` and `alb-frontend`. Leave `alb-frontend` out of `annotations` then, since it would replace `albFrontend`. Not tested |
+| `healthCheckPolicy.enabled` | `true` | Creates the HealthCheckPolicy |
+| `ingressExtension.enabled` | `true` | Creates the IngressExtension and names it in `alb.networking.azure.io/alb-ingress-extension` |
+| `ingressExtension.requestTimeout` | `1800s` | Its `requestTimeout` |
+| `ingressExtension.sessionAffinity` | `{affinityType: managed-cookie}` | Its `sessionAffinity`. Null turns session affinity off |
+
+The chart requires `tls.secretName`, since AGC takes the certificate from a
+Secret only, and one of the two pairs of ALB settings. It refuses
+`agw.ingress.className`, since the ALB Controller serves the class
+`azure-alb-external` only.
+
+### By hand
+
+#### Create the HealthCheckPolicy and the IngressExtension
 
 Create both in the release's namespace before installing, after
 `kubectl create namespace hush-security`. They name the Service, `hush-agw`
@@ -345,7 +440,7 @@ the request timeouts in
 [Application Gateway for Containers components](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/application-gateway-for-containers-components)
 and the [API specification](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/api-specification-kubernetes).
 
-### Values
+#### Values
 
 ```yaml
 agw:
