@@ -22,5 +22,6 @@
 *.tmproj
 .vscode/
 /ci
+/docs
 # Hush
 CHANGELOG.md
