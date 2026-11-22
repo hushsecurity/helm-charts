@@ -209,8 +209,8 @@ agw:
     # Balancer, configured under 'awsNlb'. It makes the Service a LoadBalancer,
     # whatever 'type' says. Keys in 'annotations' replace the ones it sets.
     #
-    # Examples for each load balancer and ingress controller are in
-    # https://github.com/hushsecurity/helm-charts/tree/main/charts/hush-agw/ci
+    # Examples for each load balancer and ingress controller are linked from
+    # https://github.com/hushsecurity/helm-charts/blob/main/charts/hush-agw/docs/edge.md
     loadBalancer: ""
 
     # An AWS Network Load Balancer, for 'loadBalancer: aws-nlb', through the
@@ -271,8 +271,8 @@ agw:
     # 'className' and keys in 'annotations' replace what it sets, except that
     # gke-ingress and azure-agc take no 'className'.
     #
-    # Examples for each ingress controller and load balancer are in
-    # https://github.com/hushsecurity/helm-charts/tree/main/charts/hush-agw/ci
+    # Examples for each ingress controller and load balancer are linked from
+    # https://github.com/hushsecurity/helm-charts/blob/main/charts/hush-agw/docs/edge.md
     controller: ""
 
     # IngressClass of the controller that serves the Ingress. When empty, the
@@ -429,8 +429,8 @@ agw:
     #
     # Keys in 'gateway.annotations' replace what it sets.
     #
-    # Examples for each implementation are in
-    # https://github.com/hushsecurity/helm-charts/tree/main/charts/hush-agw/ci
+    # Examples for each implementation are linked from
+    # https://github.com/hushsecurity/helm-charts/blob/main/charts/hush-agw/docs/edge.md
     controller: ""
 
     # Gateways the HTTPRoute attaches to, as its parentRefs, for example
