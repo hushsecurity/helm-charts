@@ -2,6 +2,9 @@
 
 Hush Access Manager helm chart.
 
+To set up the secret store, see
+[Secret stores](https://github.com/hushsecurity/helm-charts/blob/main/docs/secret-stores/README.md).
+
 ## Upgrading
 
 `helm upgrade` does **not** apply changes to CRDs - Helm only installs CRDs

@@ -9,6 +9,11 @@ Hush Security Ltd. helm charts.
 - [hush-agw](./charts/hush-agw/README.md) - Hush Agent Gateway.
 - [hush-connector](./charts/hush-connector/README.md) - Hush Connector, on its own.
 
+## Docs
+
+- [Secret stores](./docs/secret-stores/README.md) - setting up the secret store
+  of hush-am and hush-agw.
+
 ## Changelog
 
 - [hush-am](./charts/hush-am/CHANGELOG.md)
