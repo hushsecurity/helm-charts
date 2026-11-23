@@ -1020,7 +1020,8 @@ agw:
       #   Microsoft.KeyVault/vaults/secrets/delete               delete
       #   Microsoft.KeyVault/vaults/secrets/purge/action         purge
       #
-      # "Key Vault Secrets Officer" is a superset that works in either model.
+      # With Azure RBAC, the built-in role "Key Vault Secrets Officer" holds all
+      # four.
       # Omitting 'purge' has the same effect as purge protection.
       auth:
         # How Hush AGW authenticates to Key Vault:
