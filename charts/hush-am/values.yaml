@@ -409,7 +409,8 @@ secretStore:
     #   Microsoft.KeyVault/vaults/secrets/delete               delete
     #   Microsoft.KeyVault/vaults/secrets/purge/action         purge
     #
-    # "Key Vault Secrets Officer" is a superset that works in either model.
+    # With Azure RBAC, the built-in role "Key Vault Secrets Officer" holds all
+    # four.
     # Omitting 'purge' has the same effect as purge protection: the readiness
     # check deletes on every sweep, so the store never becomes ready, and the
     # two refusals are both a 403 that cannot be told apart from outside.
