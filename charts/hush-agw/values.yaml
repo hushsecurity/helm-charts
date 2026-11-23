@@ -818,6 +818,9 @@ agw:
   # A Hush AGW that shares its Hush deployment with hush-am must use hush-am's
   # secret store: the same kind, prefix and location. Either of them may create
   # the deployment's next key, and the other reads it from there.
+  #
+  # How to set up each kind, and the permissions it needs, is described at
+  # https://github.com/hushsecurity/helm-charts/blob/main/docs/secret-stores/README.md
   secretStore:
     # The secret store kind
     # Allowed values are:
