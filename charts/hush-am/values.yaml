@@ -180,7 +180,9 @@ image:
   # Custom pull policy for Access Management injector
   injectorPullPolicy: ""
 
-# Secret store configuration
+# Secret store configuration. How to set up each kind, and the permissions it
+# needs, is described at
+# https://github.com/hushsecurity/helm-charts/blob/main/docs/secret-stores/README.md
 secretStore:
   # The secret store kind
   # Allowed values are:
