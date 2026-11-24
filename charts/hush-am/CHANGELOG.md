@@ -4,6 +4,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to `v0.34.0`.
+
+  - credentials for Cloudflare R2: S3 credentials backed by an account API
+    token, created on grant for the privilege's buckets or for the account,
+    and deleted on revoke. The token expires after 730 days. The root token
+    needs the `Account API Tokens` `Edit` permission, and the access manager
+    must reach `api.cloudflare.com`.
+  - credentials for Statsig: a server secret or client API key, created
+    through the Statsig Console API on grant and deleted on revoke. The root
+    Console API key needs `omni_read_write` and `can_access_keys`, and the
+    access manager must reach `statsigapi.net`. Statsig takes up to about five
+    minutes to accept a new key.
+  - a MySQL or MariaDB `ssl_mode` means what it means to MySQL's
+    `--ssl-mode`. `preferred` falls back to plaintext when the server has no
+    TLS, `required` requires TLS without verifying the certificate, and
+    `verify-ca` verifies the certificate chain, which it skipped before. A
+    credential that relies on `required` to verify the server should move to
+    `verify-identity`. An older hush-am, after a rollback, cannot revoke a user
+    created over plaintext or with a certificate that does not verify.
+  - MySQL and MariaDB users get passwords with a digit, both letter cases and
+    a symbol, which MariaDB Cloud and MySQL's `validate_password` accept. A
+    credential that already failed on the password policy needs a new version.
+  - a native Kafka privilege can name the `CreateTokens`, `DescribeTokens` and
+    `TwoPhaseCommit` operations and the `User` resource type.
+  - security fixes in the MySQL driver.
+
 ## hush-am 0.34.0 - 2026-11-16
 
 ### Changed
