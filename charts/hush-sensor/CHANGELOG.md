@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+
+## hush-sensor 0.34.0 - 2026-11-24
+
 ### Added
 
 - `sentry.integrations.cyberark_sm` to crawl CyberArk Secrets Manager (Conjur)
