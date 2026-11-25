@@ -4,7 +4,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## hush-agw 0.13.1 - 2026-11-25
 
 ### Changed
 
