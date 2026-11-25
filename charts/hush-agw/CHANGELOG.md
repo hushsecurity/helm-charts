@@ -4,6 +4,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- bump the app version to v0.21.0. The release asks nothing of the chart.
+
+  - agents name each app by the name an admin gave it in the Hush console,
+    with its gateway name beside it, rather than by the gateway name alone,
+    and `hush_list_apps` returns each app's display name and description.
+  - a user no longer assigned to an app is no longer shown as connected to
+    it.
+  - a block notice names the blocked tool and app as users know them, and
+    tells the user an admin can change the policy.
+  - Copilot CLI users now see why a call was blocked.
+  - a tool call no longer waits for every other app to list its tools.
+  - Detect Tools on a custom MCP app with no scopes asks for the scopes the
+    app's server advertises, and the Hush console shows them as the app's
+    scopes once detection succeeds.
+
+  The rest of the release is internal improvements.
+
 ## hush-agw 0.13.0 - 2026-11-19
 
 ### Added
