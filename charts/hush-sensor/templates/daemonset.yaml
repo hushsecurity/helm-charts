@@ -149,8 +149,6 @@ spec:
             {{- include "hush-common.k8sSecretsProjectionVolumeMount" . | nindent 12 }}
           env:
             {{- include "hush-common.deploymentIdentityEnv" . | nindent 12 }}
-            - name: REPORT_HOST_METRICS
-              value: "1"
             - name: REPORT_APP_METRICS
               value: "1"
             - name: AGENT_ID_PATH
